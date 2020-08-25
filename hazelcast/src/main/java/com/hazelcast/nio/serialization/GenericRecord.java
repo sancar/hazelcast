@@ -433,6 +433,16 @@ public interface GenericRecord {
 
         /**
          * @return a new constructed GenericRecord
+         */
+        @Nonnull
+        static Builder compact(Compact serializer, int classID, Schema schema) {
+            return new CompactGenericRecordBuilder(serializer, schema, classID,
+                    bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
+                    () -> serializer.getInternalSerializationService().createObjectDataOutput());
+        }
+
+        /**
+         * @return a new constructed GenericRecord
          * @throws HazelcastSerializationException when the GenericRecord cannot be build.
          */
         @Nonnull
