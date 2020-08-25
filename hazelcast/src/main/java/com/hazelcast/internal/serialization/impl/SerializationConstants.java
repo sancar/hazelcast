@@ -127,10 +127,27 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_PRIORITY_QUEUE = -49;
 
-    // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 50;
-
     public static final int JAVA_DEFAULT_TYPE_ENUM = -50;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCAL_TIME = -51;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCAL_TIME_ARRAY = -52;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCAL_DATE = -53;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCAL_DATE_ARRAY = -54;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCAL_DATE_TIME = -55;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCAL_DATE_TIME_ARRAY = -56;
+
+    public static final int JAVA_DEFAULT_TYPE_OFFSET_DATE_TIME = -57;
+
+    public static final int JAVA_DEFAULT_TYPE_OFFSET_DATE_TIME_ARRAY = -58;
+
+    // NUMBER OF CONSTANT SERIALIZERS...
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 59;
+
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

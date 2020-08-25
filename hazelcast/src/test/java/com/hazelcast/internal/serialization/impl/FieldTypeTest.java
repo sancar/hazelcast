@@ -22,6 +22,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
+import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.BIG_INTEGER;
+import static com.hazelcast.nio.serialization.FieldType.BIG_INTEGER_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
@@ -34,8 +38,16 @@ import static com.hazelcast.nio.serialization.FieldType.FLOAT;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.INT;
 import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_TIME;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_TIME_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
+import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
@@ -63,6 +75,12 @@ public class FieldTypeTest {
         assertFalse(DOUBLE.isArrayType());
         assertFalse(UTF.isArrayType());
         assertFalse(BYTE.isArrayType());
+        assertFalse(BIG_INTEGER.isArrayType());
+        assertFalse(BIG_DECIMAL.isArrayType());
+        assertFalse(LOCAL_TIME.isArrayType());
+        assertFalse(LOCAL_DATE.isArrayType());
+        assertFalse(LOCAL_DATE_TIME.isArrayType());
+        assertFalse(OFFSET_DATE_TIME.isArrayType());
     }
 
     @Test
@@ -77,6 +95,12 @@ public class FieldTypeTest {
         assertTrue(FLOAT_ARRAY.isArrayType());
         assertTrue(DOUBLE_ARRAY.isArrayType());
         assertTrue(UTF_ARRAY.isArrayType());
+        assertTrue(BIG_INTEGER_ARRAY.isArrayType());
+        assertTrue(BIG_DECIMAL_ARRAY.isArrayType());
+        assertTrue(LOCAL_TIME_ARRAY.isArrayType());
+        assertTrue(LOCAL_DATE_ARRAY.isArrayType());
+        assertTrue(LOCAL_DATE_TIME_ARRAY.isArrayType());
+        assertTrue(OFFSET_DATE_TIME_ARRAY.isArrayType());
     }
 
     @Test
@@ -90,12 +114,17 @@ public class FieldTypeTest {
         assertEquals(LONG, LONG_ARRAY.getSingleType());
         assertEquals(FLOAT, FLOAT_ARRAY.getSingleType());
         assertEquals(DOUBLE, DOUBLE_ARRAY.getSingleType());
-        assertEquals(UTF, UTF_ARRAY.getSingleType());
+        assertEquals(BIG_INTEGER, BIG_INTEGER_ARRAY.getSingleType());
+        assertEquals(BIG_DECIMAL, BIG_DECIMAL_ARRAY.getSingleType());
+        assertEquals(LOCAL_TIME, LOCAL_TIME_ARRAY.getSingleType());
+        assertEquals(LOCAL_DATE, LOCAL_DATE_ARRAY.getSingleType());
+        assertEquals(LOCAL_DATE_TIME, LOCAL_DATE_TIME_ARRAY.getSingleType());
+        assertEquals(OFFSET_DATE_TIME, OFFSET_DATE_TIME_ARRAY.getSingleType());
     }
 
     @Test
     public void assertCorrectTypesCount() {
         assertEquals("Wrong types count! See isArrayType() implementation for details what will break",
-                20, values().length);
+                32, values().length);
     }
 }

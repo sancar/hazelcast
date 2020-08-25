@@ -22,6 +22,13 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.Objects;
 
 public class MainPortable implements Portable {
 
@@ -35,11 +42,19 @@ public class MainPortable implements Portable {
     public double d;
     public String str;
     public InnerPortable p;
+    public BigInteger bigInteger;
+    public BigDecimal bigDecimal;
+    public LocalTime localTime;
+    public LocalDate localDate;
+    public LocalDateTime localDateTime;
+    public OffsetDateTime offsetDateTime;
 
     MainPortable() {
     }
 
-    public MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerPortable p) {
+    public MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerPortable p,
+                        BigInteger bigInteger, BigDecimal bigDecimal, LocalTime localTime, LocalDate localDate,
+                        LocalDateTime localDateTime, OffsetDateTime offsetDateTime) {
         this.b = b;
         this.bool = bool;
         this.c = c;
@@ -50,6 +65,12 @@ public class MainPortable implements Portable {
         this.d = d;
         this.str = str;
         this.p = p;
+        this.bigInteger = bigInteger;
+        this.bigDecimal = bigDecimal;
+        this.localTime = localTime;
+        this.localDate = localDate;
+        this.localDateTime = localDateTime;
+        this.offsetDateTime = offsetDateTime;
     }
 
     @Override
@@ -74,6 +95,12 @@ public class MainPortable implements Portable {
             writer.writeNullPortable("p", TestSerializationConstants.PORTABLE_FACTORY_ID,
                     TestSerializationConstants.INNER_PORTABLE);
         }
+        writer.writeBigInteger("bigInteger", bigInteger);
+        writer.writeBigDecimal("bigDecimal", bigDecimal);
+        writer.writeLocalTime("localTime", localTime);
+        writer.writeLocalDate("localDate", localDate);
+        writer.writeLocalDateTime("localDateTime", localDateTime);
+        writer.writeOffsetDateTime("offsetDateTime", offsetDateTime);
     }
 
     @Override
@@ -88,6 +115,12 @@ public class MainPortable implements Portable {
         d = reader.readDouble("d");
         str = reader.readUTF("str");
         p = reader.readPortable("p");
+        bigInteger = reader.readBigInteger("bigInteger");
+        bigDecimal = reader.readBigDecimal("bigDecimal");
+        localTime = reader.readLocalTime("localTime");
+        localDate = reader.readLocalDate("localDate");
+        localDateTime = reader.readLocalDateTime("localDateTime");
+        offsetDateTime = reader.readOffsetDateTime("offsetDateTime");
     }
 
     @Override
@@ -98,57 +131,29 @@ public class MainPortable implements Portable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         MainPortable that = (MainPortable) o;
-        if (b != that.b) {
-            return false;
-        }
-        if (bool != that.bool) {
-            return false;
-        }
-        if (c != that.c) {
-            return false;
-        }
-        if (Double.compare(that.d, d) != 0) {
-            return false;
-        }
-        if (Float.compare(that.f, f) != 0) {
-            return false;
-        }
-        if (i != that.i) {
-            return false;
-        }
-        if (l != that.l) {
-            return false;
-        }
-        if (s != that.s) {
-            return false;
-        }
-        if (p != null ? !p.equals(that.p) : that.p != null) {
-            return false;
-        }
-        if (str != null ? !str.equals(that.str) : that.str != null) {
-            return false;
-        }
-        return true;
+        return b == that.b
+                && bool == that.bool
+                && c == that.c
+                && s == that.s
+                && i == that.i
+                && l == that.l
+                && Float.compare(that.f, f) == 0
+                && Double.compare(that.d, d) == 0
+                && Objects.equals(str, that.str)
+                && Objects.equals(p, that.p)
+                && Objects.equals(bigInteger, that.bigInteger)
+                && Objects.equals(bigDecimal, that.bigDecimal)
+                && Objects.equals(localTime, that.localTime)
+                && Objects.equals(localDate, that.localDate)
+                && Objects.equals(localDateTime, that.localDateTime)
+                && Objects.equals(offsetDateTime, that.offsetDateTime);
     }
 
     @Override
     public int hashCode() {
-        int result;
-        long temp;
-        result = (int) b;
-        result = 31 * result + (bool ? 1 : 0);
-        result = 31 * result + (int) c;
-        result = 31 * result + (int) s;
-        result = 31 * result + i;
-        result = 31 * result + (int) (l ^ (l >>> 32));
-        result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
-        temp = d != +0.0d ? Double.doubleToLongBits(d) : 0L;
-        result = 31 * result + (int) (temp ^ (temp >>> 32));
-        result = 31 * result + (str != null ? str.hashCode() : 0);
-        result = 31 * result + (p != null ? p.hashCode() : 0);
-        return result;
+        return Objects.hash(b, bool, c, s, i, l, f, d, str, p, bigInteger, bigDecimal, localTime, localDate,
+                localDateTime, offsetDateTime);
     }
 
     @Override

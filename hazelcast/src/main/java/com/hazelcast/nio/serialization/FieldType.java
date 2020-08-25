@@ -50,7 +50,20 @@ public enum FieldType {
     LONG_ARRAY(16, MAX_VALUE),
     FLOAT_ARRAY(17, MAX_VALUE),
     DOUBLE_ARRAY(18, MAX_VALUE),
-    UTF_ARRAY(19, MAX_VALUE);
+    UTF_ARRAY(19, MAX_VALUE),
+
+    BIG_INTEGER(20, MAX_VALUE),
+    BIG_INTEGER_ARRAY(21, MAX_VALUE),
+    BIG_DECIMAL(22, MAX_VALUE),
+    BIG_DECIMAL_ARRAY(23, MAX_VALUE),
+    LOCAL_TIME(24, INT_SIZE_IN_BYTES * 4),
+    LOCAL_TIME_ARRAY(25, MAX_VALUE),
+    LOCAL_DATE(26, INT_SIZE_IN_BYTES * 3),
+    LOCAL_DATE_ARRAY(27, MAX_VALUE),
+    LOCAL_DATE_TIME(28, INT_SIZE_IN_BYTES * 7),
+    LOCAL_DATE_TIME_ARRAY(29, MAX_VALUE),
+    OFFSET_DATE_TIME(30, INT_SIZE_IN_BYTES * 8),
+    OFFSET_DATE_TIME_ARRAY(31, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;
@@ -72,15 +85,22 @@ public enum FieldType {
     }
 
     public boolean isArrayType() {
-        return type >= PORTABLE_ARRAY.type;
+        if (type < BIG_INTEGER.type) {
+            return type >= PORTABLE_ARRAY.type;
+        }
+        return type % 2 != 0;
     }
 
     public FieldType getSingleType() {
-        if (isArrayType()) {
-            // GOTCHA: Wont' work if you add more types!!!
-            return get((byte) (getId() % TYPES_COUNT));
+        byte id = getId();
+        if (type < BIG_INTEGER.type) {
+            return get((byte) (id % TYPES_COUNT));
         }
-        return this;
+        if (id % 2 == 0) {
+            return get(id);
+        } else {
+            return get((byte) (id - 1));
+        }
     }
 
     public boolean hasDefiniteSize() {
@@ -90,7 +110,7 @@ public enum FieldType {
     /**
      * @return size of an element of the type represented by this object
      * @throws IllegalArgumentException if the type does not have a definite size.
-     *      Invoke {@link #hasDefiniteSize()} to check first.
+     *                                  Invoke {@link #hasDefiniteSize()} to check first.
      */
     public int getTypeSize() throws IllegalArgumentException {
         if (elementSize == MAX_VALUE) {

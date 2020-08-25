@@ -195,6 +195,78 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    public ClassDefinitionBuilder addBigIntegerField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BIG_INTEGER, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addBigDecimalField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BIG_DECIMAL, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addLocalTimeField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LOCAL_TIME, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addLocalDateField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LOCAL_DATE, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addLocalDateTimeField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LOCAL_DATE_TIME, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addOffsetDateTimeField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.OFFSET_DATE_TIME, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
     public ClassDefinitionBuilder addByteArrayField(String fieldName) {
         check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY, version));
@@ -315,6 +387,78 @@ public final class ClassDefinitionBuilder {
         check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY,
                 classDefinition.getFactoryId(), classDefinition.getClassId(), classDefinition.getVersion()));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addBigIntegerArrayField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BIG_INTEGER_ARRAY, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addBigDecimalArrayField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BIG_DECIMAL_ARRAY, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addLocalTimeArrayField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LOCAL_TIME_ARRAY, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addLocalDateArrayField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LOCAL_DATE_ARRAY, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addLocalDateTimeArrayField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LOCAL_DATE_TIME_ARRAY, version));
+        return this;
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addOffsetDateTimeArrayField(String fieldName) {
+        check(fieldName);
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.OFFSET_DATE_TIME_ARRAY, version));
         return this;
     }
 

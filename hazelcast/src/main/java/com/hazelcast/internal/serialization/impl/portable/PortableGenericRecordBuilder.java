@@ -24,6 +24,12 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 public class PortableGenericRecordBuilder implements GenericRecord.Builder {
 
@@ -117,7 +123,37 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     }
 
     @Override
-    public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, GenericRecord[] value) {
+    public GenericRecord.Builder writeBigInteger(@Nonnull String fieldName, @Nullable BigInteger value) {
+        return write(fieldName, value, FieldType.BIG_INTEGER);
+    }
+
+    @Override
+    public GenericRecord.Builder writeBigDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
+        return write(fieldName, value, FieldType.BIG_DECIMAL);
+    }
+
+    @Override
+    public GenericRecord.Builder writeLocalTime(@Nonnull String fieldName, @Nullable LocalTime value) {
+        return write(fieldName, value, FieldType.LOCAL_TIME);
+    }
+
+    @Override
+    public GenericRecord.Builder writeLocalDate(@Nonnull String fieldName, @Nullable LocalDate value) {
+        return write(fieldName, value, FieldType.LOCAL_DATE);
+    }
+
+    @Override
+    public GenericRecord.Builder writeLocalDateTime(@Nonnull String fieldName, @Nullable LocalDateTime value) {
+        return write(fieldName, value, FieldType.LOCAL_DATE_TIME);
+    }
+
+    @Override
+    public GenericRecord.Builder writeOffsetDateTime(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
+        return write(fieldName, value, FieldType.OFFSET_DATE_TIME);
+    }
+
+    @Override
+    public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         return write(fieldName, value, FieldType.PORTABLE_ARRAY);
     }
 
@@ -166,7 +202,38 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
         return write(fieldName, value, FieldType.UTF_ARRAY);
     }
 
-    private GenericRecord.Builder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
+    @Override
+    public GenericRecord.Builder writeBigIntegerArray(String fieldName, BigInteger[] value) {
+        return write(fieldName, value, FieldType.BIG_INTEGER_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeBigDecimalArray(String fieldName, BigDecimal[] value) {
+        return write(fieldName, value, FieldType.BIG_DECIMAL_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeLocalTimeArray(String fieldName, LocalTime[] value) {
+        return write(fieldName, value, FieldType.LOCAL_TIME_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeLocalDateArray(String fieldName, LocalDate[] value) {
+        return write(fieldName, value, FieldType.LOCAL_DATE_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeLocalDateTimeArray(String fieldName, LocalDateTime[] value) {
+        return write(fieldName, value, FieldType.LOCAL_DATE_TIME_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] value) {
+        return write(fieldName, value, FieldType.OFFSET_DATE_TIME_ARRAY);
+    }
+
+
+    private GenericRecord.Builder write(String fieldName, Object value, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
         int index = fd.getIndex();
         if (isWritten[index]) {

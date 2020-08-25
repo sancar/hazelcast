@@ -23,7 +23,17 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.Portable;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
+import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
+import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.BIG_INTEGER;
+import static com.hazelcast.nio.serialization.FieldType.BIG_INTEGER_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
@@ -36,8 +46,16 @@ import static com.hazelcast.nio.serialization.FieldType.FLOAT;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.INT;
 import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_TIME;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_TIME_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
+import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
+import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
@@ -101,12 +119,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public String readUTF(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, UTF);
-        return super.readUTF(fieldName);
+        return readIncompatibleField(fieldName, UTF, MorphingPortableReader.super::readUTF);
     }
 
     @Override
@@ -204,113 +217,127 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
+    public BigInteger readBigInteger(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, BIG_INTEGER, MorphingPortableReader.super::readBigInteger);
+    }
+
+    @Override
+    public BigDecimal readBigDecimal(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, BIG_DECIMAL, MorphingPortableReader.super::readBigDecimal);
+    }
+
+    @Override
+    public LocalTime readLocalTime(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LOCAL_TIME, MorphingPortableReader.super::readLocalTime);
+    }
+
+    @Override
+    public LocalDate readLocalDate(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LOCAL_DATE, MorphingPortableReader.super::readLocalDate);
+    }
+
+    @Override
+    public LocalDateTime readLocalDateTime(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LOCAL_DATE_TIME, MorphingPortableReader.super::readLocalDateTime);
+    }
+
+    @Override
+    public OffsetDateTime readOffsetDateTime(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, OFFSET_DATE_TIME, MorphingPortableReader.super::readOffsetDateTime);
+    }
+
+    @Override
     public byte[] readByteArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, BYTE_ARRAY);
-        return super.readByteArray(fieldName);
+        return readIncompatibleField(fieldName, BYTE_ARRAY, MorphingPortableReader.super::readByteArray);
     }
 
     @Override
     public boolean[] readBooleanArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, BOOLEAN_ARRAY);
-        return super.readBooleanArray(fieldName);
+        return readIncompatibleField(fieldName, BOOLEAN_ARRAY, MorphingPortableReader.super::readBooleanArray);
     }
 
     @Override
     public char[] readCharArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, CHAR_ARRAY);
-        return super.readCharArray(fieldName);
+        return readIncompatibleField(fieldName, CHAR_ARRAY, MorphingPortableReader.super::readCharArray);
     }
 
     @Override
     public int[] readIntArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, INT_ARRAY);
-        return super.readIntArray(fieldName);
+        return readIncompatibleField(fieldName, INT_ARRAY, MorphingPortableReader.super::readIntArray);
     }
 
     @Override
     public long[] readLongArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, LONG_ARRAY);
-        return super.readLongArray(fieldName);
+        return readIncompatibleField(fieldName, LONG_ARRAY, MorphingPortableReader.super::readLongArray);
     }
 
     @Override
     public double[] readDoubleArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, DOUBLE_ARRAY);
-        return super.readDoubleArray(fieldName);
+        return readIncompatibleField(fieldName, DOUBLE_ARRAY, MorphingPortableReader.super::readDoubleArray);
     }
 
     @Override
     public float[] readFloatArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, FLOAT_ARRAY);
-        return super.readFloatArray(fieldName);
+        return readIncompatibleField(fieldName, FLOAT_ARRAY, MorphingPortableReader.super::readFloatArray);
     }
 
     @Override
     public short[] readShortArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, SHORT_ARRAY);
-        return super.readShortArray(fieldName);
+        return readIncompatibleField(fieldName, SHORT_ARRAY, MorphingPortableReader.super::readShortArray);
     }
 
     @Override
     public String[] readUTFArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, UTF_ARRAY);
-        return super.readUTFArray(fieldName);
+        return readIncompatibleField(fieldName, UTF_ARRAY, MorphingPortableReader.super::readUTFArray);
     }
 
     @Override
     public Portable readPortable(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, PORTABLE);
-        return super.readPortable(fieldName);
+        return readIncompatibleField(fieldName, PORTABLE, MorphingPortableReader.super::readPortable);
     }
 
     @Override
     public Portable[] readPortableArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, PORTABLE_ARRAY, MorphingPortableReader.super::readPortableArray);
+    }
+
+    @Override
+    public BigInteger[] readBigIntegerArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, BIG_INTEGER_ARRAY, MorphingPortableReader.super::readBigIntegerArray);
+    }
+
+    @Override
+    public BigDecimal[] readBigDecimalArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, BIG_DECIMAL_ARRAY, MorphingPortableReader.super::readBigDecimalArray);
+    }
+
+    @Override
+    public LocalTime[] readLocalTimeArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LOCAL_TIME_ARRAY, MorphingPortableReader.super::readLocalTimeArray);
+    }
+
+    @Override
+    public LocalDate[] readLocalDateArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LOCAL_DATE_ARRAY, MorphingPortableReader.super::readLocalDateArray);
+    }
+
+    @Override
+    public LocalDateTime[] readLocalDateTimeArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LOCAL_DATE_TIME_ARRAY, MorphingPortableReader.super::readLocalDateTimeArray);
+    }
+
+    @Override
+    public OffsetDateTime[] readOffsetDateTimeArray(String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, OFFSET_DATE_TIME_ARRAY, MorphingPortableReader.super::readOffsetDateTimeArray);
+    }
+
+    private <T> T readIncompatibleField(String fieldName, FieldType fieldType, Reader<String, T> reader) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return null;
         }
-        validateTypeCompatibility(fd, PORTABLE_ARRAY);
-        return super.readPortableArray(fieldName);
+        validateTypeCompatibility(fd, fieldType);
+        return reader.read(fieldName);
     }
 
     private void validateTypeCompatibility(FieldDefinition fd, FieldType expectedType) {

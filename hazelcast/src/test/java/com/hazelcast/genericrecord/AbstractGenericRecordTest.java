@@ -34,8 +34,13 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -58,17 +63,24 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     protected abstract HazelcastInstance[] createCluster();
 
     @Test
-    public void testPutWithoutFactory_readAsPortable() throws IOException {
+    public void testPutWithoutFactory_readAsPortable() {
 
         NamedPortable[] nn = new NamedPortable[2];
         nn[0] = new NamedPortable("name", 123);
         nn[1] = new NamedPortable("name", 123);
         InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
-                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn);
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
+                new BigInteger[]{new BigInteger("12345"), new BigInteger("123456")},
+                new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
+                new LocalTime[]{LocalTime.now(), LocalTime.now()},
+                new LocalDate[]{LocalDate.now(), LocalDate.now()},
+                new LocalDateTime[]{LocalDateTime.now()},
+                new OffsetDateTime[]{OffsetDateTime.now()});
 
         MainPortable expectedMain = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main portable object created for testing!", inner);
+                -897543.3678909d, "this is main portable object created for testing!", inner, new BigInteger("12345"),
+                new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
 
         HazelcastInstance[] instances = createCluster();
         ClassDefinition namedPortableClassDefinition =
@@ -83,7 +95,14 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                         .addLongArrayField("l")
                         .addFloatArrayField("f")
                         .addDoubleArrayField("d")
-                        .addPortableArrayField("nn", namedPortableClassDefinition).build();
+                        .addPortableArrayField("nn", namedPortableClassDefinition)
+                        .addBigIntegerArrayField("bigIntegers")
+                        .addBigDecimalArrayField("bigDecimals")
+                        .addLocalTimeArrayField("localTimes")
+                        .addLocalDateArrayField("localDates")
+                        .addLocalDateTimeArrayField("localDateTimes")
+                        .addOffsetDateTimeArrayField("offsetDateTimes")
+                        .build();
         ClassDefinition mainPortableClassDefinition =
                 new ClassDefinitionBuilder(PortableTest.PORTABLE_FACTORY_ID, TestSerializationConstants.MAIN_PORTABLE)
                         .addByteField("b")
@@ -96,6 +115,12 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                         .addDoubleField("d")
                         .addUTFField("str")
                         .addPortableField("p", innerPortableClassDefinition)
+                        .addBigIntegerField("bigInteger")
+                        .addBigDecimalField("bigDecimal")
+                        .addLocalTimeField("localTime")
+                        .addLocalDateField("localDate")
+                        .addLocalDateTimeField("localDateTime")
+                        .addOffsetDateTimeField("offsetDateTime")
                         .build();
 
         GenericRecord namedRecord = GenericRecord.Builder.portable(namedPortableClassDefinition)
@@ -113,7 +138,14 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                 .writeLongArray("l", inner.ll)
                 .writeFloatArray("f", inner.ff)
                 .writeDoubleArray("d", inner.dd)
-                .writeGenericRecordArray("nn", namedRecords).build();
+                .writeGenericRecordArray("nn", namedRecords)
+                .writeBigIntegerArray("bigIntegers", inner.bigIntegers)
+                .writeBigDecimalArray("bigDecimals", inner.bigDecimals)
+                .writeLocalTimeArray("localTimes", inner.localTimes)
+                .writeLocalDateArray("localDates", inner.localDates)
+                .writeLocalDateTimeArray("localDateTimes", inner.localDateTimes)
+                .writeOffsetDateTimeArray("offsetDateTimes", inner.offsetDateTimes)
+                .build();
 
         GenericRecord expected = GenericRecord.Builder.portable(mainPortableClassDefinition)
                 .writeByte("b", expectedMain.b)
@@ -126,6 +158,12 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                 .writeDouble("d", expectedMain.d)
                 .writeUTF("str", expectedMain.str)
                 .writeGenericRecord("p", innerRecord)
+                .writeBigInteger("bigInteger", expectedMain.bigInteger)
+                .writeBigDecimal("bigDecimal", expectedMain.bigDecimal)
+                .writeLocalTime("localTime", expectedMain.localTime)
+                .writeLocalDate("localDate", expectedMain.localDate)
+                .writeLocalDateTime("localDateTime", expectedMain.localDateTime)
+                .writeOffsetDateTime("offsetDateTime", expectedMain.offsetDateTime)
                 .build();
 
         assertEquals(expectedMain.c, expected.readChar("c"));
@@ -143,7 +181,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutGenericRecordBack() throws IOException {
+    public void testPutGenericRecordBack() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -173,7 +211,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReadReturnsGenericRecord() throws IOException {
+    public void testReadReturnsGenericRecord() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -193,7 +231,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryProcessorReturnsGenericRecord() throws IOException {
+    public void testEntryProcessorReturnsGenericRecord() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -223,7 +261,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCloneWithGenericBuilderOnEntryProcessor() throws IOException {
+    public void testCloneWithGenericBuilderOnEntryProcessor() {
 
         HazelcastInstance[] instances = createCluster();
 

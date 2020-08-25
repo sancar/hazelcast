@@ -25,6 +25,12 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 final class ClassDefinitionWriter implements PortableWriter {
 
@@ -92,8 +98,7 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeBooleanArray(String fieldName, boolean[] booleans)
-            throws IOException {
+    public void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException {
         builder.addBooleanArrayField(fieldName);
     }
 
@@ -128,8 +133,7 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeUTFArray(String fieldName, String[] values)
-            throws IOException {
+    public void writeUTFArray(String fieldName, String[] values) throws IOException {
         builder.addUTFArrayField(fieldName);
     }
 
@@ -156,6 +160,36 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
+    public void writeBigInteger(String fieldName, BigInteger value) throws IOException {
+        builder.addBigIntegerField(fieldName);
+    }
+
+    @Override
+    public void writeBigDecimal(String fieldName, BigDecimal value) throws IOException {
+        builder.addBigDecimalField(fieldName);
+    }
+
+    @Override
+    public void writeLocalTime(String fieldName, LocalTime value) throws IOException {
+        builder.addLocalTimeField(fieldName);
+    }
+
+    @Override
+    public void writeLocalDate(String fieldName, LocalDate value) throws IOException {
+        builder.addLocalDateField(fieldName);
+    }
+
+    @Override
+    public void writeLocalDateTime(String fieldName, LocalDateTime value) throws IOException {
+        builder.addLocalDateTimeField(fieldName);
+    }
+
+    @Override
+    public void writeOffsetDateTime(String fieldName, OffsetDateTime value) throws IOException {
+        builder.addOffsetDateTimeField(fieldName);
+    }
+
+    @Override
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
         if (portables == null || portables.length == 0) {
             throw new HazelcastSerializationException("Cannot write null portable array without explicitly "
@@ -172,6 +206,36 @@ final class ClassDefinitionWriter implements PortableWriter {
         ClassDefinition nestedClassDef = createNestedClassDef(p,
                 new ClassDefinitionBuilder(p.getFactoryId(), classId, version));
         builder.addPortableArrayField(fieldName, nestedClassDef);
+    }
+
+    @Override
+    public void writeBigIntegerArray(String fieldName, BigInteger[] values) throws IOException {
+        builder.addBigIntegerArrayField(fieldName);
+    }
+
+    @Override
+    public void writeBigDecimalArray(String fieldName, BigDecimal[] values) throws IOException {
+        builder.addBigDecimalArrayField(fieldName);
+    }
+
+    @Override
+    public void writeLocalTimeArray(String fieldName, LocalTime[] values) throws IOException {
+        builder.addLocalTimeArrayField(fieldName);
+    }
+
+    @Override
+    public void writeLocalDateArray(String fieldName, LocalDate[] values) throws IOException {
+        builder.addLocalDateArrayField(fieldName);
+    }
+
+    @Override
+    public void writeLocalDateTimeArray(String fieldName, LocalDateTime[] values) throws IOException {
+        builder.addLocalDateTimeArrayField(fieldName);
+    }
+
+    @Override
+    public void writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] values) throws IOException {
+        builder.addOffsetDateTimeArrayField(fieldName);
     }
 
     @Override

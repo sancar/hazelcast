@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -27,6 +28,12 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -144,7 +151,7 @@ public class DefaultPortableWriter implements PortableWriter {
         out.writeInt(fd.getClassId());
 
         if (!isNull) {
-            PortableGenericRecord  record = (PortableGenericRecord) portable;
+            PortableGenericRecord record = (PortableGenericRecord) portable;
             checkPortableAttributes(fd, record.getClassDefinition());
             serializer.writePortableGenericRecordInternal(out, record);
         }
@@ -179,6 +186,66 @@ public class DefaultPortableWriter implements PortableWriter {
 
         out.writeInt(factoryId);
         out.writeInt(classId);
+    }
+
+    @Override
+    public void writeBigInteger(String fieldName, BigInteger value) throws IOException {
+        setPosition(fieldName, FieldType.BIG_INTEGER);
+        boolean isNull = value == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            IOUtil.writeBigInteger(out, value);
+        }
+    }
+
+    @Override
+    public void writeBigDecimal(String fieldName, BigDecimal value) throws IOException {
+        setPosition(fieldName, FieldType.BIG_DECIMAL);
+        boolean isNull = value == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            IOUtil.writeBigDecimal(out, value);
+        }
+    }
+
+    @Override
+    public void writeLocalTime(String fieldName, LocalTime value) throws IOException {
+        setPosition(fieldName, FieldType.LOCAL_TIME);
+        boolean isNull = value == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            IOUtil.writeLocalTime(out, value);
+        }
+    }
+
+    @Override
+    public void writeLocalDate(String fieldName, LocalDate value) throws IOException {
+        setPosition(fieldName, FieldType.LOCAL_DATE);
+        boolean isNull = value == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            IOUtil.writeLocalDate(out, value);
+        }
+    }
+
+    @Override
+    public void writeLocalDateTime(String fieldName, LocalDateTime value) throws IOException {
+        setPosition(fieldName, FieldType.LOCAL_DATE_TIME);
+        boolean isNull = value == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            IOUtil.writeLocalDateTime(out, value);
+        }
+    }
+
+    @Override
+    public void writeOffsetDateTime(String fieldName, OffsetDateTime value) throws IOException {
+        setPosition(fieldName, FieldType.OFFSET_DATE_TIME);
+        boolean isNull = value == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            IOUtil.writeOffsetDateTime(out, value);
+        }
     }
 
     @Override
@@ -255,6 +322,62 @@ public class DefaultPortableWriter implements PortableWriter {
                 serializer.writeInternal(out, portable);
             }
         }
+    }
+
+    interface Writer<O, T> {
+
+        void write(O out, T value) throws IOException;
+    }
+
+    private <T> void writeObjectArrayField(String fieldName, FieldType fieldType, T[] values, Writer<ObjectDataOutput, T> writer)
+            throws IOException {
+        setPosition(fieldName, fieldType);
+        final int len = values == null ? NULL_ARRAY_LENGTH : values.length;
+        out.writeInt(len);
+
+        if (len > 0) {
+            final int offset = out.position();
+            out.writeZeroBytes(len * 4);
+            for (int i = 0; i < len; i++) {
+                int position = out.position();
+                if (values[i] == null) {
+                    throw new HazelcastSerializationException("Array items can not be null");
+                } else {
+                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                    writer.write(out, values[i]);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void writeBigIntegerArray(String fieldName, BigInteger[] values) throws IOException {
+        writeObjectArrayField(fieldName, FieldType.BIG_INTEGER_ARRAY, values, IOUtil::writeBigInteger);
+    }
+
+    @Override
+    public void writeBigDecimalArray(String fieldName, BigDecimal[] values) throws IOException {
+        writeObjectArrayField(fieldName, FieldType.BIG_DECIMAL_ARRAY, values, IOUtil::writeBigDecimal);
+    }
+
+    @Override
+    public void writeLocalTimeArray(String fieldName, LocalTime[] values) throws IOException {
+        writeObjectArrayField(fieldName, FieldType.LOCAL_TIME_ARRAY, values, IOUtil::writeLocalTime);
+    }
+
+    @Override
+    public void writeLocalDateArray(String fieldName, LocalDate[] values) throws IOException {
+        writeObjectArrayField(fieldName, FieldType.LOCAL_DATE_ARRAY, values, IOUtil::writeLocalDate);
+    }
+
+    @Override
+    public void writeLocalDateTimeArray(String fieldName, LocalDateTime[] values) throws IOException {
+        writeObjectArrayField(fieldName, FieldType.LOCAL_DATE_TIME_ARRAY, values, IOUtil::writeLocalDateTime);
+    }
+
+    @Override
+    public void writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] values) throws IOException {
+        writeObjectArrayField(fieldName, FieldType.OFFSET_DATE_TIME_ARRAY, values, IOUtil::writeOffsetDateTime);
     }
 
     void writeGenericRecordArray(String fieldName, GenericRecord[] portables) throws IOException {

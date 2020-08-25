@@ -24,6 +24,13 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 
 public class PortableGenericRecord implements GenericRecord {
@@ -115,11 +122,49 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    @Nullable
     public String readUTF(@Nonnull String fieldName) {
         return read(fieldName, FieldType.UTF);
     }
 
     @Override
+    @Nullable
+    public BigInteger readBigInteger(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.BIG_INTEGER);
+    }
+
+    @Override
+    @Nullable
+    public BigDecimal readBigDecimal(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.BIG_DECIMAL);
+    }
+
+    @Override
+    @Nullable
+    public LocalTime readLocalTime(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.LOCAL_TIME);
+    }
+
+    @Override
+    @Nullable
+    public LocalDate readLocalDate(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.LOCAL_DATE);
+    }
+
+    @Override
+    @Nullable
+    public LocalDateTime readLocalDateTime(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.LOCAL_DATE_TIME);
+    }
+
+    @Override
+    @Nullable
+    public OffsetDateTime readOffsetDateTime(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.OFFSET_DATE_TIME);
+    }
+
+    @Override
+    @Nullable
     public boolean[] readBooleanArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BOOLEAN_ARRAY);
     }
@@ -164,13 +209,43 @@ public class PortableGenericRecord implements GenericRecord {
         return read(fieldName, FieldType.UTF_ARRAY);
     }
 
-    private <T> T read(String fieldName, FieldType fieldType) {
+    @Override
+    public BigInteger[] readBigIntegerArray(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.BIG_INTEGER_ARRAY);
+    }
+
+    @Override
+    public BigDecimal[] readBigDecimalArray(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.BIG_DECIMAL_ARRAY);
+    }
+
+    @Override
+    public LocalTime[] readLocalTimeArray(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.LOCAL_TIME_ARRAY);
+    }
+
+    @Override
+    public LocalDate[] readLocalDateArray(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.LOCAL_DATE_ARRAY);
+    }
+
+    @Override
+    public LocalDateTime[] readLocalDateTimeArray(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.LOCAL_DATE_TIME_ARRAY);
+    }
+
+    @Override
+    public OffsetDateTime[] readOffsetDateTimeArray(@Nonnull String fieldName) {
+        return read(fieldName, FieldType.OFFSET_DATE_TIME_ARRAY);
+    }
+
+    private <T> T read(@Nonnull String fieldName, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
         return (T) objects[fd.getIndex()];
     }
 
     @Nonnull
-    private FieldDefinition check(String fieldName, FieldType fieldType) {
+    private FieldDefinition check(@Nonnull String fieldName, FieldType fieldType) {
         FieldDefinition fd = classDefinition.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName

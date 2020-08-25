@@ -19,6 +19,12 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 /**
@@ -128,6 +134,48 @@ public interface PortableReader {
 
     /**
      * @param fieldName name of the field
+     * @return the BigInteger value read
+     * @throws IOException in case of any exceptional case
+     */
+    BigInteger readBigInteger(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the BigDecimal value read
+     * @throws IOException in case of any exceptional case
+     */
+    BigDecimal readBigDecimal(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the LocalTime value read
+     * @throws IOException in case of any exceptional case
+     */
+    LocalTime readLocalTime(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the LocalDate value read
+     * @throws IOException in case of any exceptional case
+     */
+    LocalDate readLocalDate(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the LocalDateTime value read
+     * @throws IOException in case of any exceptional case
+     */
+    LocalDateTime readLocalDateTime(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the OffsetDateTime value read
+     * @throws IOException in case of any exceptional case
+     */
+    OffsetDateTime readOffsetDateTime(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
      * @return the byte array value read
      * @throws IOException in case of any exceptional case
      */
@@ -191,10 +239,52 @@ public interface PortableReader {
 
     /**
      * @param fieldName name of the field
-     * @return the portable value read
+     * @return the portable array read
      * @throws IOException in case of any exceptional case
      */
     Portable[] readPortableArray(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the BigInteger array read
+     * @throws IOException in case of any exceptional case
+     */
+    BigInteger[] readBigIntegerArray(String fieldName)throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the BigDecimal array read
+     * @throws IOException in case of any exceptional case
+     */
+    BigDecimal[] readBigDecimalArray(String fieldName)throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the LocalTime array read
+     * @throws IOException in case of any exceptional case
+     */
+    LocalTime[] readLocalTimeArray(String fieldName)throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the LocalDate array read
+     * @throws IOException in case of any exceptional case
+     */
+    LocalDate[] readLocalDateArray(String fieldName)throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the LocalDateTime array read
+     * @throws IOException in case of any exceptional case
+     */
+    LocalDateTime[] readLocalDateTimeArray(String fieldName)throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the OffsetDateTime array read
+     * @throws IOException in case of any exceptional case
+     */
+    OffsetDateTime[] readOffsetDateTimeArray(String fieldName)throws IOException;
 
     /**
      * {@link PortableWriter#getRawDataOutput()}.
@@ -206,4 +296,5 @@ public interface PortableReader {
      * @throws IOException in case of any exceptional case
      */
     ObjectDataInput getRawDataInput() throws IOException;
+
 }

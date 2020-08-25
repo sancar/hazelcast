@@ -21,6 +21,12 @@ import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 /**
  * A generic object interface that is returned to user when the domain class can not be created from any of the distributed
@@ -199,6 +205,60 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
+    BigInteger readBigInteger(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    BigDecimal readBigDecimal(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalTime readLocalTime(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalDate readLocalDate(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalDateTime readLocalDateTime(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    OffsetDateTime readOffsetDateTime(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
     GenericRecord readGenericRecord(@Nonnull String fieldName);
 
     /**
@@ -281,6 +341,60 @@ public interface GenericRecord {
      */
     @Nullable
     String[] readUTFArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    BigInteger[] readBigIntegerArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    BigDecimal[] readBigDecimalArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalTime[] readLocalTimeArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalDate[] readLocalDateArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalDateTime[] readLocalDateTimeArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    OffsetDateTime[] readOffsetDateTimeArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -445,6 +559,7 @@ public interface GenericRecord {
          */
         Builder writeUTF(@Nonnull String fieldName, @Nullable String value);
 
+
         /**
          * It is illegal to write to the same field twice.
          * This method allows nested structures. Subclass should also created as `GenericRecord`
@@ -458,6 +573,84 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
         Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeBigInteger(@Nonnull String fieldName, BigInteger value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeBigDecimal(@Nonnull String fieldName, BigDecimal value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeLocalTime(@Nonnull String fieldName, LocalTime value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeLocalDate(@Nonnull String fieldName, LocalDate value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeLocalDateTime(@Nonnull String fieldName, LocalDateTime value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeOffsetDateTime(@Nonnull String fieldName, OffsetDateTime value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -577,6 +770,96 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
         Builder writeUTFArray(@Nonnull String fieldName, @Nullable String[] value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         * <p>
+         * Array items can not be null
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeBigIntegerArray(String fieldName, BigInteger[] value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         * <p>
+         * Array items can not be null
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeBigDecimalArray(String fieldName, BigDecimal[] value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         * <p>
+         * Array items can not be null
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeLocalTimeArray(String fieldName, LocalTime[] value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         * <p>
+         * Array items can not be null
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeLocalDateArray(String fieldName, LocalDate[] value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         * <p>
+         * Array items can not be null
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeLocalDateTimeArray(String fieldName, LocalDateTime[] value);
+
+        /**
+         * It is illegal to write to the same field twice.
+         * <p>
+         * Array items can not be null
+         *
+         * @param fieldName name of the field as it is defined in its class definition.
+         *                  See {@link ClassDefinition} for {@link Portable}
+         * @param value
+         * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+         *                                         the type of the field does not match the one in the class definition or
+         *                                         Same field is trying to be overwritten without using
+         *                                         {@link GenericRecord#cloneWithBuilder()}.
+         */
+        Builder writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] value);
 
         /**
          * It is illegal to write to the same field twice.

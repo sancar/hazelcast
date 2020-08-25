@@ -263,6 +263,18 @@ public final class GenericRecordQueryReader implements ValueReader {
                 return record.readUTFFromArray(path, index);
             case PORTABLE_ARRAY:
                 return record.readObjectFromArray(path, index);
+            case BIG_INTEGER_ARRAY:
+                return record.readBigIntegerFromArray(path, index);
+            case BIG_DECIMAL_ARRAY:
+                return record.readBigDecimalFromArray(path, index);
+            case LOCAL_TIME_ARRAY:
+                return record.readLocalTimeFromArray(path, index);
+            case LOCAL_DATE_ARRAY:
+                return record.readLocalDateFromArray(path, index);
+            case LOCAL_DATE_TIME_ARRAY:
+                return record.readLocalDateTimeFromArray(path, index);
+            case OFFSET_DATE_TIME_ARRAY:
+                return record.readOffsetDateTimeFromArray(path, index);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
@@ -314,6 +326,30 @@ public final class GenericRecordQueryReader implements ValueReader {
                 return record.readObject(path);
             case PORTABLE_ARRAY:
                 return record.readObjectArray(path);
+            case BIG_INTEGER:
+                return record.readBigInteger(path);
+            case BIG_INTEGER_ARRAY:
+                return record.readBigIntegerArray(path);
+            case BIG_DECIMAL:
+                return record.readBigDecimal(path);
+            case BIG_DECIMAL_ARRAY:
+                return record.readBigDecimalArray(path);
+            case LOCAL_TIME:
+                return record.readLocalTime(path);
+            case LOCAL_TIME_ARRAY:
+                return record.readLocalTimeArray(path);
+            case LOCAL_DATE:
+                return record.readLocalDate(path);
+            case LOCAL_DATE_ARRAY:
+                return record.readLocalDateArray(path);
+            case LOCAL_DATE_TIME:
+                return record.readLocalDateTime(path);
+            case LOCAL_DATE_TIME_ARRAY:
+                return record.readLocalDateTimeArray(path);
+            case OFFSET_DATE_TIME:
+                return record.readOffsetDateTime(path);
+            case OFFSET_DATE_TIME_ARRAY:
+                return record.readOffsetDateTimeArray(path);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }

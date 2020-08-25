@@ -246,6 +246,24 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                 case UTF:
                     writer.writeUTF(fieldName, record.readUTF(fieldName));
                     break;
+                case BIG_INTEGER:
+                    writer.writeBigInteger(fieldName, record.readBigInteger(fieldName));
+                    break;
+                case BIG_DECIMAL:
+                    writer.writeBigDecimal(fieldName, record.readBigDecimal(fieldName));
+                    break;
+                case LOCAL_TIME:
+                    writer.writeLocalTime(fieldName, record.readLocalTime(fieldName));
+                    break;
+                case LOCAL_DATE:
+                    writer.writeLocalDate(fieldName, record.readLocalDate(fieldName));
+                    break;
+                case LOCAL_DATE_TIME:
+                    writer.writeLocalDateTime(fieldName, record.readLocalDateTime(fieldName));
+                    break;
+                case OFFSET_DATE_TIME:
+                    writer.writeOffsetDateTime(fieldName, record.readOffsetDateTime(fieldName));
+                    break;
                 case PORTABLE_ARRAY:
                     writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
                     break;
@@ -275,6 +293,24 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     break;
                 case UTF_ARRAY:
                     writer.writeUTFArray(fieldName, record.readUTFArray(fieldName));
+                    break;
+                case BIG_INTEGER_ARRAY:
+                    writer.writeBigIntegerArray(fieldName, record.readBigIntegerArray(fieldName));
+                    break;
+                case BIG_DECIMAL_ARRAY:
+                    writer.writeBigDecimalArray(fieldName, record.readBigDecimalArray(fieldName));
+                    break;
+                case LOCAL_TIME_ARRAY:
+                    writer.writeLocalTimeArray(fieldName, record.readLocalTimeArray(fieldName));
+                    break;
+                case LOCAL_DATE_ARRAY:
+                    writer.writeLocalDateArray(fieldName, record.readLocalDateArray(fieldName));
+                    break;
+                case LOCAL_DATE_TIME_ARRAY:
+                    writer.writeLocalDateTimeArray(fieldName, record.readLocalDateTimeArray(fieldName));
+                    break;
+                case OFFSET_DATE_TIME_ARRAY:
+                    writer.writeOffsetDateTimeArray(fieldName, record.readOffsetDateTimeArray(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected field type: " + cd.getFieldType(fieldName));
@@ -343,6 +379,24 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                 case UTF:
                     genericRecordBuilder.writeUTF(fieldName, reader.readUTF(fieldName));
                     break;
+                case BIG_INTEGER:
+                    genericRecordBuilder.writeBigInteger(fieldName, reader.readBigInteger(fieldName));
+                    break;
+                case BIG_DECIMAL:
+                    genericRecordBuilder.writeBigDecimal(fieldName, reader.readBigDecimal(fieldName));
+                    break;
+                case LOCAL_TIME:
+                    genericRecordBuilder.writeLocalTime(fieldName, reader.readLocalTime(fieldName));
+                    break;
+                case LOCAL_DATE:
+                    genericRecordBuilder.writeLocalDate(fieldName, reader.readLocalDate(fieldName));
+                    break;
+                case LOCAL_DATE_TIME:
+                    genericRecordBuilder.writeLocalDateTime(fieldName, reader.readLocalDateTime(fieldName));
+                    break;
+                case OFFSET_DATE_TIME:
+                    genericRecordBuilder.writeOffsetDateTime(fieldName, reader.readOffsetDateTime(fieldName));
+                    break;
                 case PORTABLE_ARRAY:
                     genericRecordBuilder.writeGenericRecordArray(fieldName, reader.readGenericRecordArray(fieldName));
                     break;
@@ -372,6 +426,24 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     break;
                 case UTF_ARRAY:
                     genericRecordBuilder.writeUTFArray(fieldName, reader.readUTFArray(fieldName));
+                    break;
+                case BIG_INTEGER_ARRAY:
+                    genericRecordBuilder.writeBigIntegerArray(fieldName, reader.readBigIntegerArray(fieldName));
+                    break;
+                case BIG_DECIMAL_ARRAY:
+                    genericRecordBuilder.writeBigDecimalArray(fieldName, reader.readBigDecimalArray(fieldName));
+                    break;
+                case LOCAL_TIME_ARRAY:
+                    genericRecordBuilder.writeLocalTimeArray(fieldName, reader.readLocalTimeArray(fieldName));
+                    break;
+                case LOCAL_DATE_ARRAY:
+                    genericRecordBuilder.writeLocalDateArray(fieldName, reader.readLocalDateArray(fieldName));
+                    break;
+                case LOCAL_DATE_TIME_ARRAY:
+                    genericRecordBuilder.writeLocalDateTimeArray(fieldName, reader.readLocalDateTimeArray(fieldName));
+                    break;
+                case OFFSET_DATE_TIME_ARRAY:
+                    genericRecordBuilder.writeOffsetDateTimeArray(fieldName, reader.readOffsetDateTimeArray(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));

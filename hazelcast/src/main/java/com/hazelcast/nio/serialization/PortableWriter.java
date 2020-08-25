@@ -19,6 +19,12 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 /**
  * Provides means for writing portable fields to binary data in the form of java primitives,
@@ -127,6 +133,60 @@ public interface PortableWriter {
     void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException;
 
     /**
+     * Writes a BigInteger.
+     *
+     * @param fieldName name of the field
+     * @param value     BigInteger value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeBigInteger(String fieldName, BigInteger value) throws IOException;
+
+    /**
+     * Writes a BigDecimal.
+     *
+     * @param fieldName name of the field
+     * @param value     BigDecimal value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeBigDecimal(String fieldName, BigDecimal value) throws IOException;
+
+    /**
+     * Writes a LocalTime.
+     *
+     * @param fieldName name of the field
+     * @param value     LocalTime value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeLocalTime(String fieldName, LocalTime value) throws IOException;
+
+    /**
+     * Writes a LocalDate.
+     *
+     * @param fieldName name of the field
+     * @param value     LocalDate value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeLocalDate(String fieldName, LocalDate value) throws IOException;
+
+    /**
+     * Writes a LocalDateTime.
+     *
+     * @param fieldName name of the field
+     * @param value     LocalDateTime value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeLocalDateTime(String fieldName, LocalDateTime value) throws IOException;
+
+    /**
+     * Writes a OffsetDateTime.
+     *
+     * @param fieldName name of the field
+     * @param value     OffsetDateTime value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeOffsetDateTime(String fieldName, OffsetDateTime value) throws IOException;
+
+    /**
      * Writes a primitive byte-array.
      *
      * @param fieldName name of the field
@@ -211,10 +271,64 @@ public interface PortableWriter {
      * Writes a an array of Portables.
      *
      * @param fieldName name of the field
-     * @param portables portable array to be written
+     * @param values    portable array to be written
      * @throws IOException in case of any exceptional case
      */
-    void writePortableArray(String fieldName, Portable[] portables) throws IOException;
+    void writePortableArray(String fieldName, Portable[] values) throws IOException;
+
+    /**
+     * Writes a BigInteger array.
+     *
+     * @param fieldName name of the field
+     * @param values    BigInteger array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeBigIntegerArray(String fieldName, BigInteger[] values) throws IOException;
+
+    /**
+     * Writes a BigDecimal array.
+     *
+     * @param fieldName name of the field
+     * @param values    BigDecimal array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeBigDecimalArray(String fieldName, BigDecimal[] values) throws IOException;
+
+    /**
+     * Writes a LocalTime array.
+     *
+     * @param fieldName name of the field
+     * @param values    LocalTime array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeLocalTimeArray(String fieldName, LocalTime[] values) throws IOException;
+
+    /**
+     * Writes a LocalDate array.
+     *
+     * @param fieldName name of the field
+     * @param values    LocalDate array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeLocalDateArray(String fieldName, LocalDate[] values) throws IOException;
+
+    /**
+     * Writes a LocalDateTime array.
+     *
+     * @param fieldName name of the field
+     * @param values    LocalDateTime array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeLocalDateTimeArray(String fieldName, LocalDateTime[] values) throws IOException;
+
+    /**
+     * Writes a OffsetDateTime array.
+     *
+     * @param fieldName name of the field
+     * @param values    OffsetDateTime array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] values) throws IOException;
 
     /**
      * After writing portable fields one can subsequently write remaining fields in the old-fashioned way.
@@ -225,4 +339,5 @@ public interface PortableWriter {
      * @throws IOException in case of any exceptional case
      */
     ObjectDataOutput getRawDataOutput() throws IOException;
+
 }
