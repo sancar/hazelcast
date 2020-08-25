@@ -76,7 +76,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
             // field count
             fieldCount = in.readInt();
         } catch (IOException e) {
-            throw new HazelcastSerializationException(e);
+            throw illegalStateException(e);
         }
         if (fieldCount != cd.getFieldCount()) {
             throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);

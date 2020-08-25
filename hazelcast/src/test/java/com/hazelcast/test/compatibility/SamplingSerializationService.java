@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.compatibility;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
@@ -191,6 +192,21 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public byte getVersion() {
         return delegate.getVersion();
+    }
+
+    @Override
+    public void deploySchemas() {
+        delegate.deploySchemas();
+    }
+
+    @Override
+    public boolean supportsQueryOverData(int type) {
+        return delegate.supportsQueryOverData(type);
+    }
+
+    @Override
+    public void start(HazelcastInstance instance) {
+        delegate.start(instance);
     }
 
     @Override

@@ -443,6 +443,7 @@ public class Node {
 
     void start() {
         nodeEngine.start();
+        serializationService.start(hazelcastInstance);
         initializeListeners(config);
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         clusterService.sendLocalMembershipEvent();

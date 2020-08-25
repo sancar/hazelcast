@@ -20,6 +20,7 @@ import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
@@ -30,6 +31,7 @@ import com.hazelcast.internal.util.Preconditions;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
@@ -44,7 +46,7 @@ public final class Extractors {
 
     private volatile PortableGetter genericPortableGetter;
     private volatile JsonDataGetter jsonDataGetter;
-
+    private final Map<Integer, Getter> customGetters = new ConcurrentHashMap<>();
     /**
      * Maps the extractorAttributeName WITHOUT the arguments to a
      * ValueExtractor instance. The name does not contain the argument
@@ -105,7 +107,7 @@ public final class Extractors {
         }
         if (target instanceof Data) {
             targetData = (Data) target;
-            if (targetData.isPortable() || targetData.isJson()) {
+            if (targetData.isPortable() || targetData.isJson()  || ss.supportsQueryOverData(targetData.getType())) {
                 return targetData;
             } else {
                 // convert non-portable Data to object
@@ -135,23 +137,39 @@ public final class Extractors {
             return new ExtractorGetter(ss, valueExtractor, arguments);
         } else {
             if (targetObject instanceof Data) {
-                if (((Data) targetObject).isPortable()) {
+                Data data = (Data) targetObject;
+                if (data.isPortable()) {
                     if (genericPortableGetter == null) {
                         // will be initialised a couple of times in the worst case
                         genericPortableGetter = new PortableGetter(ss);
                     }
                     return genericPortableGetter;
-                } else if (((Data) targetObject).isJson()) {
+                }
+
+                if (data.isJson()) {
                     if (jsonDataGetter == null) {
                         // will be initialised a couple of times in the worst case
                         jsonDataGetter = new JsonDataGetter(ss);
                     }
                     return jsonDataGetter;
-                } else {
-                    throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());
                 }
+
+                if (ss.supportsQueryOverData(data.getType())) {
+                    Getter getter = customGetters.get(data.getType());
+                    //TODO cache null
+                    if (getter != null) {
+                        return getter;
+                    }
+                    CustomGetterAdapter customGetterAdapter = new CustomGetterAdapter(ss);
+                    customGetters.put(data.getType(), customGetterAdapter);
+                    return customGetterAdapter;
+                }
+
+                throw new HazelcastSerializationException("No Data getter found for type " + data.getType());
             } else if (targetObject instanceof HazelcastJsonValue) {
                 return JsonGetter.INSTANCE;
+            } else if (targetObject instanceof GenericRecord) {
+                throw new IllegalStateException("In memory format can not be object when working with Compact Serializer");
             } else {
                 return ReflectionHelper.createGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             }

@@ -52,6 +52,7 @@ import com.hazelcast.internal.serialization.impl.portable.PortableContextImpl;
 import com.hazelcast.internal.serialization.impl.portable.PortableHookLoader;
 import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.serialization.AdvancedSerializer;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -61,6 +62,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
@@ -179,11 +181,17 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
-        if (!data.isPortable()) {
-            throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
+        if (data.isPortable()) {
+            BufferObjectDataInput in = createObjectDataInput(data);
+            return portableSerializer.readAsInternalGenericRecord(in);
         }
-        BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.readAsInternalGenericRecord(in);
+
+        SerializerAdapter serializerAdapter = serializerFor(data.getType());
+        Serializer impl = serializerAdapter.getImpl();
+        if (impl instanceof AdvancedSerializer) {
+            return ((AdvancedSerializer) impl).readAsInternalGenericRecord(createObjectDataInput(data));
+        }
+        throw new IllegalArgumentException("Given type does not support query(InternalGenericRecord), type id " + data.getType());
     }
 
     public PortableContext getPortableContext() {

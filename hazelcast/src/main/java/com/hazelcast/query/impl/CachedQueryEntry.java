@@ -110,21 +110,25 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable() || keyData.isJson()) {
+            if (keyData.isPortable() || keyData.isJson()
+                    || serializationService.supportsQueryOverData(keyData.getType())) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
-                if (valueData.isPortable() || valueData.isJson()) {
+                if (valueData.isPortable() || valueData.isJson()
+                        || serializationService.supportsQueryOverData(valueData.getType())) {
                     targetObject = valueData;
                 } else {
                     targetObject = getValue();
                 }
             } else {
-                if (valueObject instanceof Portable) {
-                    targetObject = getValueData();
+                Data valueData = getValueData();
+                if (valueObject instanceof Portable
+                        || serializationService.supportsQueryOverData(valueData.getType())) {
+                    targetObject = valueData;
                 } else {
                     targetObject = getValue();
                 }

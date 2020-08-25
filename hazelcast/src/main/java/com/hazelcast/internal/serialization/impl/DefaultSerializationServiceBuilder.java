@@ -31,6 +31,7 @@ import com.hazelcast.internal.serialization.SerializationClassNameFilter;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.nio.serialization.AdvancedSerializer;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -54,7 +55,7 @@ import static java.nio.ByteOrder.nativeOrder;
 
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
-    public static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
+    static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
 
     // System property to override configured byte order for tests
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
@@ -253,6 +254,10 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     ((HazelcastInstanceAware) serializer).setHazelcastInstance(hazelcastInstance);
                 }
 
+                if(serializer instanceof AdvancedSerializer) {
+                    ((AdvancedSerializer) serializer).setInternalSerializationService(ss);
+                }
+
                 ((AbstractSerializationService) ss)
                         .registerGlobal(serializer, globalSerializerConfig.isOverrideJavaSerialization());
             }
@@ -282,22 +287,22 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         switch (version) {
             case 1:
                 SerializationServiceV1 serializationServiceV1 = SerializationServiceV1.builder()
-                    .withInputOutputFactory(inputOutputFactory)
-                    .withVersion(version)
-                    .withPortableVersion(portableVersion)
-                    .withClassLoader(classLoader)
-                    .withDataSerializableFactories(dataSerializableFactories)
-                    .withPortableFactories(portableFactories)
-                    .withManagedContext(managedContext)
-                    .withGlobalPartitionStrategy(partitioningStrategy)
-                    .withInitialOutputBufferSize(initialOutputBufferSize)
-                    .withBufferPoolFactory(new BufferPoolFactoryImpl())
-                    .withEnableCompression(enableCompression)
-                    .withEnableSharedObject(enableSharedObject)
-                    .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
-                    .withClassNameFilter(classNameFilter)
-                    .withCheckClassDefErrors(checkClassDefErrors)
-                    .build();
+                        .withInputOutputFactory(inputOutputFactory)
+                        .withVersion(version)
+                        .withPortableVersion(portableVersion)
+                        .withClassLoader(classLoader)
+                        .withDataSerializableFactories(dataSerializableFactories)
+                        .withPortableFactories(portableFactories)
+                        .withManagedContext(managedContext)
+                        .withGlobalPartitionStrategy(partitioningStrategy)
+                        .withInitialOutputBufferSize(initialOutputBufferSize)
+                        .withBufferPoolFactory(new BufferPoolFactoryImpl())
+                        .withEnableCompression(enableCompression)
+                        .withEnableSharedObject(enableSharedObject)
+                        .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
+                        .withClassNameFilter(classNameFilter)
+                        .withCheckClassDefErrors(checkClassDefErrors)
+                        .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;
 
@@ -318,6 +323,9 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                 serializer = ((SerializerHook) value).createSerializer();
             } else {
                 serializer = (Serializer) value;
+            }
+            if(serializer instanceof AdvancedSerializer) {
+                ((AdvancedSerializer) serializer).setInternalSerializationService(ss);
             }
             if (value instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);

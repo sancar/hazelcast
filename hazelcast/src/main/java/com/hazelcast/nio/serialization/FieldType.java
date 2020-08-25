@@ -29,50 +29,52 @@ import static java.lang.Integer.MAX_VALUE;
 public enum FieldType {
 
     // SINGLE-VALUE TYPES
-    PORTABLE(0, MAX_VALUE),
-    BYTE(1, BYTE_SIZE_IN_BYTES),
-    BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES),
-    CHAR(3, CHAR_SIZE_IN_BYTES),
-    SHORT(4, SHORT_SIZE_IN_BYTES),
-    INT(5, INT_SIZE_IN_BYTES),
-    LONG(6, LONG_SIZE_IN_BYTES),
-    FLOAT(7, FLOAT_SIZE_IN_BYTES),
-    DOUBLE(8, DOUBLE_SIZE_IN_BYTES),
-    UTF(9, MAX_VALUE),
+    PORTABLE(0, false, MAX_VALUE),//used to represent any nested object
+    BYTE(1, true, BYTE_SIZE_IN_BYTES),
+    BOOLEAN(2, true, BOOLEAN_SIZE_IN_BYTES),
+    CHAR(3, true, CHAR_SIZE_IN_BYTES),
+    SHORT(4, true, SHORT_SIZE_IN_BYTES),
+    INT(5, true, INT_SIZE_IN_BYTES),
+    LONG(6, true, LONG_SIZE_IN_BYTES),
+    FLOAT(7, true, FLOAT_SIZE_IN_BYTES),
+    DOUBLE(8, true, DOUBLE_SIZE_IN_BYTES),
+    UTF(9, false, MAX_VALUE),
 
     // ARRAY TYPES
-    PORTABLE_ARRAY(10, MAX_VALUE),
-    BYTE_ARRAY(11, MAX_VALUE),
-    BOOLEAN_ARRAY(12, MAX_VALUE),
-    CHAR_ARRAY(13, MAX_VALUE),
-    SHORT_ARRAY(14, MAX_VALUE),
-    INT_ARRAY(15, MAX_VALUE),
-    LONG_ARRAY(16, MAX_VALUE),
-    FLOAT_ARRAY(17, MAX_VALUE),
-    DOUBLE_ARRAY(18, MAX_VALUE),
-    UTF_ARRAY(19, MAX_VALUE),
+    PORTABLE_ARRAY(10, false, MAX_VALUE),//used to represent any nested object array
+    BYTE_ARRAY(11, false, MAX_VALUE),
+    BOOLEAN_ARRAY(12, false, MAX_VALUE),
+    CHAR_ARRAY(13, false, MAX_VALUE),
+    SHORT_ARRAY(14, false, MAX_VALUE),
+    INT_ARRAY(15, false, MAX_VALUE),
+    LONG_ARRAY(16, false, MAX_VALUE),
+    FLOAT_ARRAY(17, false, MAX_VALUE),
+    DOUBLE_ARRAY(18, false, MAX_VALUE),
+    UTF_ARRAY(19, false, MAX_VALUE),
 
-    BIG_INTEGER(20, MAX_VALUE),
-    BIG_INTEGER_ARRAY(21, MAX_VALUE),
-    BIG_DECIMAL(22, MAX_VALUE),
-    BIG_DECIMAL_ARRAY(23, MAX_VALUE),
-    LOCAL_TIME(24, INT_SIZE_IN_BYTES * 4),
-    LOCAL_TIME_ARRAY(25, MAX_VALUE),
-    LOCAL_DATE(26, INT_SIZE_IN_BYTES * 3),
-    LOCAL_DATE_ARRAY(27, MAX_VALUE),
-    LOCAL_DATE_TIME(28, INT_SIZE_IN_BYTES * 7),
-    LOCAL_DATE_TIME_ARRAY(29, MAX_VALUE),
-    OFFSET_DATE_TIME(30, INT_SIZE_IN_BYTES * 8),
-    OFFSET_DATE_TIME_ARRAY(31, MAX_VALUE);
+    BIG_INTEGER(20, false, MAX_VALUE),
+    BIG_INTEGER_ARRAY(21, false, MAX_VALUE),
+    BIG_DECIMAL(22, false, MAX_VALUE),
+    BIG_DECIMAL_ARRAY(23, false, MAX_VALUE),
+    LOCAL_TIME(24, false, INT_SIZE_IN_BYTES * 4),
+    LOCAL_TIME_ARRAY(25, false, MAX_VALUE),
+    LOCAL_DATE(26, false, INT_SIZE_IN_BYTES * 3),
+    LOCAL_DATE_ARRAY(27, false, MAX_VALUE),
+    LOCAL_DATE_TIME(28, false, INT_SIZE_IN_BYTES * 7),
+    LOCAL_DATE_TIME_ARRAY(29, false, MAX_VALUE),
+    OFFSET_DATE_TIME(30, false, INT_SIZE_IN_BYTES * 8),
+    OFFSET_DATE_TIME_ARRAY(31, false, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;
 
     private final byte type;
+    private final boolean isPrimitive;
     private final int elementSize;
 
-    FieldType(int type, int elementSize) {
+    FieldType(int type, boolean isPrimitive, int elementSize) {
         this.type = (byte) type;
+        this.isPrimitive = isPrimitive;
         this.elementSize = elementSize;
     }
 
@@ -101,6 +103,10 @@ public enum FieldType {
         } else {
             return get((byte) (id - 1));
         }
+    }
+
+    public boolean isPrimitive() {
+        return isPrimitive;
     }
 
     public boolean hasDefiniteSize() {

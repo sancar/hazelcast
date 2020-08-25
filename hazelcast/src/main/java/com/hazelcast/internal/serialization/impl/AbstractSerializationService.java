@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
@@ -27,16 +28,18 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.AdvancedSerializer;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.compact.MetaDataService;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
@@ -75,11 +78,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
 
-    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(
+    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<>(
             CONSTANT_SERIALIZERS_LENGTH);
     private final SerializerAdapter[] constantTypeIds = new SerializerAdapter[CONSTANT_SERIALIZERS_LENGTH];
-    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
-    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
+    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
 
     //Global serializer may override Java Serialization or not
@@ -211,7 +214,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw handleException(e);
         } finally {
             ClassLocator.onFinishDeserialization();
-            pool.returnInputBuffer(in);
+            if (!in.isStolen()) {
+                pool.returnInputBuffer(in);
+            }
         }
     }
 
@@ -459,6 +464,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     public SerializerAdapter serializerFor(final int typeId) {
+//        if(overrideJavaSerialization) {
+//            return global.get();
+//        }
         if (typeId <= 0) {
             final int index = indexForDefaultType(typeId);
             if (index < CONSTANT_SERIALIZERS_LENGTH) {
@@ -469,6 +477,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     public SerializerAdapter serializerFor(Object object) {
+//        if(overrideJavaSerialization) {
+//            return global.get();
+//        }
         /*
             Searches for a serializer for the provided object
             Serializers will be  searched in this order;
@@ -518,9 +529,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return dataSerializerAdapter;
         }
         if (Portable.class.isAssignableFrom(type)) {
-            return portableSerializerAdapter;
-        }
-        if (PortableGenericRecord.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
         return constantTypesMap.get(type);
@@ -644,5 +652,47 @@ public abstract class AbstractSerializationService implements InternalSerializat
             this.notActiveExceptionSupplier = notActiveExceptionSupplier;
             return self();
         }
+    }
+
+    @Override
+    public void deploySchemas() {
+        //TODO move meta data service to here
+    }
+
+    @Override
+    public boolean supportsQueryOverData(int type) {
+        if (type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
+            return true;
+        }
+        SerializerAdapter serializerAdapter = idMap.get(type);
+        if (serializerAdapter == null) {
+            return false;
+        }
+        Serializer impl = serializerAdapter.getImpl();
+        return impl instanceof AdvancedSerializer;
+    }
+
+    @Override
+    public void start(HazelcastInstance hazelcastInstance) {
+        idMap.forEach((integer, serializerAdapter) -> {
+            Serializer serializer = serializerAdapter.getImpl();
+            if (!(serializer instanceof AdvancedSerializer)) {
+                return;
+            }
+            IMap<Object, byte[]> map = hazelcastInstance.getMap("__hz__metaDataMap");
+            ((AdvancedSerializer) serializer).setMetaDataService(
+                    new MetaDataService() {
+                        @Override
+                        public byte[] get(Object key) {
+                            return map.get(key);
+                        }
+
+                        @Override
+                        public Object put(Object key, byte[] metaData) {
+                            return map.put(key, metaData);
+                        }
+                    });
+        });
+
     }
 }

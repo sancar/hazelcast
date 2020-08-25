@@ -17,6 +17,9 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.Compact;
+import com.hazelcast.nio.serialization.compact.CompactGenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.Schema;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;

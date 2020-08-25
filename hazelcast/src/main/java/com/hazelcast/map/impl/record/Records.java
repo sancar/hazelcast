@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -124,7 +125,7 @@ public final class Records {
         for (; ; ) {
             if (cachedValue == null) {
                 Object valueBeforeCas = record.getValue();
-                if (!shouldCache(valueBeforeCas)) {
+                if (!shouldCache(valueBeforeCas, (InternalSerializationService) serializationService)) {
                     //it's either a null or value which we do not want to cache. let's just return it.
                     return valueBeforeCas;
                 }
@@ -184,8 +185,15 @@ public final class Records {
         return object;
     }
 
-    static boolean shouldCache(Object value) {
-        return value instanceof Data && !((Data) value).isPortable();
+    static boolean shouldCache(Object value, InternalSerializationService serializationService) {
+        if (value instanceof Data) {
+            Data data = (Data) value;
+            if (serializationService.supportsQueryOverData(data.getType())) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
 

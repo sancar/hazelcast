@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.io.EOFException;
@@ -42,7 +43,9 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     int size;
     int pos;
     int mark;
+    int offset;
     char[] charBuffer;
+    boolean isStolen;
 
     private final InternalSerializationService service;
     private final boolean bigEndian;
@@ -54,6 +57,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
         this.data = data;
         this.size = data != null ? data.length : 0;
+        this.offset = offset;
         this.pos = offset;
         this.service = service;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
@@ -63,6 +67,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     public void init(byte[] data, int offset) {
         this.data = data;
         this.size = data != null ? data.length : 0;
+        this.offset = offset;
         this.pos = offset;
     }
 
@@ -72,11 +77,22 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         size = 0;
         pos = 0;
         mark = 0;
+        offset = 0;
         if (charBuffer != null && charBuffer.length > UTF_BUFFER_SIZE * 8) {
             charBuffer = new char[UTF_BUFFER_SIZE * 8];
         }
         version = UNKNOWN;
         wanProtocolVersion = UNKNOWN;
+    }
+
+    @Override
+    public void steal() {
+        isStolen = true;
+    }
+
+    @Override
+    public boolean isStolen() {
+        return isStolen;
     }
 
     @Override

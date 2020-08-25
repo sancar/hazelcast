@@ -71,6 +71,10 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataR
 
     void reset();
 
+    void steal();
+
+    boolean isStolen();
+
     void clear();
 
     void init(byte[] data, int offset);

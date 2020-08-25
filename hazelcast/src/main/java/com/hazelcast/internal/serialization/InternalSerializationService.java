@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
@@ -89,7 +90,12 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput();
 
-    InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
+    /**
+     * @param data
+     * @return InternalGenericRecord if data type supports it, otherwise returns null
+     * @throws IOException
+     */
+    InternalGenericRecord readAsInternalGenericRecord(Data data)  throws IOException ;
 
     PortableContext getPortableContext();
 
@@ -112,4 +118,14 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     byte getVersion();
 
+    void start(HazelcastInstance instance);
+
+    void deploySchemas();
+
+    /***
+     *
+     * @param type of the serializer {@link com.hazelcast.internal.serialization.impl.SerializationConstants}
+     * @return true if supports query over serialized data with {@link InternalGenericRecord}
+     */
+    boolean supportsQueryOverData(int type);
 }

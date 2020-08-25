@@ -406,6 +406,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             addClientConfigAddedListeners(configuredListeners);
+            serializationService.start(this);
             sendStateToCluster();
         } catch (Throwable e) {
             try {
@@ -854,8 +855,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
         userCodeDeploymentService.deploy(this);
-        proxyManager.createDistributedObjectsOnCluster();
+        serializationService.deploySchemas();
         queryCacheContext.recreateAllCaches();
+        proxyManager.createDistributedObjectsOnCluster();
     }
 
     // visible for testing
