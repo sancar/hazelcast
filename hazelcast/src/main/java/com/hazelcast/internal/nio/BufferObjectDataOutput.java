@@ -26,6 +26,8 @@ import java.nio.ByteOrder;
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable,
                                                 SerializationServiceSupport, DataWriter {
 
+    byte[] getBuffer();
+
     void write(int position, int b);
 
     void writeInt(int position, int v) throws IOException;

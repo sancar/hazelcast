@@ -72,6 +72,11 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    public void readTo(BufferObjectDataOutput out) throws IOException {
+        out.write(data, offset, size);
+    }
+
+    @Override
     public void clear() {
         data = null;
         size = 0;

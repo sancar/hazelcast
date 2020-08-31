@@ -54,6 +54,11 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    public byte[] getBuffer() {
+        return buffer;
+    }
+
+    @Override
     public void write(int b) {
         ensureAvailable(1);
         buffer[pos++] = (byte) (b);

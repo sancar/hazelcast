@@ -78,4 +78,6 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataR
     void clear();
 
     void init(byte[] data, int offset);
+
+    void readTo(BufferObjectDataOutput out) throws IOException;
 }

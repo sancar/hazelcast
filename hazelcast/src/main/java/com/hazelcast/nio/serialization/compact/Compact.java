@@ -48,24 +48,77 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
 
     private final Map<Class, CompactRegistry> classToRegistryMap = new ConcurrentHashMap<>();
     private final Map<Integer, CompactRegistry> idToRegistryMap = new ConcurrentHashMap<>();
-    private final Map<Class, SchemaImpl> classToSchemaMap = new ConcurrentHashMap<>();
-    private final Map<Long, Schema> schemaCache = new ConcurrentHashMap<>();
+
+    private final SchemaRegistrar schemaRegistrar = new SchemaRegistrar();
     private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
     private InternalSerializationService internalSerializationService;
     private ManagedContext managedContext;
-    private MetaDataService metaDataService = new MetaDataService() {
-        private Map<Object, byte[]> map = new ConcurrentHashMap();
 
-        @Override
-        public byte[] get(Object key) {
-            return map.get(key);
+    private class SchemaRegistrar {
+        private final Map<Class, SchemaImpl> classToSchemaMap = new ConcurrentHashMap<>();
+        private final Map<Long, SchemaImpl> schemaCache = new ConcurrentHashMap<>();
+
+        MetaDataService metaDataService = new MetaDataService() {
+            private Map<Object, byte[]> map = new ConcurrentHashMap();
+
+            @Override
+            public byte[] get(Object key) {
+                return map.get(key);
+            }
+
+            @Override
+            public Object put(Object key, byte[] metaData) {
+                return map.put(key, metaData);
+            }
+        };
+
+        private void tryRegisterSchema(SchemaImpl schema) {
+            long schemaId = schema.getId();
+            if (schemaCache.get(schemaId) != null) {
+                return;
+            }
+
+            long id = schema.getId();
+            byte[] serialized = schema.getSerialized();
+            schemaCache.put(id, schema);
+            metaDataService.put(id, serialized);
         }
 
-        @Override
-        public Object put(Object key, byte[] metaData) {
-            return map.put(key, metaData);
+        SchemaImpl lookupSchema(long schemaId) {
+            SchemaImpl schema = schemaCache.get(schemaId);
+            if (schema != null) {
+                return schema;
+            }
+            byte[] bytes = metaDataService.get(schemaId);
+            schema = (SchemaImpl) toSchema(bytes);
+            schemaCache.put(schemaId, schema);
+            return schema;
         }
-    };
+
+        void registerSchema(SchemaImpl schema, Class<?> aClass) {
+            long id = schema.getId();
+            byte[] serialized = schema.getSerialized();
+            schemaCache.put(id, schema);
+            metaDataService.put(id, serialized);
+            classToSchemaMap.put(aClass, schema);
+        }
+
+        private Schema toSchema(byte[] bytes) {
+            ByteBuffer in = ByteBuffer.wrap(bytes);
+            SchemaBuilder builder = new SchemaBuilder();
+            int fieldCount = in.get();
+            for (int i = 0; i < fieldCount; i++) {
+                String name = readBasicString(in);
+                FieldType type = FieldType.get(in.get());
+                builder.addField(new FieldDefinitionImpl(name, type));
+            }
+            return builder.build();
+        }
+
+        public SchemaImpl lookupSchema(Class<?> aClass) {
+            return classToSchemaMap.get(aClass);
+        }
+    }
 
 
     //TODO SANCAR do we need to depend on internalSerializationService ? Enterprise
@@ -82,7 +135,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
 
     @Override
     public void setMetaDataService(MetaDataService metaDataService) {
-        this.metaDataService = metaDataService;
+        this.schemaRegistrar.metaDataService = metaDataService;
     }
 
     @Override
@@ -114,12 +167,13 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     }
 
     public void writeGenericRecord(ObjectDataOutput out, GenericRecord o) throws IOException {
+        assert out instanceof BufferObjectDataOutput;
         CompactGenericRecord record = (CompactGenericRecord) o;
         SchemaImpl schema = (SchemaImpl) record.getSchema();
-        out.write(record.getClassID());
+        schemaRegistrar.tryRegisterSchema(schema);
+        out.writeInt(record.getClassID());
         out.writeLong(schema.getId());
-//        BufferObjectDataInput bufferObjectDataInput = record.getBufferObjectDataInput();
-//        bufferObjectDataInput.readTo((BufferObjectDataOutput) out); TODO SANCAR
+        record.getIn().readTo((BufferObjectDataOutput) out);
     }
 
     public void writeObject(ObjectDataOutput out, Object o) throws IOException {
@@ -137,7 +191,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     public Object read(ObjectDataInput in) throws IOException {
         int classID = in.readInt();
         long schemaId = in.readLong();
-        Schema schema = lookupSchema(schemaId);
+        Schema schema = schemaRegistrar.lookupSchema(schemaId);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         CompactRegistry registry = idToRegistryMap.get(classID);
         if (registry == null) {
@@ -153,7 +207,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     public <T> T readObject(ObjectDataInput in) throws IOException {
         int classID = in.readInt();
         long schemaId = in.readLong();
-        Schema schema = lookupSchema(schemaId);
+        Schema schema = schemaRegistrar.lookupSchema(schemaId);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         CompactRegistry registry = getRegistry(classID);
         CompactGenericRecord genericRecord = new CompactGenericRecord(this, classID, input, schema);
@@ -163,7 +217,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     public GenericRecord readGenericRecord(ObjectDataInput in) throws IOException {
         int classID = in.readInt();
         long schemaId = in.readLong();
-        Schema schema = lookupSchema(schemaId);
+        Schema schema = schemaRegistrar.lookupSchema(schemaId);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         //make sure that this is not returned to pool
         input.steal();
@@ -176,28 +230,6 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         return managedContext != null ? (T) managedContext.initialize(o) : o;
     }
 
-    public Schema lookupSchema(long schemaId) {
-        Schema schema = schemaCache.get(schemaId);
-        if (schema != null) {
-            return schema;
-        }
-        byte[] bytes = metaDataService.get(schemaId);
-        schema = toSchema(bytes);
-        schemaCache.put(schemaId, schema);
-        return schema;
-    }
-
-    private static Schema toSchema(byte[] bytes) {
-        ByteBuffer in = ByteBuffer.wrap(bytes);
-        SchemaBuilder builder = new SchemaBuilder();
-        int fieldCount = in.get();
-        for (int i = 0; i < fieldCount; i++) {
-            String name = readBasicString(in);
-            FieldType type = FieldType.get(in.get());
-            builder.addField(new FieldDefinitionImpl(name, type));
-        }
-        return builder.build();
-    }
 
     private static String readBasicString(ByteBuffer in) {
         int len = in.getInt();
@@ -208,7 +240,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
 
     private SchemaImpl lookupOrRegisterSchema(Object o) throws IOException {
         Class<?> aClass = o.getClass();
-        SchemaImpl schema = classToSchemaMap.get(aClass);
+        SchemaImpl schema = schemaRegistrar.lookupSchema(aClass);
         if (schema != null) {
             return schema;
         }
@@ -217,15 +249,13 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         SchemaBuilder builder = new SchemaBuilder();
         SchemaWriter writer = new SchemaWriter(builder);
         getRegistry(aClass).compactSerializer.write(aClass, writer, o);
-        schema = (SchemaImpl) builder.build();
+        schema = builder.build();
 
-        long id = schema.getId();
-        byte[] serialized = schema.getSerialized();
-        schemaCache.put(id, schema);
-        metaDataService.put(id, serialized);
-        classToSchemaMap.put(aClass, schema);
+        schemaRegistrar.registerSchema(schema ,aClass);
+
         return schema;
     }
+
 
     private CompactRegistry getRegistry(Class aClass) {
         CompactRegistry compactRegistry = classToRegistryMap.get(aClass);

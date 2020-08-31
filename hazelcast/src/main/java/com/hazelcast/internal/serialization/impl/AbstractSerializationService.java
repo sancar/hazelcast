@@ -271,7 +271,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         try {
             SerializerAdapter serializer = serializerFor(obj);
             out.writeInt(serializer.getTypeId());
-            serializer.write(out, obj);
+            serializer.write((BufferObjectDataOutput) out, obj);
         } catch (Throwable e) {
             throw handleSerializeException(obj, e);
         }

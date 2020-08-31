@@ -33,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import java.io.DataInput;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -107,6 +108,10 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
         } catch (IOException e) {
             throw illegalStateException(e);
         }
+    }
+
+    public BufferObjectDataInput getIn() {
+        return  in;
     }
 
     @Override

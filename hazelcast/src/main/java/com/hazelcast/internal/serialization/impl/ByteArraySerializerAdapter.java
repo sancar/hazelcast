@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
@@ -35,7 +36,7 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void write(ObjectDataOutput out, Object object) throws IOException {
+    public void write(BufferObjectDataOutput out, Object object) throws IOException {
         byte[] bytes = serializer.write(object);
         out.writeByteArray(bytes);
     }
