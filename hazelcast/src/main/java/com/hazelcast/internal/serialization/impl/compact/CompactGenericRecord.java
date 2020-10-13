@@ -286,7 +286,7 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
 
     @Override
     public boolean hasField(@Nonnull String fieldName) {
-        return false;
+        return schema.hasField(fieldName);
     }
 
     @Override
@@ -626,9 +626,9 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
             if (pos == NULL_POSITION || doesNotHaveIndex(pos, index)) {
                 return null;
             }
-            int position = in.readInt((pos + INT_SIZE_IN_BYTES) + index * INT_SIZE_IN_BYTES);
-            if (position != NULL_POSITION) {
-                in.position(pos);
+            int indexedItemPosition = in.readInt((pos + INT_SIZE_IN_BYTES) + index * INT_SIZE_IN_BYTES);
+            if (indexedItemPosition != NULL_POSITION) {
+                in.position(indexedItemPosition);
                 return reader.read(in);
             }
             return null;

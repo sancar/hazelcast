@@ -141,7 +141,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     @Override
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input) {
         try {
-            return (InternalGenericRecord) read(input);
+            return (InternalGenericRecord) readGenericRecord(input);
         } catch (IOException e) {
             //TODO SANCAR ??
             return null;

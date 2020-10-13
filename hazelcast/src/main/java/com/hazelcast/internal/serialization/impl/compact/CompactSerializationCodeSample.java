@@ -103,10 +103,8 @@ public class CompactSerializationCodeSample {
         {
             ClientConfig config = new ClientConfig();
             SerializationConfig serializationConfig = config.getSerializationConfig();
-            GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
 
-            SerializerConfig serializerConfig = new SerializerConfig();
-            serializationConfig.addSerializerConfig(serializerConfig);
+            GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
 
             Compact compact = new Compact();
 
@@ -124,6 +122,7 @@ public class CompactSerializationCodeSample {
             });
 
             globalSerializerConfig.setImplementation(compact);
+            serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
 
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
 

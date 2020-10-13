@@ -61,6 +61,7 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
@@ -249,7 +250,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeOffsetDateTime(String fieldName, OffsetDateTime value) {
-        writeNullable(fieldName, value, BIG_INTEGER, IOUtil::writeOffsetDateTime);
+        writeNullable(fieldName, value, OFFSET_DATE_TIME, IOUtil::writeOffsetDateTime);
     }
 
     @Override

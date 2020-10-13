@@ -83,7 +83,7 @@ public class CompactValueReaderTestStructure {
 
     }
 
-    public static class PrimitiveObject  {
+    public static class PrimitiveObject {
 
         byte byte_;
         short short_;
@@ -150,10 +150,11 @@ public class CompactValueReaderTestStructure {
                 string_ = seed + 80 + "text";
                 bigInteger_ = new BigInteger(32, rnd);
                 bigDecimal_ = new BigDecimal(bigInteger_, 2);
-                localTime_ = LocalTime.now();
-                localDate_ = LocalDate.now();
-                localDateTime_ = LocalDateTime.now();
-                offsetDateTime_ = OffsetDateTime.now();
+                bigDecimal_ = new BigDecimal(bigInteger_, 2);
+                localTime_ = LocalTime.of(17, 41, 47, 874000000);
+                localDate_ = LocalDate.of(1, 1, 1);
+                localDateTime_ = LocalDateTime.of(localDate_, localTime_);
+                offsetDateTime_ = OffsetDateTime.of(localDateTime_, ZoneOffset.ofHours(2));
 
                 bigIntegers = new BigInteger[]{new BigInteger(32, rnd), new BigInteger(32, rnd),
                         new BigInteger(32, rnd)};
@@ -183,10 +184,10 @@ public class CompactValueReaderTestStructure {
 
                 bigInteger_ = new BigInteger(32, rnd);
                 bigDecimal_ = new BigDecimal(bigInteger_, 2);
-                localTime_ = LocalTime.now();
-                localDate_ = LocalDate.now();
-                localDateTime_ = LocalDateTime.now();
-                offsetDateTime_ = OffsetDateTime.now();
+                localTime_ = LocalTime.of(17, 41, 47, 874000000);
+                localDate_ = LocalDate.of(1, 1, 1);
+                localDateTime_ = LocalDateTime.of(localDate_, localTime_);
+                offsetDateTime_ = OffsetDateTime.of(localDateTime_, ZoneOffset.ofHours(2));
                 string_ = "";
             }
         }
@@ -330,7 +331,7 @@ public class CompactValueReaderTestStructure {
         }
     }
 
-    static class GroupObject  {
+    static class GroupObject {
 
 
         PrimitiveObject object;
@@ -391,7 +392,7 @@ public class CompactValueReaderTestStructure {
         }
     }
 
-    static class NestedGroupObject{
+    static class NestedGroupObject {
 
         GroupObject object;
         GroupObject[] objects;

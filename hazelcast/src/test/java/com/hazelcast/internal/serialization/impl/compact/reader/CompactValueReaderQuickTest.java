@@ -162,7 +162,7 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
 
     @Test
     public void nestedPortableAttribute() throws IOException {
-        ChipPortable expected = PORSCHE.engine.chip;
+        Chip expected = PORSCHE.engine.chip;
         assertEquals(expected, reader(PORSCHE).read("engine.chip"));
     }
 
@@ -199,7 +199,7 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
     @Test
     public void portableArray_wholeArrayFetched_withAny() throws IOException {
         Wheel[] expected = PORSCHE.wheels;
-        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[any]"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any]")).getResults());
     }
 
     @Test
@@ -222,19 +222,19 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_portableAtTheEnd() throws IOException {
-        ChipPortable expected = ((Wheel) PORSCHE.wheels[1]).chip;
+        Chip expected = ((Wheel) PORSCHE.wheels[1]).chip;
         assertEquals(expected, reader(PORSCHE).read("wheels[1].chip"));
     }
 
     @Test
     public void portableArrayFirst_portableArrayAtTheEnd_oneElementFetched() throws IOException {
-        ChipPortable expected = ((Wheel) PORSCHE.wheels[0]).chips[1];
+        Chip expected = ((Wheel) PORSCHE.wheels[0]).chips[1];
         assertEquals(expected, reader(PORSCHE).read("wheels[0].chips[1]"));
     }
 
     @Test
     public void portableArrayFirst_portableArrayAtTheEnd_wholeArrayFetched() throws IOException {
-        ChipPortable[] expected = ((Wheel) PORSCHE.wheels[0]).chips;
+        Chip[] expected = ((Wheel) PORSCHE.wheels[0]).chips;
         assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[0].chips"));
     }
 
@@ -279,21 +279,21 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd2() throws IOException {
-        ChipPortable[] expected = new ChipPortable[]{
+    public void portableArrayFirst_withAny_ObjectArrayAtTheEnd2() throws IOException {
+        Chip[] expected = new Chip[]{
                 ((Wheel) PORSCHE.wheels[0]).chip,
                 ((Wheel) PORSCHE.wheels[1]).chip,
         };
-        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[any].chip"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].chip")).getResults());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
-        ChipPortable[] expected = new ChipPortable[]{
+        Chip[] expected = new Chip[]{
                 ((Wheel) PORSCHE.wheels[0]).chips[1],
                 ((Wheel) PORSCHE.wheels[1]).chips[1],
         };
-        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[any].chips[1]"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].chips[1]")).getResults());
     }
 
     @Test
@@ -371,6 +371,7 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
         compact.register(Car.class, 1);
         compact.register(Wheel.class, 2);
         compact.register(Engine.class, 3);
+        compact.register(Chip.class, 4);
         globalSerializerConfig.setImplementation(compact);
         globalSerializerConfig.setOverrideJavaSerialization(true);
         serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
@@ -428,15 +429,15 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
     static class Engine implements Comparable<Engine> {
 
         Integer power;
-        ChipPortable chip;
+        Chip chip;
 
         Engine() {
-            this.chip = new ChipPortable();
+            this.chip = new Chip();
         }
 
         Engine(int power) {
             this.power = power;
-            this.chip = new ChipPortable();
+            this.chip = new Chip();
         }
 
         @Override
@@ -463,16 +464,16 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
         }
     }
 
-    static class ChipPortable implements Comparable<ChipPortable> {
+    static class Chip implements Comparable<Chip> {
 
 
         Integer power;
 
-        ChipPortable() {
+        Chip() {
             this.power = 15;
         }
 
-        ChipPortable(int power) {
+        Chip(int power) {
             this.power = power;
         }
 
@@ -484,7 +485,7 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            ChipPortable that = (ChipPortable) o;
+            Chip that = (Chip) o;
             return power.equals(that.power);
 
         }
@@ -495,7 +496,7 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int compareTo(ChipPortable o) {
+        public int compareTo(Chip o) {
             return this.power.compareTo(o.power);
         }
     }
@@ -503,10 +504,10 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
     static class Wheel implements Comparable<Wheel> {
 
         String name;
-        ChipPortable chip;
-        ChipPortable[] chips;
-        ChipPortable[] emptyChips;
-        ChipPortable[] nullChips;
+        Chip chip;
+        Chip[] chips;
+        Chip[] emptyChips;
+        Chip[] nullChips;
         int[] serial;
 
         Wheel() {
@@ -514,13 +515,13 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
 
         Wheel(String name, boolean nonNull) {
             this.name = name;
-            this.chip = new ChipPortable(100);
-            this.chips = new ChipPortable[]{new ChipPortable(20), new ChipPortable(40)};
+            this.chip = new Chip(100);
+            this.chips = new Chip[]{new Chip(20), new Chip(40)};
             if (nonNull) {
-                this.emptyChips = new ChipPortable[]{new ChipPortable(20)};
-                this.nullChips = new ChipPortable[]{new ChipPortable(20)};
+                this.emptyChips = new Chip[]{new Chip(20)};
+                this.nullChips = new Chip[]{new Chip(20)};
             } else {
-                this.emptyChips = new ChipPortable[]{};
+                this.emptyChips = new Chip[]{};
                 this.nullChips = null;
             }
             int nameLength = name.length();

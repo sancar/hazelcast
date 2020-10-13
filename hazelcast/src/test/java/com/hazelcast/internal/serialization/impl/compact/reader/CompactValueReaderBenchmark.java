@@ -57,6 +57,11 @@ public class CompactValueReaderBenchmark extends HazelcastTestSupport {
         SerializationConfig serializationConfig = new SerializationConfig();
         GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
         Compact compact = new Compact();
+        compact.register(CompactValueReaderQuickTest.Car.class, 1);
+        compact.register(CompactValueReaderQuickTest.Wheel.class, 2);
+        compact.register(CompactValueReaderQuickTest.Engine.class, 3);
+        compact.register(CompactValueReaderQuickTest.Chip.class, 4);
+        compact.register(CompactValueReaderTestStructure.PrimitiveObject.class, 5);
         globalSerializerConfig.setImplementation(compact);
         globalSerializerConfig.setOverrideJavaSerialization(true);
         serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
