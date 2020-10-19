@@ -24,6 +24,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
@@ -120,6 +121,27 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public V put(@Nonnull K key, @Nonnull V value) {
         return put(key, value, UNSET, TimeUnit.MILLISECONDS);
+    }
+
+    private byte[] getForC(@Nonnull byte[] dataPayload) {
+        checkNotNull(dataPayload, NULL_KEY_IS_NOT_ALLOWED);
+        Data value = toData(getInternal(dataPayload));
+        if(value == null) {
+            return null;
+        }
+        return value.toByteArray();
+    }
+
+    private byte[] putForC(@Nonnull byte[] keyDataPayload, @Nonnull byte[] valueDataPayload) {
+        checkNotNull(valueDataPayload, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data valueData = toData(new HeapData(valueDataPayload));
+        Data result = toData(putInternal(new HeapData(keyDataPayload), valueData, UNSET, TimeUnit.MILLISECONDS,
+                UNSET, TimeUnit.MILLISECONDS));
+        if(result == null) {
+            return null;
+        }
+        return result.toByteArray();
     }
 
     @Override
@@ -1202,7 +1224,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     return null;
                 }
             } else {
-                Data result =  putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                Data result = putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
                         TimeUnit.MILLISECONDS);
                 if (result == null) {
                     return value;

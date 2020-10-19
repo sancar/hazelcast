@@ -109,6 +109,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -244,6 +245,27 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return toObject(getInternal(key));
+    }
+
+    private byte[] getForC(@Nonnull byte[] dataPayload) {
+        checkNotNull(dataPayload, NULL_KEY_IS_NOT_ALLOWED);
+        Data value = toData(getInternal(dataPayload));
+        if (value == null) {
+            return null;
+        }
+        return value.toByteArray();
+    }
+
+    private byte[] putForC(@Nonnull byte[] keyDataPayload, @Nonnull byte[] valueDataPayload) {
+        checkNotNull(valueDataPayload, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data valueData = toData(new HeapData(valueDataPayload));
+        Data result = toData(putInternal(UNSET, TimeUnit.MILLISECONDS,
+                null, TimeUnit.MILLISECONDS, new HeapData(keyDataPayload), valueData));
+        if (result == null) {
+            return null;
+        }
+        return result.toByteArray();
     }
 
     protected Object getInternal(Object key) {
@@ -2081,7 +2103,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                     return null;
                 }
             } else {
-                V result =  putIfAbsentInternal(UNSET, MILLISECONDS, null, null, keyAsData, toData(value));
+                V result = putIfAbsentInternal(UNSET, MILLISECONDS, null, null, keyAsData, toData(value));
                 if (result == null) {
                     return value;
                 }
