@@ -249,7 +249,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private byte[] getForC(@Nonnull byte[] dataPayload) {
         checkNotNull(dataPayload, NULL_KEY_IS_NOT_ALLOWED);
-        Data value = toData(getInternal(dataPayload));
+        Data value = toData(getInternal(new HeapData(dataPayload)));
         if (value == null) {
             return null;
         }
@@ -259,7 +259,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private byte[] putForC(@Nonnull byte[] keyDataPayload, @Nonnull byte[] valueDataPayload) {
         checkNotNull(valueDataPayload, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data valueData = toData(new HeapData(valueDataPayload));
+        Data valueData = new HeapData(valueDataPayload);
         Data result = toData(putInternal(UNSET, TimeUnit.MILLISECONDS,
                 null, TimeUnit.MILLISECONDS, new HeapData(keyDataPayload), valueData));
         if (result == null) {
