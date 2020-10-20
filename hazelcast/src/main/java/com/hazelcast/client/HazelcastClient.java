@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -32,6 +33,9 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -117,6 +121,12 @@ public final class HazelcastClient {
      */
     public static HazelcastInstance newHazelcastClient() {
         return newHazelcastClientInternal(null, resolveClientConfig(null), null);
+    }
+
+    public static HazelcastInstance newHazelcastClientWithConfig(String xmlConfig) {
+        InputStream inputStream = new ByteArrayInputStream(xmlConfig.getBytes(StandardCharsets.UTF_8));
+        ClientConfig config = new XmlClientConfigBuilder(inputStream).build();
+        return newHazelcastClientInternal(null, resolveClientConfig(config), null);
     }
 
     /**

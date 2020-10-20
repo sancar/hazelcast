@@ -17,9 +17,13 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
@@ -57,6 +61,12 @@ public final class Hazelcast {
         return HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
+    public static HazelcastInstance newHazelcastInstanceWithConfig(String xmlConfig) {
+        InputStream inputStream = new ByteArrayInputStream(xmlConfig.getBytes(StandardCharsets.UTF_8));
+        Config config = new XmlConfigBuilder(inputStream).build();
+        return HazelcastInstanceFactory.newHazelcastInstance(config);
+    }
+
     /**
      * Creates a new HazelcastInstance (a new node in a cluster).
      * This method allows you to create and run multiple instances
@@ -64,7 +74,7 @@ public final class Hazelcast {
      * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
-     *
+     * <p>
      * Hazelcast will look into two places for the configuration file:
      * <ol>
      *     <li>
@@ -122,14 +132,14 @@ public final class Hazelcast {
      *         Classpath: Hazelcast will check classpath for hazelcast.xml file.
      *     </li>
      * </ol>
-     *
+     * <p>
      * If a configuration file is not located, an {@link IllegalArgumentException} will be thrown.
-     *
+     * <p>
      * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
      *
      * @return the HazelcastInstance
      * @throws IllegalArgumentException if the instance name of the config is null or empty or if no config file can be
-     * located.
+     *                                  located.
      */
     public static HazelcastInstance getOrCreateHazelcastInstance() {
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(null);
@@ -137,9 +147,9 @@ public final class Hazelcast {
 
     /**
      * Gets or creates the HazelcastInstance with a certain name.
-     *
+     * <p>
      * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
-     *
+     * <p>
      * If {@code config} is {@code null}, then an XML configuration file is looked up in the following order:
      * <ol>
      *     <li>
@@ -159,7 +169,7 @@ public final class Hazelcast {
      * @param config the Config.
      * @return the HazelcastInstance
      * @throws IllegalArgumentException if the instance name of the config is null or empty or if no config file can be
-     * located.
+     *                                  located.
      */
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
@@ -193,7 +203,6 @@ public final class Hazelcast {
      * </p>
      *
      * @param outOfMemoryHandler set when an <code>OutOfMemoryError</code> is caught by Hazelcast threads
-     *
      * @see OutOfMemoryError
      * @see OutOfMemoryHandler
      */
