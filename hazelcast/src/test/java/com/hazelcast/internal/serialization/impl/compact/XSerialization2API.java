@@ -1,13 +1,12 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.CompactSerializerConfig;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.util.Map;
 
 public class XSerialization2API {
-
 
 
     public static void main(String[] args) throws InterruptedException {
@@ -38,8 +36,8 @@ public class XSerialization2API {
             {
                 // 2) Or it should be configured explicitly in config
                 Config config = new Config();
-                CompactSerializerConfig compactSerializerConfig = config.getSerializationConfig().getCompactSerializerConfig();
-                compactSerializerConfig.register(Employee.class);
+                CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+                compactSerializationConfig.register(Employee.class);
 
                 HazelcastInstance instance = Hazelcast.newHazelcastInstance();
                 IMap<Object, Object> map = instance.getMap("map");
@@ -88,8 +86,8 @@ public class XSerialization2API {
         {
             //When it needs to be interoperable between java and non-java
             Config config = new Config();
-            CompactSerializerConfig compactSerializerConfig = config.getSerializationConfig().getCompactSerializerConfig();
-            compactSerializerConfig.register(Employee.class);
+            CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+            compactSerializationConfig.register(Employee.class);
             //it is advised to give explicit class name. Default class name includes package name
             //it is advised to give explicit serializer. This way it is simpler to match types of the fields.
             //When user does not give explicit serializer, we can try to create a reflective serializer but not straightforward
@@ -97,7 +95,7 @@ public class XSerialization2API {
             // 1. C++ does not have this.
             // 2. Node js does not have different types for integer, long etc. Not clear in which type we should write a number.
             //......
-            compactSerializerConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
+            compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
                 @Override
                 public Employee read(Schema schema, CompactReader in) throws IOException {
                     String name = in.readUTF("name");
@@ -147,19 +145,26 @@ public class XSerialization2API {
         {
             //Example for schema evolution
             Config config = new Config();
-            CompactSerializerConfig compactSerializerConfig = config.getSerializationConfig().getCompactSerializerConfig();
-            compactSerializerConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
+            CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+            compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
                 @Override
                 public Employee read(Schema schema, CompactReader in) throws IOException {
                     String name = in.readUTF("name");
                     int age = in.readInt("age");
-                    return new Employee(name, age);
+                    if (schema.hasField("surname")) {
+                        String surname = in.readUTF("surname");
+                        return new Employee(name, age, surname);
+                    } else {
+                        return new Employee(name, age, "NOT AVAILABLE");
+
+                    }
                 }
 
                 @Override
                 public void write(CompactWriter out, Employee object) throws IOException {
                     out.writeUTF("name", object.getName());
                     out.writeInt("age", object.getAge());
+                    out.writeUTF("surname", object.getSurname());
                 }
             });
 

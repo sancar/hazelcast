@@ -2,7 +2,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 
-public class CompactSerializerConfig {
+public class CompactSerializationConfig {
     /**
      * Register class to be serialized via compact serializer.
      * Overrides Portable,Identified,Java Serializable or GlobalSerializer

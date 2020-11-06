@@ -525,7 +525,7 @@ public class SerializationConfig {
             enableCompression, enableSharedObject, allowUnsafe, classDefinitions, javaSerializationFilterConfig);
     }
 
-    public CompactSerializerConfig getCompactSerializerConfig() {
+    public CompactSerializationConfig getCompactSerializationConfig() {
         return null;
     }
 }
