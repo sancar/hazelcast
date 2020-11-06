@@ -44,9 +44,6 @@ public interface CompactWriter {
 
     void writeShort(String fieldName, short value);
 
-    /**
-     * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
-     */
     <T> void writeObject(String fieldName, T value);
 
     void writeBigInteger(String fieldName, BigInteger value);
@@ -91,14 +88,8 @@ public interface CompactWriter {
 
     void writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] values);
 
-    /**
-     * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
-     */
     <T> void writeObjectArray(String fieldName, T[] value);
 
-    /**
-     * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
-     */
     <T> void writeObjectArrayList(String fieldName, ArrayList<T> arrayList);
 
 }

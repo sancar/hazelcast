@@ -33,6 +33,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
@@ -471,4 +472,6 @@ public interface HazelcastInstance {
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.
      */
     void shutdown();
+
+    Compact getCompactSerializer();
 }

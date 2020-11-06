@@ -63,7 +63,9 @@ public enum FieldType {
     LOCAL_DATE_TIME(28, false, INT_SIZE_IN_BYTES * 7),
     LOCAL_DATE_TIME_ARRAY(29, false, MAX_VALUE),
     OFFSET_DATE_TIME(30, false, INT_SIZE_IN_BYTES * 8),
-    OFFSET_DATE_TIME_ARRAY(31, false, MAX_VALUE);
+    OFFSET_DATE_TIME_ARRAY(31, false, MAX_VALUE),
+    OBJECT(32, false, MAX_VALUE),
+    OBJECT_ARRAY(33, false, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;

@@ -19,10 +19,18 @@ package com.hazelcast.nio.serialization.compact;
 import java.util.Collection;
 
 /**
- * Represents a classes schema.
- * Consists of field definitions.
+ * Represents the schema of a class.
+ * Consists of field definitions and the class name.
  */
 public interface Schema {
+
+    /**
+     * The class name provided when building a schema
+     * In java, when it is not configured explicitly, this falls back to full class name including the path.
+     *
+     * @return name of the class
+     */
+    String getClassName();
 
     Collection<FieldDefinition> getFields();
 

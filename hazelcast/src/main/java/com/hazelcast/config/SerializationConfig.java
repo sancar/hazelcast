@@ -524,4 +524,8 @@ public class SerializationConfig {
             portableFactories, globalSerializerConfig, serializerConfigs, checkClassDefErrors, useNativeByteOrder, byteOrder,
             enableCompression, enableSharedObject, allowUnsafe, classDefinitions, javaSerializationFilterConfig);
     }
+
+    public CompactSerializerConfig getCompactSerializerConfig() {
+        return null;
+    }
 }

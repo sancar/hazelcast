@@ -20,6 +20,7 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.compact.FieldDefinition;
+import com.hazelcast.nio.serialization.compact.Schema;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
@@ -47,9 +48,10 @@ public class SchemaBuilder {
     }
 
     protected Map<String, FieldDefinition> fieldDefinitionMap = new HashMap<>();
+    protected String className;
 
-    public SchemaBuilder() {
-
+    public SchemaBuilder(String className) {
+        this.className = className;
     }
 
     public SchemaBuilder addIntField(String fieldName) {
@@ -184,7 +186,7 @@ public class SchemaBuilder {
         out.write(bytes);
     }
 
-    public SchemaImpl build() {
+    public Schema build() {
         List<FieldDefinition> list = new ArrayList<>(fieldDefinitionMap.values());
         list.sort((o1, o2) -> {
             if (o1.getType().isPrimitive()) {
@@ -213,7 +215,7 @@ public class SchemaBuilder {
         }
         byte[] bytes = toBytes(fieldDefinitionMap);
         long id = fingerprint64(bytes);
-        return new SchemaImpl(fieldDefinitionMap, id, bytes, index, offset);
+        return new SchemaImpl(className, fieldDefinitionMap, id, bytes, index, offset);
     }
 
     public void addField(FieldDefinitionImpl fieldDefinition) {

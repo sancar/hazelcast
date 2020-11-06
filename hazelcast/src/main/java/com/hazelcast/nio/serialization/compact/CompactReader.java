@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization.compact;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -25,9 +24,11 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 
+/**
+ * All read methods throws HazelcastSerializationException when related field is not found or there is a type mismatch
+ *
+ */
 public interface CompactReader {
-
-    Schema getSchema();
 
     byte readByte(String fieldName);
 
@@ -61,6 +62,8 @@ public interface CompactReader {
 
     /**
      * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
+     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
+     *                                               found in the classpath
      */
     <T> T readObject(String fieldName);
 
@@ -96,11 +99,15 @@ public interface CompactReader {
 
     /**
      * @return class type of items must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
+     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
+     *                                               found in the classpath
      */
     Object[] readObjectArray(String fieldName);
 
     /**
      * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
+     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
+     *                                               found in the classpath
      */
     <T> ArrayList<T> readObjectArrayList(String fieldName);
 

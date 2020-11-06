@@ -16,12 +16,21 @@
 
 package com.hazelcast.nio.serialization.compact;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 public interface CompactSerializer<T> {
+    /**
+     * @param schema of the object being deserialized
+     * @param in     reader to read fields of an object
+     * @return the object created as a result of read method
+     * @throws IOException
+     */
+    T read(Schema schema, CompactReader in) throws IOException;
 
-    T read(@Nullable Class associatedClass, Schema schema, CompactReader in) throws IOException;
-
-    void write(Class clazz, CompactWriter out, T object) throws IOException;
+    /**
+     * @param out    CompactWriter to serialize the fields onto
+     * @param object to be serialized
+     * @throws IOException
+     */
+    void write(CompactWriter out, T object) throws IOException;
 }

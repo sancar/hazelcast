@@ -29,9 +29,11 @@ public class SchemaImpl implements Schema {
     private final byte[] serialized;
     private final int numberOfComplexFields;
     private final int primitiveOffsetEnd;
+    private final String className;
 
-    public SchemaImpl(Map<String, FieldDefinition> fieldDefinitionMap, long id, byte[] serialized,
+    public SchemaImpl(String className, Map<String, FieldDefinition> fieldDefinitionMap, long id, byte[] serialized,
                       int numberOfComplexFields, int primitiveOffsetEnd) {
+        this.className = className;
         this.fieldDefinitionMap = fieldDefinitionMap;
         this.id = id;
         this.serialized = serialized;

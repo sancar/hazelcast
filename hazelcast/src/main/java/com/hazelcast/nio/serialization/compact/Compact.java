@@ -34,7 +34,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.AdvancedSerializer;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
@@ -42,17 +41,24 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
 
     private final Map<Class, CompactRegistry> classToRegistryMap = new ConcurrentHashMap<>();
-    private final Map<Integer, CompactRegistry> idToRegistryMap = new ConcurrentHashMap<>();
+    private final Map<String, CompactRegistry> classNameToRegistryMap = new ConcurrentHashMap<>();
 
     private final SchemaRegistrar schemaRegistrar = new SchemaRegistrar();
     private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
     private InternalSerializationService internalSerializationService;
     private ManagedContext managedContext;
+
+    public CompactGenericRecordBuilder genericRecordBuilder(String className, Schema schema) {
+        return new CompactGenericRecordBuilder(this, schema, classID,
+                bytes -> this.getInternalSerializationService().createObjectDataInput(bytes),
+                () -> this.getInternalSerializationService().createObjectDataOutput());
+    }
 
     private class SchemaRegistrar {
         private final Map<Class, SchemaImpl> classToSchemaMap = new ConcurrentHashMap<>();
@@ -178,12 +184,12 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
 
     public void writeObject(ObjectDataOutput out, Object o) throws IOException {
         SchemaImpl schema = lookupOrRegisterSchema(o);
-        CompactRegistry registry = getRegistry(o.getClass());
+        CompactRegistry registry = classToRegistryMap.get(o.getClass());
         out.writeInt(registry.classID);
         out.writeLong(schema.getId());
         DefaultCompactWriter writer = new DefaultCompactWriter(this, (BufferObjectDataOutput) out, schema);
         CompactSerializer compactSerializer = registry.compactSerializer;
-        compactSerializer.write(registry.clazz, writer, o);
+        compactSerializer.write(writer, o);
         writer.end();
     }
 
@@ -193,14 +199,17 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         long schemaId = in.readLong();
         Schema schema = schemaRegistrar.lookupSchema(schemaId);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        CompactRegistry registry = idToRegistryMap.get(classID);
+        CompactRegistry registry = classNameToRegistryMap.get(classID);
         if (registry == null) {
             //make sure that this is not returned to pool
             input.steal();
             return new CompactGenericRecord(this, classID, input, schema);
+        } else if(registry.compactSerializer == null){
+            CompactGenericRecord genericRecord = new CompactGenericRecord(this, classID, input, schema);
+            return reflectiveSerializer.read(registry.clazz, schema, genericRecord);
         } else {
             CompactGenericRecord genericRecord = new CompactGenericRecord(this, classID, input, schema);
-            return registry.compactSerializer.read(registry.clazz, schema, genericRecord);
+            return registry.compactSerializer.read(schema, genericRecord);
         }
     }
 
@@ -211,7 +220,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         CompactRegistry registry = getRegistry(classID);
         CompactGenericRecord genericRecord = new CompactGenericRecord(this, classID, input, schema);
-        return (T) registry.compactSerializer.read(registry.clazz, schema, genericRecord);
+        return (T) registry.compactSerializer.read(schema, genericRecord);
     }
 
     public GenericRecord readGenericRecord(ObjectDataInput in) throws IOException {
@@ -226,7 +235,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
 
     public <T> T toObject(Class aClass, CompactGenericRecord genericRecord) throws IOException {
         CompactRegistry registry = getRegistry(aClass);
-        T o = (T) registry.compactSerializer.read(aClass, genericRecord.getSchema(), genericRecord);
+        T o = (T) registry.compactSerializer.read(genericRecord.getSchema(), genericRecord);
         return managedContext != null ? (T) managedContext.initialize(o) : o;
     }
 
@@ -248,41 +257,34 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         //buid schema
         SchemaBuilder builder = new SchemaBuilder();
         SchemaWriter writer = new SchemaWriter(builder);
-        getRegistry(aClass).compactSerializer.write(aClass, writer, o);
-        schema = builder.build();
+        CompactRegistry registry = classToRegistryMap.get(aClass);
+        if(registry != null && registry.compactSerializer != null) {
+            registry.compactSerializer.write(writer, o);
+        } else {
+            reflectiveSerializer.write(writer, o);
+        }
+        schema = (SchemaImpl) builder.build();
 
         schemaRegistrar.registerSchema(schema ,aClass);
 
         return schema;
     }
 
-
-    private CompactRegistry getRegistry(Class aClass) {
-        CompactRegistry compactRegistry = classToRegistryMap.get(aClass);
-        if (compactRegistry == null) {
-            throw new HazelcastSerializationException("Class " + aClass + " is not registered for compact serialization");
-        }
-        return compactRegistry;
+    public void register(Class clazz, String aliasClassName, CompactSerializer compactSerializer) {
+        checkNotNull(aliasClassName, "aliasClassName");
+        classToRegistryMap.put(clazz, new CompactRegistry(clazz, aliasClassName, compactSerializer));
+        classNameToRegistryMap.put(aliasClassName, new CompactRegistry(clazz, aliasClassName, compactSerializer));
     }
 
-    private CompactRegistry getRegistry(int classID) {
-        CompactRegistry compactRegistry = idToRegistryMap.get(classID);
-        if (compactRegistry == null) {
-            throw new HazelcastSerializationException("Class with id " + classID + " is not registered for compact serialization");
-        }
-        return compactRegistry;
+    public void register(Class clazz, CompactSerializer compactSerializer) {
+        classToRegistryMap.put(clazz, new CompactRegistry(clazz, clazz.getName(), compactSerializer));
+        classNameToRegistryMap.put(clazz.getName(), new CompactRegistry(clazz, clazz.getName(), compactSerializer));
     }
 
-    public void register(Class clazz, int classID, CompactSerializer compactSerializer) {
-        checkPositive(classID, "classID");
-        classToRegistryMap.put(clazz, new CompactRegistry(clazz, classID, compactSerializer));
-        idToRegistryMap.put(classID, new CompactRegistry(clazz, classID, compactSerializer));
-    }
-
-    public void register(Class clazz, int classID) {
-        checkPositive(classID, "classID");
-        classToRegistryMap.put(clazz, new CompactRegistry(clazz, classID, reflectiveSerializer));
-        idToRegistryMap.put(classID, new CompactRegistry(clazz, classID, reflectiveSerializer));
+    public void register(Class clazz, String aliasClassName) {
+        checkNotNull(aliasClassName, "aliasClassName");
+        classToRegistryMap.put(clazz, new CompactRegistry(clazz, aliasClassName, null));
+        classNameToRegistryMap.put(aliasClassName, new CompactRegistry(clazz, aliasClassName, null));
     }
 
 

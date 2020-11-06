@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -37,7 +36,6 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.nio.serialization.compact.Schema;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
@@ -85,6 +83,7 @@ public class CompactSerializationCodeSample {
             CompactGenericRecord o = (CompactGenericRecord) map.get(1);
             map.put(2, o);
 
+
             //TODO SANCAR
             Serializer implementation = instance.getConfig().getSerializationConfig().getGlobalSerializerConfig().getImplementation();
             Compact compact = (Compact) implementation;
@@ -110,12 +109,12 @@ public class CompactSerializationCodeSample {
 
             compact.register(EmployeeDTO.class, 1, new CompactSerializer<EmployeeDTO>() {
                 @Override
-                public EmployeeDTO read(@Nullable Class associatedClass, Schema schema, CompactReader in) throws IOException {
+                public EmployeeDTO read(Schema schema, CompactReader in) throws IOException {
                     return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
                 }
 
                 @Override
-                public void write(Class clazz, CompactWriter out, EmployeeDTO object) throws IOException {
+                public void write(CompactWriter out, EmployeeDTO object) throws IOException {
                     out.writeInt("age", object.age);
                     out.writeLong("id", object.id);
                 }

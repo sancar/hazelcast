@@ -34,7 +34,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -185,12 +184,12 @@ public class CompactTest {
 
         compact.register(EmployeeDTO.class, 1, new CompactSerializer<EmployeeDTO>() {
             @Override
-            public EmployeeDTO read(@Nullable Class associatedClass, Schema schema, CompactReader in) throws IOException {
+            public EmployeeDTO read(Schema schema, CompactReader in) throws IOException {
                 return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
             }
 
             @Override
-            public void write(Class clazz, CompactWriter out, EmployeeDTO object) throws IOException {
+            public void write(CompactWriter out, EmployeeDTO object) throws IOException {
                 out.writeInt("age", object.getAge());
                 out.writeLong("id", object.getId());
             }

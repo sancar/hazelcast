@@ -438,7 +438,7 @@ public interface GenericRecord {
          * @return a new constructed GenericRecord
          */
         @Nonnull
-        static Builder compact(Compact serializer, int classID, Schema schema) {
+        static Builder compact(Schema schema) {
             return new CompactGenericRecordBuilder(serializer, schema, classID,
                     bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
                     () -> serializer.getInternalSerializationService().createObjectDataOutput());

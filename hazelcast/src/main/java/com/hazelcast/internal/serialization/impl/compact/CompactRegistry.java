@@ -24,11 +24,11 @@ import javax.annotation.Nonnull;
 public class CompactRegistry {
     public final Class clazz;
     public final CompactSerializer compactSerializer;
-    public final int classID;
+    public final String aliasClassName;
 
-    public CompactRegistry(Class clazz, int classID, @Nonnull CompactSerializer compactSerializer) {
+    public CompactRegistry(Class clazz, String aliasClassName, CompactSerializer compactSerializer) {
         this.clazz = clazz;
-        this.classID = classID;
+        this.aliasClassName = aliasClassName;
         this.compactSerializer = compactSerializer;
     }
 }

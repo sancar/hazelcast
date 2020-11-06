@@ -18,9 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
-import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.nio.serialization.compact.CompactReader;
-import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.nio.serialization.compact.Schema;
 import sun.misc.Unsafe;
@@ -45,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.stream.Collectors.toList;
 
-public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
+public class ReflectiveCompactSerializer {
 
     Unsafe unsafe = UnsafeUtil.UNSAFE;
 
@@ -55,8 +53,8 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     public ReflectiveCompactSerializer() {
     }
 
-    @Override
-    public void write(Class clazz, CompactWriter writer, Object object) throws IOException {
+    public void write(CompactWriter writer, Object object) throws IOException {
+        Class<?> clazz = object.getClass();
         if (writeFast(clazz, writer, object)) {
             return;
         }
@@ -87,7 +85,6 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
         return false;
     }
 
-    @Override
     public Object read(Class associatedClass, Schema schema, CompactReader reader) throws IOException {
         try {
             Object object;
