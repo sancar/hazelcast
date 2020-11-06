@@ -135,6 +135,60 @@ IMap<Object, Object> map = instance.getMap("map");
 map.put(1, new Employee());
 Employee employee = (Employee) map.get(1);      
 ```
+4. This use case is when a class is evolved. Added/removed some field or a type of the field is changed.
+Lets say that we have added `surname` field to our `Employee` class later. 
+    1. The basic example where user does not give any serializer will work. We will be able to write any version of the Employee
+        to the cluster.
+        ```
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        IMap<Object, Object> map = instance.getMap("map");
+        map.put(1, new Employee("John", 20, "Smith"));
+       ```
+       For the read, we have 3 possible states. 
+            - A field `Employee` has could be removed in the new data.
+            - A new field could be added, which local `Employee` class does not have.
+            - A field type could change which does not fit to `Employee`. This is actually same as removing a field, and adding
+            a new unrelated field.   
+       ```
+        Employee employee = (Employee) map.get(1);
+        ```
+       If the incoming data(evolved class on the cluster) have an extra field, the user's object will be created with the fields it has.
+       New fields will just be ignored.  
+       If the incoming data(evolved class on the cluster) have removed a field/changed the type of the field than related field
+       of the `Employee` object will be leave unset. So if `Employee` class is constructed with some default values in the 
+       default constructor, they will be untouched.  
+    2.  Another use case is when a user configures an explicit serializer and the data evolves.  
+        The user should plan ahead in this case. Any field that could be removed in the future, should be guarded with 
+        `schema.hasField()` 
+        ```
+        Config config = new Config();
+        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+        compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
+            @Override
+            public Employee read(Schema CompactReader in) throws IOException {
+                String name = in.readUTF("name");
+                int age = in.readInt("age");
+                if (schema.hasField("surname" , Type.UTF)) {
+                    String surname = in.readUTF("surname");
+                    return new Employee(name, age, surname);
+                } else {
+                    return new Employee(name, age, "NOT AVAILABLE");        
+                }                      
+            }
+        
+            @Override
+            public void write(CompactWriter out, Employee object) throws IOException {
+                out.writeUTF("name", object.getName());
+                out.writeInt("age", object.getAge());
+                out.writeUTF("surname", object.getSurname());
+            }
+        });
+        
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        IMap<Object, Object> map = instance.getMap("map");
+        map.put(1, new Employee());
+        Employee employee = (Employee) map.get(1);
+        ```
 # API Design
 
 In here, we will list all the new classes and methods that are necessary for the new format API. 
