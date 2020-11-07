@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Set;
 
 /**
  * A generic object interface that is returned to user when the domain class can not be created from any of the distributed
@@ -407,6 +408,8 @@ public interface GenericRecord {
      */
     @Nullable
     GenericRecord[] readGenericRecordArray(@Nonnull String fieldName);
+
+    Set<String> getFieldNames();
 
     /**
      * Interface for creating {@link GenericRecord} instances.

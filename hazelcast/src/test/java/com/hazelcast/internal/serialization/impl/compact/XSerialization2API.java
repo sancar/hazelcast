@@ -6,6 +6,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -15,6 +16,7 @@ import domainclasses.Employee;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 
 public class XSerialization2API {
 
@@ -172,6 +174,28 @@ public class XSerialization2API {
             IMap<Object, Object> map = instance.getMap("map");
             map.put(1, new Employee());
             Employee employee = (Employee) map.get(1);
+        }
+        {
+            HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+            IMap<Object, Object> map = instance.getMap("map");
+
+            GenericRecord genericRecord = GenericRecord.Builder.compact("employee")
+                    .writeUTF("name", "John")
+                    .writeInt("age", 20)
+                    .writeUTF("surname", "Smith").build();
+            map.put(1, genericRecord);
+            GenericRecord employee = (GenericRecord) map.get(1);
+
+            String name = employee.readUTF("name");
+            int age = employee.readInt("age");
+            String surname ;
+            if(employee.hasField("surname") && employee.getFieldType("surname").equals(FieldType.UTF)) {
+                surname = employee.readUTF("surname");
+            } else {
+                surname = "NOT AVAILABLE";
+            }
+
+
         }
 
     }

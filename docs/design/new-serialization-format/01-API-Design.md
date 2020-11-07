@@ -178,7 +178,28 @@ When a user does not give an explicit serializer, we will try to create a reflec
         map.put(1, new Employee());
         Employee employee = (Employee) map.get(1);
         ```
-        The example above could be interpreted as the new version of the application which will work with an existing cluster. In the version, we just added a new field, and existing data on the cluster is missing the `surname` field.  
+        The example above could be interpreted as the new version of the application which will work with an existing cluster. In the version, we just added a new field, and existing data on the cluster is missing the `surname` field.
+    3.  It could be the case that the class is not in our class path. The `GenericRecord` could also be used with the schema evolution as follows:
+        ```
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        IMap<Object, Object> map = instance.getMap("map");
+
+        GenericRecord genericRecord = GenericRecord.Builder.compact("employee")
+                .writeUTF("name", "John")
+                .writeInt("age", 20)
+                .writeUTF("surname", "Smith").build();
+        map.put(1, genericRecord);
+        GenericRecord employee = (GenericRecord) map.get(1);
+
+        String name = employee.readUTF("name");
+        int age = employee.readInt("age");
+        String surname ;
+        if(employee.hasField("surname") && employee.getFieldType("surname").equals(FieldType.UTF)) {
+            surname = employee.readUTF("surname");
+        } else {
+            surname = "NOT AVAILABLE";
+        }
+        ```      
 # API Design
 
 Here, we will list all the new classes and methods that are necessary for the new format API. 
@@ -429,6 +450,41 @@ public interface GenericRecord {
     }
 }
 
+```
+
+### GenericRecord.getFields
+
+A single method will be added to the existing GenericRecord class.
+
+```
+@Beta
+public interface GenericRecord {
+
+    Set<String> getFieldNames();
+}
+
+```
+
+### FieldType
+
+We will reuse FieldType because it is exposed from `GenericRecord.getFieldType` as a common type descriptor for all formats
+that implements `GenericRecord` . We are reusing `FieldType` because we want to make the return value of
+`ClassDefinition.getField` consistent with `GenericRecord.getFieldType` . 
+TODO: re-evaluate this decision. May be we should not care about Portable(ClassDefinition API) anymore since it will be deprecated.
+See existing [FieldType implementation](https://github.com/hazelcast/hazelcast/blob/4.1/hazelcast/src/main/java/com/hazelcast/nio/serialization/FieldType.java)  to compare. 
+
+```
+
+public enum FieldType {
+    PORTABLE(0, false, MAX_VALUE), //this value has no meaning for new format. It will never be used for the new format.
+    BYTE(1, true, BYTE_SIZE_IN_BYTES),
+    BOOLEAN(2, true, BOOLEAN_SIZE_IN_BYTES),
+......
+    PORTABLE_ARRAY(10, false, MAX_VALUE),//this value has no meaning for new format. It will never be used for the new format.
+......
+    OBJECT(32, false, MAX_VALUE),         //two additional enums to replace PORTABLE and PORTABLE_ARRAY in the new format.
+    OBJECT_ARRAY(33, false, MAX_VALUE);   //similarly these two have no meaning for PORTABLE. 
+}
 ```
 
 ### CompactSerializationConfig
