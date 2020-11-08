@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact.extractor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.nio.serialization.compact.Compact;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -98,12 +98,6 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     public void doWithConfig(Config config) {
-        SerializationConfig serializationConfig = config.getSerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
     }
 
     @Test(expected = IllegalArgumentException.class)

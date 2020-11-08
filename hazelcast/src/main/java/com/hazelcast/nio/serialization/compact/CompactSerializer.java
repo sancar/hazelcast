@@ -16,16 +16,17 @@
 
 package com.hazelcast.nio.serialization.compact;
 
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactSerializer;
+
 import java.io.IOException;
 
-public interface CompactSerializer<T> {
+public interface CompactSerializer<T> extends InternalCompactSerializer<T, CompactReader> {
     /**
-     * @param schema of the object being deserialized
-     * @param in     reader to read fields of an object
+     * @param in reader to read fields of an object
      * @return the object created as a result of read method
      * @throws IOException
      */
-    T read(Schema schema, CompactReader in) throws IOException;
+    T read(CompactReader in) throws IOException;
 
     /**
      * @param out    CompactWriter to serialize the fields onto

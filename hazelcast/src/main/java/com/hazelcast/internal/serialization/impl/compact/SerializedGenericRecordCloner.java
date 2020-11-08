@@ -1,10 +1,7 @@
-package com.hazelcast.nio.serialization.compact;
+package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
-import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
-import com.hazelcast.internal.serialization.impl.compact.SchemaImpl;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
@@ -20,26 +17,24 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class CompactGenericRecordCloner implements GenericRecord.Builder {
+public class SerializedGenericRecordCloner implements GenericRecord.Builder {
 
     interface Writer {
         void write() throws IOException;
     }
 
     private final Schema schema;
-    private final CompactGenericRecord genericRecord;
+    private final SerializedGenericRecord genericRecord;
     private final DefaultCompactWriter compactWriter;
-    private final int classID;
     private final Compact serializer;
     private final Map<String, Writer> overwrittenFields = new HashMap<>();
     private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
 
-    public CompactGenericRecordCloner(Compact serializer, Schema schema, int classID, CompactGenericRecord record,
-                                      Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
-                                      Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
+    public SerializedGenericRecordCloner(Compact serializer, Schema schema, SerializedGenericRecord record,
+                                         Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
+                                         Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
         this.serializer = serializer;
         this.schema = schema;
-        this.classID = classID;
         this.genericRecord = record;
         this.compactWriter = new DefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), (SchemaImpl) schema);
         this.bufferObjectDataInputFunc = bufferObjectDataInputFunc;
@@ -48,7 +43,7 @@ public class CompactGenericRecordCloner implements GenericRecord.Builder {
     @Override
     public GenericRecord build() {
         try {
-            for (FieldDefinition field : schema.getFields()) {
+            for (FieldDescriptor field : schema.getFields()) {
                 String fieldName = field.getName();
                 Writer writer = overwrittenFields.get(fieldName);
                 if (writer != null) {
@@ -158,7 +153,8 @@ public class CompactGenericRecordCloner implements GenericRecord.Builder {
             }
             compactWriter.end();
             byte[] bytes = compactWriter.toByteArray();
-            return new CompactGenericRecord(serializer, classID, bufferObjectDataInputFunc.apply(bytes), schema);
+            Class associatedClass = genericRecord.getAssociatedClass();
+            return new SerializedGenericRecord(serializer, bufferObjectDataInputFunc.apply(bytes), schema, associatedClass);
         } catch (IOException e) {
             throw new HazelcastSerializationException(e);
         }

@@ -37,167 +37,167 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public void writeInt(String fieldName, int value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.INT));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.INT));
     }
 
     @Override
     public void writeLong(String fieldName, long value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LONG));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LONG));
     }
 
     @Override
     public void writeUTF(String fieldName, String str) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.UTF));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.UTF));
     }
 
     @Override
     public void writeBoolean(String fieldName, boolean value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BOOLEAN));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BOOLEAN));
     }
 
     @Override
     public void writeByte(String fieldName, byte value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BYTE));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BYTE));
     }
 
     @Override
     public void writeChar(String fieldName, char value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.CHAR));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.CHAR));
     }
 
     @Override
     public void writeDouble(String fieldName, double value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.DOUBLE));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.DOUBLE));
     }
 
     @Override
     public void writeFloat(String fieldName, float value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.FLOAT));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.FLOAT));
     }
 
     @Override
     public void writeShort(String fieldName, short value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.SHORT));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.SHORT));
     }
 
     @Override
     public void writeObject(String fieldName, Object object) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.PORTABLE));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE));
     }
 
     @Override
     public void writeBigInteger(String fieldName, BigInteger value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BIG_INTEGER));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BIG_INTEGER));
     }
 
     @Override
     public void writeBigDecimal(String fieldName, BigDecimal value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BIG_DECIMAL));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BIG_DECIMAL));
     }
 
     @Override
     public void writeLocalTime(String fieldName, LocalTime value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LOCAL_TIME));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LOCAL_TIME));
     }
 
     @Override
     public void writeLocalDate(String fieldName, LocalDate value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LOCAL_DATE));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LOCAL_DATE));
     }
 
     @Override
     public void writeLocalDateTime(String fieldName, LocalDateTime value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LOCAL_DATE_TIME));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LOCAL_DATE_TIME));
     }
 
     @Override
     public void writeOffsetDateTime(String fieldName, OffsetDateTime value) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.OFFSET_DATE_TIME));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OFFSET_DATE_TIME));
     }
 
     @Override
     public void writeByteArray(String fieldName, byte[] bytes) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BYTE_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BYTE_ARRAY));
     }
 
     @Override
     public void writeBooleanArray(String fieldName, boolean[] booleans) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BOOLEAN_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BOOLEAN_ARRAY));
     }
 
     @Override
     public void writeCharArray(String fieldName, char[] chars) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.CHAR_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.CHAR_ARRAY));
     }
 
     @Override
     public void writeIntArray(String fieldName, int[] ints) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.INT_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.INT_ARRAY));
     }
 
     @Override
     public void writeLongArray(String fieldName, long[] longs) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LONG_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LONG_ARRAY));
     }
 
     @Override
     public void writeDoubleArray(String fieldName, double[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.DOUBLE_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.DOUBLE_ARRAY));
     }
 
     @Override
     public void writeFloatArray(String fieldName, float[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.FLOAT_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.FLOAT_ARRAY));
     }
 
     @Override
     public void writeShortArray(String fieldName, short[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.SHORT_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.SHORT_ARRAY));
     }
 
     @Override
     public void writeUTFArray(String fieldName, String[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.UTF_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.UTF_ARRAY));
     }
 
     @Override
     public void writeBigIntegerArray(String fieldName, BigInteger[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BIG_INTEGER_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BIG_INTEGER_ARRAY));
     }
 
     @Override
     public void writeBigDecimalArray(String fieldName, BigDecimal[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.BIG_DECIMAL_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.BIG_DECIMAL_ARRAY));
     }
 
     @Override
     public void writeLocalTimeArray(String fieldName, LocalTime[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LOCAL_TIME_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LOCAL_TIME_ARRAY));
     }
 
     @Override
     public void writeLocalDateArray(String fieldName, LocalDate[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LOCAL_DATE_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LOCAL_DATE_ARRAY));
     }
 
     @Override
     public void writeLocalDateTimeArray(String fieldName, LocalDateTime[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.LOCAL_DATE_TIME_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.LOCAL_DATE_TIME_ARRAY));
     }
 
     @Override
     public void writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.OFFSET_DATE_TIME_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OFFSET_DATE_TIME_ARRAY));
     }
 
     @Override
     public <T> void writeObjectArrayList(String fieldName, ArrayList<T> arrayList) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.PORTABLE_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE_ARRAY));
     }
 
     @Override
     public void writeObjectArray(String fieldName, Object[] values) {
-        builder.addField(new FieldDefinitionImpl(fieldName, FieldType.PORTABLE_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE_ARRAY));
     }
 
 }

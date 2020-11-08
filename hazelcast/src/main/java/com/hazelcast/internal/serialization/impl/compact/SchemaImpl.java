@@ -16,33 +16,45 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.compact.FieldDefinition;
-import com.hazelcast.nio.serialization.compact.Schema;
-
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Represents the schema of a class.
+ * Consists of field definitions and the class name.
+ */
 public class SchemaImpl implements Schema {
 
-    private final Map<String, FieldDefinition> fieldDefinitionMap;
-    private final long id;
+    private final String className;
+    private final Map<String, FieldDescriptor> fieldDefinitionMap;
+    private final long schemaId;
     private final byte[] serialized;
     private final int numberOfComplexFields;
     private final int primitiveOffsetEnd;
-    private final String className;
 
-    public SchemaImpl(String className, Map<String, FieldDefinition> fieldDefinitionMap, long id, byte[] serialized,
-                      int numberOfComplexFields, int primitiveOffsetEnd) {
+    public SchemaImpl(String className, Map<String, FieldDescriptor> fieldDefinitionMap, long schemaId, byte[] serialized,
+                       int numberOfComplexFields, int primitiveOffsetEnd) {
         this.className = className;
         this.fieldDefinitionMap = fieldDefinitionMap;
-        this.id = id;
+        this.schemaId = schemaId;
         this.serialized = serialized;
         this.numberOfComplexFields = numberOfComplexFields;
         this.primitiveOffsetEnd = primitiveOffsetEnd;
     }
 
+
+    /**
+     * The class name provided when building a schema
+     * In java, when it is not configured explicitly, this falls back to full class name including the path.
+     *
+     * @return name of the class
+     */
+    public String getClassName() {
+        return className;
+    }
+
     @Override
-    public Collection<FieldDefinition> getFields() {
+    public Collection<FieldDescriptor> getFields() {
         return fieldDefinitionMap.values();
     }
 
@@ -54,11 +66,11 @@ public class SchemaImpl implements Schema {
         return primitiveOffsetEnd;
     }
 
-    public long getId() {
-        return id;
+    public long getSchemaId() {
+        return schemaId;
     }
 
-    public byte[] getSerialized() {
+    public byte[] getSerializedSchema() {
         return serialized;
     }
 
@@ -68,7 +80,7 @@ public class SchemaImpl implements Schema {
     }
 
     @Override
-    public FieldDefinition getField(String fieldName) {
+    public FieldDescriptor getField(String fieldName) {
         return fieldDefinitionMap.get(fieldName);
     }
 
@@ -95,11 +107,11 @@ public class SchemaImpl implements Schema {
 
         SchemaImpl schema = (SchemaImpl) o;
 
-        return id == schema.id;
+        return schemaId == schema.schemaId;
     }
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return (int) (schemaId ^ (schemaId >>> 32));
     }
 }

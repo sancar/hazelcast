@@ -16,12 +16,28 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.serialization.compact.Schema;
+import java.util.Collection;
 
-public class CompactUtil {
+/**
+ * Represents the schema of a class.
+ * Consists of field definitions and the class name.
+ */
+public interface Schema {
 
-    void writeSchema(BufferObjectDataOutput out, Schema schema ) {
+    /**
+     * The class name provided when building a schema
+     * In java, when it is not configured explicitly, this falls back to full class name including the path.
+     *
+     * @return name of the class
+     */
+    String getClassName();
 
-    }
+    Collection<FieldDescriptor> getFields();
+
+    int getFieldCount();
+
+    FieldDescriptor getField(String fieldName);
+
+    boolean hasField(String fieldName);
+
 }

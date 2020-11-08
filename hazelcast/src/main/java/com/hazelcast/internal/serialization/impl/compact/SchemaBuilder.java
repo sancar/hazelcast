@@ -18,12 +18,8 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.EmptyStatement;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.compact.FieldDefinition;
-import com.hazelcast.nio.serialization.compact.Schema;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,115 +43,115 @@ public class SchemaBuilder {
         }
     }
 
-    protected Map<String, FieldDefinition> fieldDefinitionMap = new HashMap<>();
-    protected String className;
+    private Map<String, FieldDescriptor> fieldDefinitionMap = new HashMap<>();
+    private String className;
 
-    public SchemaBuilder(String className) {
+    protected SchemaBuilder(String className) {
         this.className = className;
     }
 
-    public SchemaBuilder addIntField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.INT));
-        return this;
-    }
+//    public SchemaBuilder addIntField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.INT));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addLongField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.LONG));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addUTFField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.UTF));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addBooleanField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.BOOLEAN));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addByteField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.BYTE));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addBooleanArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.BOOLEAN_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addCharField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.CHAR));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addDoubleField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.DOUBLE));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addFloatField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.FLOAT));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addShortField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.SHORT));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addByteArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.BYTE_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addCharArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.CHAR_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addIntArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.INT_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addLongArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.LONG_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addDoubleArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.DOUBLE_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addFloatArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.FLOAT_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addShortArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.SHORT_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addUTFArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.UTF_ARRAY));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addObjectField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE));
+//        return this;
+//    }
+//
+//    public SchemaBuilder addObjectArrayField(String fieldName) {
+//        addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE_ARRAY));
+//        return this;
+//    }
 
-    public SchemaBuilder addLongField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.LONG));
-        return this;
-    }
 
-    public SchemaBuilder addUTFField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.UTF));
-        return this;
-    }
-
-    public SchemaBuilder addBooleanField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.BOOLEAN));
-        return this;
-    }
-
-    public SchemaBuilder addByteField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.BYTE));
-        return this;
-    }
-
-    public SchemaBuilder addBooleanArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.BOOLEAN_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addCharField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.CHAR));
-        return this;
-    }
-
-    public SchemaBuilder addDoubleField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.DOUBLE));
-        return this;
-    }
-
-    public SchemaBuilder addFloatField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.FLOAT));
-        return this;
-    }
-
-    public SchemaBuilder addShortField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.SHORT));
-        return this;
-    }
-
-    public SchemaBuilder addByteArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.BYTE_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addCharArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.CHAR_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addIntArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.INT_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addLongArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.LONG_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addDoubleArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.DOUBLE_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addFloatArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.FLOAT_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addShortArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.SHORT_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addUTFArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.UTF_ARRAY));
-        return this;
-    }
-
-    public SchemaBuilder addObjectField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.PORTABLE));
-        return this;
-    }
-
-    public SchemaBuilder addObjectArrayField(String fieldName) {
-        addField(new FieldDefinitionImpl(fieldName, FieldType.PORTABLE_ARRAY));
-        return this;
-    }
-
-
-    private long fingerprint64(byte[] buf) {
+    private static long fingerprint64(byte[] buf) {
         long fp = EMPTY;
         for (byte b : buf) {
             fp = (fp >>> 8) ^ FP_TABLE[(int) (fp ^ b) & 0xff];
@@ -163,31 +159,33 @@ public class SchemaBuilder {
         return fp;
     }
 
-    private static byte[] toBytes(Map<String, FieldDefinition> fieldDefinitionMap) {
+    private static byte[] toBytes(String className, Map<String, FieldDescriptor> fieldDefinitionMap) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         DataOutputStream objectOutputStream = new DataOutputStream(out);
 
-        Collection<FieldDefinition> fields = fieldDefinitionMap.values();
+        writeBasicString(objectOutputStream, className);
+        Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
         out.write(fields.size());
-        for (FieldDefinition field : fields) {
-            try {
-                writeBasicString(objectOutputStream, field.getName());
-            } catch (IOException e) {
-                EmptyStatement.ignore(e);
-            }
+        for (FieldDescriptor field : fields) {
+            writeBasicString(objectOutputStream, field.getName());
             out.write(field.getType().getId());
         }
         return out.toByteArray();
     }
 
-    private static void writeBasicString(DataOutput out, String value) throws IOException {
-        byte[] bytes = value.getBytes();
-        out.writeInt(bytes.length);
-        out.write(bytes);
+    private static void writeBasicString(DataOutputStream out, String value) {
+        try {
+            byte[] bytes = value.getBytes();
+            out.writeInt(bytes.length);
+            out.write(bytes);
+        } catch (IOException e) {
+            // callers of `writeBasicString` guarantees that underlying stream will grow without throwing exception.
+            EmptyStatement.ignore(e);
+        }
     }
 
     public Schema build() {
-        List<FieldDefinition> list = new ArrayList<>(fieldDefinitionMap.values());
+        List<FieldDescriptor> list = new ArrayList<>(fieldDefinitionMap.values());
         list.sort((o1, o2) -> {
             if (o1.getType().isPrimitive()) {
                 if (!o2.getType().isPrimitive()) {
@@ -204,8 +202,8 @@ public class SchemaBuilder {
         int index = 0;
         //first field is length
         int offset = Bits.INT_SIZE_IN_BYTES;
-        for (FieldDefinition value : list) {
-            FieldDefinitionImpl fieldDefinition = (FieldDefinitionImpl) value;
+        for (FieldDescriptor value : list) {
+            FieldDescriptorImpl fieldDefinition = (FieldDescriptorImpl) value;
             if (fieldDefinition.getType().isPrimitive()) {
                 fieldDefinition.setOffset(offset);
                 offset += fieldDefinition.getType().getTypeSize();
@@ -213,12 +211,12 @@ public class SchemaBuilder {
                 fieldDefinition.setIndex(index++);
             }
         }
-        byte[] bytes = toBytes(fieldDefinitionMap);
-        long id = fingerprint64(bytes);
-        return new SchemaImpl(className, fieldDefinitionMap, id, bytes, index, offset);
+        byte[] serializedSchema = toBytes(className, fieldDefinitionMap);
+        long schemaId = fingerprint64(serializedSchema);
+        return new SchemaImpl(className, fieldDefinitionMap, schemaId, serializedSchema, index, offset);
     }
 
-    public void addField(FieldDefinitionImpl fieldDefinition) {
+    protected void addField(FieldDescriptor fieldDefinition) {
         fieldDefinitionMap.put(fieldDefinition.getName(), fieldDefinition);
     }
 }

@@ -14,30 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization.compact;
+package com.hazelcast.internal.serialization.impl.compact;
 
-import java.util.Collection;
+import com.hazelcast.nio.serialization.FieldType;
 
 /**
- * Represents the schema of a class.
- * Consists of field definitions and the class name.
+ * Represents the name, type of a field in compact serialization
  */
-public interface Schema {
+public interface FieldDescriptor {
 
-    /**
-     * The class name provided when building a schema
-     * In java, when it is not configured explicitly, this falls back to full class name including the path.
-     *
-     * @return name of the class
-     */
-    String getClassName();
+    FieldType getType();
 
-    Collection<FieldDefinition> getFields();
-
-    int getFieldCount();
-
-    FieldDefinition getField(String fieldName);
-
-    boolean hasField(String fieldName);
+    String getName();
 
 }

@@ -145,8 +145,10 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_OFFSET_DATE_TIME_ARRAY = -58;
 
+    public static final int COMPACT_SERIALIZER = -59;
+
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 59;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 60;
 
 
     // ------------------------------------------------------------

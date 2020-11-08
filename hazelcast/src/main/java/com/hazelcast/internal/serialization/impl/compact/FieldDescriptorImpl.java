@@ -17,18 +17,17 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.compact.FieldDefinition;
 
 import javax.annotation.Nonnull;
 
-public class FieldDefinitionImpl implements FieldDefinition {
+public class FieldDescriptorImpl implements FieldDescriptor {
 
     private final String fieldName;
     private final FieldType type;
     private int index = -1;
     private int offset = -1;
 
-    public FieldDefinitionImpl(@Nonnull String fieldName, @Nonnull FieldType type) {
+    public FieldDescriptorImpl(@Nonnull String fieldName, @Nonnull FieldType type) {
         this.fieldName = fieldName;
         this.type = type;
     }
@@ -75,11 +74,8 @@ public class FieldDefinitionImpl implements FieldDefinition {
             return false;
         }
 
-        FieldDefinitionImpl that = (FieldDefinitionImpl) o;
+        FieldDescriptorImpl that = (FieldDescriptorImpl) o;
 
-        if (index != that.index) {
-            return false;
-        }
         if (!fieldName.equals(that.fieldName)) {
             return false;
         }
@@ -90,7 +86,6 @@ public class FieldDefinitionImpl implements FieldDefinition {
     public int hashCode() {
         int result = fieldName.hashCode();
         result = 31 * result + type.hashCode();
-        result = 31 * result + index;
         return result;
     }
 

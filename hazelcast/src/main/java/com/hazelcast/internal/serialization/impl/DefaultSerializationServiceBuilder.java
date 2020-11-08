@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -90,6 +91,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected HazelcastInstance hazelcastInstance;
 
+    protected CompactSerializationConfig compactSerializationConfig;
+
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
 
     protected ClassNameFilter classNameFilter;
@@ -134,6 +137,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         allowUnsafe = config.isAllowUnsafe();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
         classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
 
@@ -254,10 +258,6 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     ((HazelcastInstanceAware) serializer).setHazelcastInstance(hazelcastInstance);
                 }
 
-                if(serializer instanceof AdvancedSerializer) {
-                    ((AdvancedSerializer) serializer).setInternalSerializationService(ss);
-                }
-
                 ((AbstractSerializationService) ss)
                         .registerGlobal(serializer, globalSerializerConfig.isOverrideJavaSerialization());
             }
@@ -302,6 +302,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                         .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
                         .withClassNameFilter(classNameFilter)
                         .withCheckClassDefErrors(checkClassDefErrors)
+                        .withCompactSerializationConfig(compactSerializationConfig)
                         .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;
@@ -323,9 +324,6 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                 serializer = ((SerializerHook) value).createSerializer();
             } else {
                 serializer = (Serializer) value;
-            }
-            if(serializer instanceof AdvancedSerializer) {
-                ((AdvancedSerializer) serializer).setInternalSerializationService(ss);
             }
             if (value instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);

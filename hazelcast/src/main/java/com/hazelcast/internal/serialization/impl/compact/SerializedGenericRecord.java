@@ -24,16 +24,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.compact.Compact;
-import com.hazelcast.nio.serialization.compact.CompactGenericRecordCloner;
 import com.hazelcast.nio.serialization.compact.CompactReader;
-import com.hazelcast.nio.serialization.compact.Schema;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.DataInput;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -41,7 +38,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
@@ -75,6 +75,8 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.OBJECT;
+import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
@@ -84,22 +86,24 @@ import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
-public class CompactGenericRecord implements InternalGenericRecord, CompactReader {
+public class SerializedGenericRecord implements InternalGenericRecord, CompactReader {
 
     private static final int NULL_POSITION = -1;
     private final Schema schema;
     private final Compact serializer;
-    private final int classID;
 
     private final BufferObjectDataInput in;
     private final int finalPosition;
     private final int offset;
 
-    public CompactGenericRecord(Compact serializer, int classID, BufferObjectDataInput in, Schema schema) {
+    private final @Nullable Class associatedClass;
+
+
+    public SerializedGenericRecord(Compact serializer, BufferObjectDataInput in, Schema schema, @Nullable Class associatedClass) {
         this.in = in;
         this.serializer = serializer;
         this.schema = schema;
-        this.classID = classID;
+        this.associatedClass = associatedClass;
 
         try {
             offset = in.position();
@@ -110,27 +114,27 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
         }
     }
 
-    public BufferObjectDataInput getIn() {
-        return  in;
+    @Nullable
+    public Class getAssociatedClass() {
+        return associatedClass;
     }
 
-    @Override
+    public BufferObjectDataInput getIn() {
+        return in;
+    }
+
     public Schema getSchema() {
         return schema;
     }
 
-    public int getClassID() {
-        return classID;
-    }
-
     @Override
     public GenericRecord.Builder newBuilder() {
-        return GenericRecord.Builder.compact(serializer, classID, schema);
+        return new DeserializedSchemaBoundGenericRecordBuilder(schema);
     }
 
     @Override
     public Builder cloneWithBuilder() {
-        return new CompactGenericRecordCloner(serializer, schema, classID, this,
+        return new SerializedGenericRecordCloner(serializer, schema, this,
                 bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
                 () -> serializer.getInternalSerializationService().createObjectDataOutput());
     }
@@ -141,12 +145,36 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public boolean hasField(@Nonnull String fieldName) {
+        return schema.hasField(fieldName);
+    }
+
+    @Nonnull
+    @Override
+    public Set<String> getFieldNames() {
+        return schema.getFields().stream().map(FieldDescriptor::getName).collect(Collectors.toSet());
+    }
+
+    @Override
     public byte readByte(@Nonnull String fieldName) {
         try {
             return in.readByte(readPrimitivePosition(fieldName, BYTE));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
+    }
+
+    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldType type) {
+        FieldDescriptor field = schema.getField(fieldName);
+        if (field == null) {
+            return false;
+        }
+        return field.getType().equals(type);
+    }
+
+    @Override
+    public byte readByte(String fieldName, byte defaultValue) {
+        return isFieldExists(fieldName, BYTE) ? readByte(fieldName) : defaultValue;
     }
 
     @Override
@@ -159,12 +187,22 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public short readShort(String fieldName, short defaultValue) {
+        return isFieldExists(fieldName, SHORT) ? readShort(fieldName) : defaultValue;
+    }
+
+    @Override
     public int readInt(@Nonnull String fieldName) {
         try {
             return in.readInt(readPrimitivePosition(fieldName, INT));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
+    }
+
+    @Override
+    public int readInt(String fieldName, int defaultValue) {
+        return isFieldExists(fieldName, INT) ? readInt(fieldName) : defaultValue;
     }
 
     @Override
@@ -177,12 +215,22 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public long readLong(String fieldName, long defaultValue) {
+        return isFieldExists(fieldName, LONG) ? readLong(fieldName) : defaultValue;
+    }
+
+    @Override
     public float readFloat(@Nonnull String fieldName) {
         try {
             return in.readFloat(readPrimitivePosition(fieldName, FLOAT));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
+    }
+
+    @Override
+    public float readFloat(String fieldName, float defaultValue) {
+        return isFieldExists(fieldName, FLOAT) ? readFloat(fieldName) : defaultValue;
     }
 
     @Override
@@ -195,12 +243,22 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public double readDouble(String fieldName, double defaultValue) {
+        return isFieldExists(fieldName, DOUBLE) ? readDouble(fieldName) : defaultValue;
+    }
+
+    @Override
     public boolean readBoolean(@Nonnull String fieldName) {
         try {
             return in.readBoolean(readPrimitivePosition(fieldName, BOOLEAN));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
+    }
+
+    @Override
+    public boolean readBoolean(String fieldName, boolean defaultValue) {
+        return isFieldExists(fieldName, BOOLEAN) ? readBoolean(fieldName) : defaultValue;
     }
 
     @Override
@@ -213,8 +271,13 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public char readChar(String fieldName, char defaultValue) {
+        return isFieldExists(fieldName, CHAR) ? readChar(fieldName) : defaultValue;
+    }
+
+    @Override
     public String readUTF(@Nonnull String fieldName) {
-        //TODO SANCAR can we use readNullableField as we do in BigInteger etc.
+        //TODO sancar can we use readNullableField as we do in BigInteger etc.
         //in.readUTF already supports nullable
         final int currentPos = in.position();
         try {
@@ -226,6 +289,11 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
         } finally {
             in.position(currentPos);
         }
+    }
+
+    @Override
+    public String readUTF(String fieldName, String defaultValue) {
+        return isFieldExists(fieldName, UTF) ? readUTF(fieldName) : defaultValue;
     }
 
     private <T> T readNullableField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader) {
@@ -250,8 +318,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public BigInteger readBigInteger(String fieldName, BigInteger defaultValue) {
+        return isFieldExists(fieldName, BIG_INTEGER) ? readBigInteger(fieldName) : defaultValue;
+    }
+
+    @Override
     public BigDecimal readBigDecimal(@Nonnull String fieldName) {
         return readNullableField(fieldName, BIG_DECIMAL, IOUtil::readBigDecimal);
+    }
+
+    @Override
+    public BigDecimal readBigDecimal(String fieldName, BigDecimal defaultValue) {
+        return isFieldExists(fieldName, BIG_DECIMAL) ? readBigDecimal(fieldName) : defaultValue;
     }
 
     @Override
@@ -260,8 +338,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public LocalTime readLocalTime(String fieldName, LocalTime defaultValue) {
+        return isFieldExists(fieldName, LOCAL_TIME) ? readLocalTime(fieldName) : defaultValue;
+    }
+
+    @Override
     public LocalDate readLocalDate(@Nonnull String fieldName) {
         return readNullableField(fieldName, LOCAL_DATE, IOUtil::readLocalDate);
+    }
+
+    @Override
+    public LocalDate readLocalDate(String fieldName, LocalDate defaultValue) {
+        return isFieldExists(fieldName, LOCAL_DATE) ? readLocalDate(fieldName) : defaultValue;
     }
 
     @Override
@@ -270,8 +358,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public LocalDateTime readLocalDateTime(String fieldName, LocalDateTime defaultValue) {
+        return isFieldExists(fieldName, LOCAL_DATE_TIME) ? readLocalDateTime(fieldName) : defaultValue;
+    }
+
+    @Override
     public OffsetDateTime readOffsetDateTime(@Nonnull String fieldName) {
         return readNullableField(fieldName, OFFSET_DATE_TIME, IOUtil::readOffsetDateTime);
+    }
+
+    @Override
+    public OffsetDateTime readOffsetDateTime(String fieldName, OffsetDateTime defaultValue) {
+        return isFieldExists(fieldName, OFFSET_DATE_TIME) ? readOffsetDateTime(fieldName) : defaultValue;
     }
 
     @Override
@@ -281,12 +379,12 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
 
     @Override
     public <T> T readObject(@Nonnull String fieldName) {
-        return readNullableField(fieldName, PORTABLE, serializer::readObject);
+        return readNullableField(fieldName, OBJECT, serializer::readObject);
     }
 
     @Override
-    public boolean hasField(@Nonnull String fieldName) {
-        return schema.hasField(fieldName);
+    public <T> T readObject(String fieldName, T defaultValue) {
+        return isFieldExists(fieldName, OBJECT) ? readObject(fieldName) : defaultValue;
     }
 
     @Override
@@ -295,8 +393,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public byte[] readByteArray(String fieldName, byte[] defaultValue) {
+        return isFieldExists(fieldName, BYTE_ARRAY) ? readByteArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public boolean[] readBooleanArray(@Nonnull String fieldName) {
         return readNullableField(fieldName, BOOLEAN_ARRAY, ObjectDataInput::readBooleanArray);
+    }
+
+    @Override
+    public boolean[] readBooleanArray(String fieldName, boolean[] defaultValue) {
+        return isFieldExists(fieldName, BOOLEAN_ARRAY) ? readBooleanArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -305,8 +413,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public char[] readCharArray(String fieldName, char[] defaultValue) {
+        return isFieldExists(fieldName, CHAR_ARRAY) ? readCharArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public int[] readIntArray(@Nonnull String fieldName) {
         return readNullableField(fieldName, INT_ARRAY, ObjectDataInput::readIntArray);
+    }
+
+    @Override
+    public int[] readIntArray(String fieldName, int[] defaultValue) {
+        return isFieldExists(fieldName, INT_ARRAY) ? readIntArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -315,8 +433,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public long[] readLongArray(String fieldName, long[] defaultValue) {
+        return isFieldExists(fieldName, LONG_ARRAY) ? readLongArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public double[] readDoubleArray(@Nonnull String fieldName) {
         return readNullableField(fieldName, DOUBLE_ARRAY, ObjectDataInput::readDoubleArray);
+    }
+
+    @Override
+    public double[] readDoubleArray(String fieldName, double[] defaultValue) {
+        return isFieldExists(fieldName, DOUBLE_ARRAY) ? readDoubleArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -325,8 +453,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public float[] readFloatArray(String fieldName, float[] defaultValue) {
+        return isFieldExists(fieldName, FLOAT_ARRAY) ? readFloatArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public short[] readShortArray(@Nonnull String fieldName) {
         return readNullableField(fieldName, SHORT_ARRAY, ObjectDataInput::readShortArray);
+    }
+
+    @Override
+    public short[] readShortArray(String fieldName, short[] defaultValue) {
+        return isFieldExists(fieldName, SHORT_ARRAY) ? readShortArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -335,8 +473,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public String[] readUTFArray(String fieldName, String[] defaultValue) {
+        return isFieldExists(fieldName, UTF_ARRAY) ? readUTFArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public BigInteger[] readBigIntegerArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, BIG_INTEGER_ARRAY, BigInteger[]::new, IOUtil::readBigInteger);
+    }
+
+    @Override
+    public BigInteger[] readBigIntegerArray(String fieldName, BigInteger[] defaultValue) {
+        return isFieldExists(fieldName, BIG_INTEGER_ARRAY) ? readBigIntegerArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -345,8 +493,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public BigDecimal[] readBigDecimalArray(String fieldName, BigDecimal[] defaultValue) {
+        return isFieldExists(fieldName, BIG_DECIMAL_ARRAY) ? readBigDecimalArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public LocalTime[] readLocalTimeArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, LOCAL_TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
+    }
+
+    @Override
+    public LocalTime[] readLocalTimeArray(String fieldName, LocalTime[] defaultValue) {
+        return isFieldExists(fieldName, LOCAL_TIME_ARRAY) ? readLocalTimeArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -355,8 +513,18 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public LocalDate[] readLocalDateArray(String fieldName, LocalDate[] defaultValue) {
+        return isFieldExists(fieldName, LOCAL_DATE_ARRAY) ? readLocalDateArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public LocalDateTime[] readLocalDateTimeArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, LOCAL_DATE_TIME_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
+    }
+
+    @Override
+    public LocalDateTime[] readLocalDateTimeArray(String fieldName, LocalDateTime[] defaultValue) {
+        return isFieldExists(fieldName, LOCAL_DATE_TIME_ARRAY) ? readLocalDateTimeArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -365,17 +533,27 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     @Override
+    public OffsetDateTime[] readOffsetDateTimeArray(String fieldName, OffsetDateTime[] defaultValue) {
+        return isFieldExists(fieldName, OFFSET_DATE_TIME_ARRAY) ? readOffsetDateTimeArray(fieldName) : defaultValue;
+    }
+
+    @Override
     public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, PORTABLE_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
+        return readObjectArrayField(fieldName, OBJECT_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
     }
 
     @Override
     public Object[] readObjectArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, PORTABLE_ARRAY, Object[]::new, serializer::readObject);
+        return readObjectArrayField(fieldName, OBJECT_ARRAY, Object[]::new, serializer::readObject);
     }
 
     @Override
-    public <T> ArrayList<T> readObjectArrayList(@Nonnull String fieldName) {
+    public Object[] readObjectArray(String fieldName, Object[] defaultValue) {
+        return isFieldExists(fieldName, OBJECT_ARRAY) ? readObjectArray(fieldName) : defaultValue;
+    }
+
+    @Override
+    public <T> List<T> readObjectList(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int beginOffset = readPosition(fieldName, PORTABLE_ARRAY);
@@ -399,6 +577,11 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
         } finally {
             in.position(currentPos);
         }
+    }
+
+    @Override
+    public <T> List<T> readObjectList(String fieldName, List<T> defaultValue) {
+        return isFieldExists(fieldName, OBJECT_ARRAY) ? readObjectList(fieldName) : defaultValue;
     }
 
     protected interface Reader<T, R> {
@@ -433,14 +616,14 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     }
 
     private int readPrimitivePosition(@Nonnull String fieldName, FieldType fieldType) {
-        FieldDefinitionImpl fd = getFieldDefinition(fieldName, fieldType);
+        FieldDescriptorImpl fd = getFieldDefinition(fieldName, fieldType);
         int primitiveOffset = fd.getOffset();
         return primitiveOffset + offset;
     }
 
     @NotNull
-    private FieldDefinitionImpl getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
-        FieldDefinitionImpl fd = (FieldDefinitionImpl) schema.getField(fieldName);
+    private FieldDescriptorImpl getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
+        FieldDescriptorImpl fd = (FieldDescriptorImpl) schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
@@ -452,7 +635,7 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
 
     private int readPosition(@Nonnull String fieldName, FieldType fieldType) {
         try {
-            FieldDefinitionImpl fd = getFieldDefinition(fieldName, fieldType);
+            FieldDescriptorImpl fd = getFieldDefinition(fieldName, fieldType);
             int index = fd.getIndex();
             int pos = in.readInt(finalPosition - (index + 1) * INT_SIZE_IN_BYTES);
             return pos == NULL_POSITION ? NULL_POSITION : pos + offset;
@@ -648,7 +831,7 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
             return false;
         }
 
-        CompactGenericRecord that = (CompactGenericRecord) o;
+        SerializedGenericRecord that = (SerializedGenericRecord) o;
         if (finalPosition - offset != that.finalPosition - that.offset) {
             return false;
         }
@@ -686,7 +869,6 @@ public class CompactGenericRecord implements InternalGenericRecord, CompactReade
     public String toString() {
         return "CompactGenericRecord{" +
                 "schema=" + schema +
-                ", classID=" + classID +
                 ", finalPosition=" + finalPosition +
                 ", offset=" + offset +
                 '}';

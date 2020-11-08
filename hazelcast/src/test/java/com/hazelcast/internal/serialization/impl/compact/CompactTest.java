@@ -16,17 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.hazelcast.nio.serialization.compact.Schema;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,16 +42,7 @@ public class CompactTest {
 
     @Test
     public void testDefaultsReflection_hasCollection() {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(EmployeeDTO.class, 1);
-        compact.register(EmployeeGroup.class, 2);
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
-
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         ArrayList<EmployeeDTO> arrayList = new ArrayList<>();
@@ -71,16 +59,7 @@ public class CompactTest {
 
     @Test
     public void testDefaultsReflection_insideCollection() {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(EmployeeDTO.class, 1);
-        compact.register(EmployerDTO.class, 2);
-        compact.register(NodeDTO.class, 3);
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         NodeDTO node = new NodeDTO(new NodeDTO(new NodeDTO(2), 1), 0);
 
@@ -108,13 +87,7 @@ public class CompactTest {
 
     @Test
     public void testDefaultsReflection_recursive() throws IOException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(NodeDTO.class, 1);
-        globalSerializerConfig.setImplementation(compact);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         NodeDTO node = new NodeDTO(new NodeDTO(new NodeDTO(2), 1), 0);
 
@@ -129,14 +102,7 @@ public class CompactTest {
 
     @Test
     public void testDefaultsReflection_nested() throws IOException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(EmployeeDTO.class, 1);
-        compact.register(EmployerDTO.class, 2);
-        globalSerializerConfig.setImplementation(compact);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         long[] ids = new long[2];
@@ -158,18 +124,9 @@ public class CompactTest {
 
     @Test
     public void testDefaultsReflection() {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(EmployeeDTO.class, 1);
-        globalSerializerConfig.setImplementation(compact);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
-
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-
         Data data = serializationService.toData(employeeDTO);
-
         EmployeeDTO object = serializationService.toObject(data);
         assertEquals(employeeDTO, object);
     }
@@ -177,28 +134,21 @@ public class CompactTest {
     @Test
     public void testWithExplicitSerializer() throws IOException {
         SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+        serializationConfig.getCompactSerializationConfig().register(EmployeeDTO.class, "employee",
+                new CompactSerializer<EmployeeDTO>() {
+                    @Override
+                    public EmployeeDTO read(CompactReader in) throws IOException {
+                        return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
+                    }
 
-        Compact compact = new Compact();
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-
-        compact.register(EmployeeDTO.class, 1, new CompactSerializer<EmployeeDTO>() {
-            @Override
-            public EmployeeDTO read(Schema schema, CompactReader in) throws IOException {
-                return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
-            }
-
-            @Override
-            public void write(CompactWriter out, EmployeeDTO object) throws IOException {
-                out.writeInt("age", object.getAge());
-                out.writeLong("id", object.getId());
-            }
-        });
-
-        globalSerializerConfig.setImplementation(compact);
+                    @Override
+                    public void write(CompactWriter out, EmployeeDTO object) throws IOException {
+                        out.writeInt("age", object.getAge());
+                        out.writeLong("id", object.getId());
+                    }
+                });
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
-
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         Data data = serializationService.toData(employeeDTO);
@@ -212,16 +162,10 @@ public class CompactTest {
 
     @Test
     public void testSerializeWithGenericRecord() throws IOException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        globalSerializerConfig.setImplementation(compact);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .build();
 
-        Schema writeSchema = new SchemaBuilder().addIntField("foo").addLongField("bar").build();
-
-        GenericRecord.Builder builder = GenericRecord.Builder.compact(compact, 1, writeSchema);
+        GenericRecord.Builder builder = GenericRecord.Builder.compact("fooBarClassName");
         builder.writeInt("foo", 1);
         builder.writeLong("bar", 1231L);
         GenericRecord expectedGenericRecord = builder.build();
@@ -234,7 +178,16 @@ public class CompactTest {
         assertEquals(expectedGenericRecord, genericRecord);
         assertEquals(1, genericRecord.readInt("foo"));
         assertEquals(1231L, genericRecord.readLong("bar"));
+    }
 
+    @Test
+    public void testOverridenClassNameWithAlias() throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Test
+    public void testDeserializedToGenericRecordWhenClassNotFoundOnClassPath() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
 

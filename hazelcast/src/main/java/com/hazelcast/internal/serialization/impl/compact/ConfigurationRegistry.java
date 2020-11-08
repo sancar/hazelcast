@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization.compact;
+package com.hazelcast.internal.serialization.impl.compact;
 
-/**
- * Service to put and get meta data to cluster
- *
- * Client implementations shpuld make sure that even if cluster has restarted meta data will be put back.
- */
-public interface MetaDataService {
+import javax.annotation.Nonnull;
 
-    byte[] get(Object key);
+public class ConfigurationRegistry {
+    public final Class clazz;
+    public final InternalCompactSerializer compactSerializer;
+    public final String aliasClassName;
 
-    /**
-     * Once put meta data should not change for single key
-     * @param key
-     * @param metaData
-     * @return
-     */
-    Object put(Object key, byte[] metaData);
-
+    public ConfigurationRegistry(@Nonnull Class clazz, @Nonnull String aliasClassName,
+                                 @Nonnull InternalCompactSerializer compactSerializer) {
+        this.clazz = clazz;
+        this.aliasClassName = aliasClassName;
+        this.compactSerializer = compactSerializer;
+    }
 }

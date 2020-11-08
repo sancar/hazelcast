@@ -26,7 +26,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.compact.Compact;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -64,13 +64,6 @@ public class QueryTest extends HazelcastTestSupport {
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.addMapConfig(mapConfig);
 
-        SerializationConfig serializationConfig = config.getSerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("map");
         map.put(1, BOND);
@@ -89,13 +82,6 @@ public class QueryTest extends HazelcastTestSupport {
         indexConfig.setType(IndexType.SORTED);
         mapConfig.addIndexConfig(indexConfig);
         config.addMapConfig(mapConfig);
-
-        SerializationConfig serializationConfig = config.getSerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("map");
@@ -127,13 +113,6 @@ public class QueryTest extends HazelcastTestSupport {
         indexConfig.setType(indexType);
         mapConfig.addIndexConfig(indexConfig);
         config.addMapConfig(mapConfig);
-
-        SerializationConfig serializationConfig = config.getSerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("map");

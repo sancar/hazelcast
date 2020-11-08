@@ -23,15 +23,13 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.compact.Compact;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -113,12 +111,6 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
     private void setup(Query query) {
         Config config = new Config();
 
-        SerializationConfig serializationConfig = config.getSerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
         doWithConfig(config);
         setupIndexes(config, query);
         setupInstance(config);

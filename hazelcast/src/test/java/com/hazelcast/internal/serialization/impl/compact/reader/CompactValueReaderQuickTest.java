@@ -24,7 +24,6 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -365,19 +364,7 @@ public class CompactValueReaderQuickTest extends HazelcastTestSupport {
     //
 
     public GenericRecordQueryReader reader(Car portable) throws IOException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(Car.class, 1);
-        compact.register(Wheel.class, 2);
-        compact.register(Engine.class, 3);
-        compact.register(Chip.class, 4);
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
-
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         Data data = ss.toData(portable);
         return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
     }

@@ -282,7 +282,6 @@ public interface CompactReader {
     OffsetDateTime readOffsetDateTime(String fieldName, OffsetDateTime defaultValue);
 
     /**
-     * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
@@ -335,7 +334,6 @@ public interface CompactReader {
     OffsetDateTime[] readOffsetDateTimeArray(String fieldName, OffsetDateTime[] defaultValue);
 
     /**
-     * @return class type of items must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
@@ -343,7 +341,6 @@ public interface CompactReader {
     Object[] readObjectArray(String fieldName, Object[] defaultValue);
 
     /**
-     * @param <T> must be registered via{@link com.hazelcast.nio.serialization.compact.Compact#register}
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */

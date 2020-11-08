@@ -16,15 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl.compact.reader;
 
-import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -135,21 +130,7 @@ public class CompactValueReaderSpecTest extends HazelcastTestSupport {
         printlnScenarioDescription(resultToMatch);
 
         // assert the condition
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(CompactValueReaderQuickTest.Car.class, 1);
-        compact.register(CompactValueReaderQuickTest.Wheel.class, 2);
-        compact.register(CompactValueReaderQuickTest.Engine.class, 3);
-        compact.register(CompactValueReaderQuickTest.Chip.class, 4);
-        compact.register(CompactValueReaderTestStructure.PrimitiveObject.class, 6);
-        compact.register(CompactValueReaderTestStructure.NestedGroupObject.class, 7);
-        compact.register(CompactValueReaderTestStructure.GroupObject.class, 8);
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
         Data data = ss.toData(inputObject);
         GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
@@ -165,24 +146,6 @@ public class CompactValueReaderSpecTest extends HazelcastTestSupport {
                 // in case of multi result while invoking generic "read" method deal with the multi results
                 result = ((MultiResult) result).getResults().toArray();
             }
-        }
-        //TODO think moving this inside reader.read(path, class)
-        if (result instanceof GenericRecord) {
-            Class<?> aClass = resultToMatch.getClass();
-            result = (compact.toObject(aClass, (CompactGenericRecord) result));
-        } else if (result instanceof Object[]) {
-            Class<?> aClass = resultToMatch.getClass();
-            Class<?> componentType = aClass.getComponentType();
-            Object[] resultArray = (Object[]) result;
-            Object[] objectResultArray = new Object[resultArray.length];
-            for (int i = 0; i < resultArray.length; i++) {
-                if (resultArray[i] instanceof GenericRecord) {
-                    objectResultArray[i] = compact.toObject(componentType, (CompactGenericRecord) resultArray[i]);
-                } else {
-                    objectResultArray[i] = resultArray[i];
-                }
-            }
-            result = objectResultArray;
         }
         assertThat(result, equalTo(resultToMatch));
 

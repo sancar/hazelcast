@@ -199,7 +199,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     private void registerConstantSerializers() {
-        registerConstant(null, nullSerializerAdapter);
+        registerConstant(nullSerializerAdapter);
+        registerConstant(compactSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
         //primitives and String

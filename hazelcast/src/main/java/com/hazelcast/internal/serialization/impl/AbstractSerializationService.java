@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
@@ -27,6 +28,8 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
+import com.hazelcast.internal.serialization.impl.compact.MetaDataService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
@@ -39,7 +42,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.compact.MetaDataService;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
@@ -77,6 +79,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected final SerializerAdapter nullSerializerAdapter;
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
+    protected SerializerAdapter compactSerializerAdapter;
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<>(
             CONSTANT_SERIALIZERS_LENGTH);
@@ -105,6 +108,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
+        Compact compact = new Compact(builder.compactSerializationConfig, this, managedContext);
+        this.compactSerializerAdapter = createSerializerAdapter(compact);
     }
 
     // used by jet
@@ -455,6 +460,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }
 
+    protected final void registerConstant(SerializerAdapter serializer) {
+        constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
+    }
+
     private SerializerAdapter registerFromSuperType(final Class type, final Class superType) {
         final SerializerAdapter serializer = typeMap.get(superType);
         if (serializer != null) {
@@ -464,9 +473,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     public SerializerAdapter serializerFor(final int typeId) {
-//        if(overrideJavaSerialization) {
-//            return global.get();
-//        }
         if (typeId <= 0) {
             final int index = indexForDefaultType(typeId);
             if (index < CONSTANT_SERIALIZERS_LENGTH) {
@@ -477,9 +483,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     public SerializerAdapter serializerFor(Object object) {
-//        if(overrideJavaSerialization) {
-//            return global.get();
-//        }
         /*
             Searches for a serializer for the provided object
             Serializers will be  searched in this order;
@@ -516,10 +519,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         if (serializer == null) {
-            if (active) {
-                throw new HazelcastSerializationException("There is no suitable serializer for " + type);
-            }
-            throw notActiveExceptionSupplier.get();
+            return compactSerializerAdapter;
         }
         return serializer;
     }
@@ -603,6 +603,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private int initialOutputBufferSize;
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
+        private CompactSerializationConfig compactSerializationConfig;
 
         protected Builder() {
         }
@@ -652,11 +653,16 @@ public abstract class AbstractSerializationService implements InternalSerializat
             this.notActiveExceptionSupplier = notActiveExceptionSupplier;
             return self();
         }
+
+        public final T withCompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
+            this.compactSerializationConfig = compactSerializationConfig;
+            return self();
+        }
     }
 
     @Override
     public void deploySchemas() {
-        //TODO move meta data service to here
+        //TODO sancar move meta data service to here
     }
 
     @Override
@@ -679,6 +685,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             if (!(serializer instanceof AdvancedSerializer)) {
                 return;
             }
+            //TODO sancar implement meta data service properly.
             IMap<Object, byte[]> map = hazelcastInstance.getMap("__hz__metaDataMap");
             ((AdvancedSerializer) serializer).setMetaDataService(
                     new MetaDataService() {

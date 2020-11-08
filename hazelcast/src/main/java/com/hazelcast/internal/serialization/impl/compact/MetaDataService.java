@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization.compact;
-
-import com.hazelcast.nio.serialization.FieldType;
+package com.hazelcast.internal.serialization.impl.compact;
 
 /**
- * Represents the name, type of a field in compact serialization
+ * Service to put and get meta data to cluster
+ *
+ * Client implementations shpuld make sure that even if cluster has restarted meta data will be put back.
  */
-public interface FieldDefinition {
+public interface MetaDataService {
 
-    FieldType getType();
+    byte[] get(Object key);
 
-    String getName();
+    /**
+     * Once put meta data should not change for single key
+     * @param key
+     * @param metaData
+     * @return
+     */
+    Object put(Object key, byte[] metaData);
 
 }

@@ -262,6 +262,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             case UTF_ARRAY:
                 return record.readUTFFromArray(path, index);
             case PORTABLE_ARRAY:
+            case OBJECT_ARRAY:
                 return record.readObjectFromArray(path, index);
             case BIG_INTEGER_ARRAY:
                 return record.readBigIntegerFromArray(path, index);
@@ -323,8 +324,10 @@ public final class GenericRecordQueryReader implements ValueReader {
             case UTF_ARRAY:
                 return record.readUTFArray(path);
             case PORTABLE:
+            case OBJECT:
                 return record.readObject(path);
             case PORTABLE_ARRAY:
+            case OBJECT_ARRAY:
                 return record.readObjectArray(path);
             case BIG_INTEGER:
                 return record.readBigInteger(path);

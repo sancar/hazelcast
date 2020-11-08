@@ -11,12 +11,10 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.hazelcast.nio.serialization.compact.Schema;
 import domainclasses.Employee;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 
 public class XSerialization2API {
 
@@ -60,10 +58,7 @@ public class XSerialization2API {
             HazelcastInstance instance = Hazelcast.newHazelcastInstance();
             IMap<Object, Object> map = instance.getMap("map");
 
-            SchemaBuilder schemaBuilder = new SchemaBuilder("employee");
-            Schema schema = schemaBuilder.addUTFField("name").addIntField("age").build();
-
-            GenericRecord genericRecord = GenericRecord.Builder.compact(schema)
+            GenericRecord genericRecord = GenericRecord.Builder.compact("employee")
                     .writeUTF("name", "John")
                     .writeInt("age", 20).build();
             map.put(1, genericRecord);
@@ -99,7 +94,7 @@ public class XSerialization2API {
             //......
             compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
                 @Override
-                public Employee read(Schema schema, CompactReader in) throws IOException {
+                public Employee read(CompactReader in) throws IOException {
                     String name = in.readUTF("name");
                     int age = in.readInt("age");
                     return new Employee(name, age);
@@ -124,9 +119,6 @@ public class XSerialization2API {
             //No config is necessary
             HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
-            SchemaBuilder schemaBuilder = new SchemaBuilder("employee");
-            Schema schema = schemaBuilder.addUTFField("name").addIntField("age").build();
-
 //          Integration with enterprise might require this API.
 //          To support serialization config like byte order. Unsafe factory, we may need this kind of API.
 //            Compact compactSerializer = instance.getCompactSerializer();
@@ -136,7 +128,7 @@ public class XSerialization2API {
             //OR
 //            GenericRecord genericRecord = GenericRecord.Builder.compact(compactSerializer, "employee", schema)
 
-            GenericRecord genericRecord = GenericRecord.Builder.compact(schema)
+            GenericRecord genericRecord = GenericRecord.Builder.compact("employee")
                     .writeUTF("name", "myName")
                     .writeInt("age", 20).build();
 
@@ -150,16 +142,11 @@ public class XSerialization2API {
             CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
             compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
                 @Override
-                public Employee read(Schema schema, CompactReader in) throws IOException {
+                public Employee read(CompactReader in) throws IOException {
                     String name = in.readUTF("name");
                     int age = in.readInt("age");
-                    if (schema.hasField("surname")) {
-                        String surname = in.readUTF("surname");
-                        return new Employee(name, age, surname);
-                    } else {
-                        return new Employee(name, age, "NOT AVAILABLE");
-
-                    }
+                    String surname = in.readUTF("surname", "NOT AVAILABLE");
+                    return new Employee(name, age, "NOT AVAILABLE");
                 }
 
                 @Override
@@ -188,8 +175,8 @@ public class XSerialization2API {
 
             String name = employee.readUTF("name");
             int age = employee.readInt("age");
-            String surname ;
-            if(employee.hasField("surname") && employee.getFieldType("surname").equals(FieldType.UTF)) {
+            String surname;
+            if (employee.hasField("surname") && employee.getFieldType("surname").equals(FieldType.UTF)) {
                 surname = employee.readUTF("surname");
             } else {
                 surname = "NOT AVAILABLE";

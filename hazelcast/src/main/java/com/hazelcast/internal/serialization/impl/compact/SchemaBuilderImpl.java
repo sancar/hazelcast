@@ -18,7 +18,11 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 public class SchemaBuilderImpl extends SchemaBuilder {
 
-    public void addField(FieldDefinitionImpl fieldDefinition) {
-        fieldDefinitionMap.put(fieldDefinition.getName(), fieldDefinition);
+    public SchemaBuilderImpl(String className) {
+        super(className);
+    }
+
+    public void addField(FieldDescriptor fieldDefinition) {
+        super.addField(fieldDefinition);
     }
 }

@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
@@ -95,6 +96,12 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     @Override
     public boolean hasField(@Nonnull String fieldName) {
         return cd.hasField(fieldName);
+    }
+
+    @Nonnull
+    @Override
+    public Set<String> getFieldNames() {
+        return cd.getFieldNames();
     }
 
     @Override

@@ -16,10 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
-import com.hazelcast.nio.serialization.compact.Compact;
-import com.hazelcast.nio.serialization.compact.CompactGenericRecordBuilder;
-import com.hazelcast.nio.serialization.compact.Schema;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -128,6 +126,13 @@ public interface GenericRecord {
      * @return true if field exists in the definition of the class. Note that returns true even if the field is null.
      */
     boolean hasField(@Nonnull String fieldName);
+
+    /**
+     * TODO sancar javadoc
+     * @return
+     */
+    @Nonnull
+    Set<String> getFieldNames();
 
     /**
      * @param fieldName the name of the field
@@ -409,7 +414,7 @@ public interface GenericRecord {
     @Nullable
     GenericRecord[] readGenericRecordArray(@Nonnull String fieldName);
 
-    Set<String> getFieldNames();
+
 
     /**
      * Interface for creating {@link GenericRecord} instances.
@@ -441,10 +446,8 @@ public interface GenericRecord {
          * @return a new constructed GenericRecord
          */
         @Nonnull
-        static Builder compact(Schema schema) {
-            return new CompactGenericRecordBuilder(serializer, schema, classID,
-                    bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
-                    () -> serializer.getInternalSerializationService().createObjectDataOutput());
+        static Builder compact(String className) {
+            return new DeserializedGenericRecordBuilder(className);
         }
 
         /**

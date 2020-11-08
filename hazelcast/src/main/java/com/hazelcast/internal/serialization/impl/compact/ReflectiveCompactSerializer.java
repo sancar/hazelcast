@@ -20,7 +20,6 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.hazelcast.nio.serialization.compact.Schema;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
@@ -43,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.stream.Collectors.toList;
 
-public class ReflectiveCompactSerializer {
+public class ReflectiveCompactSerializer implements InternalCompactSerializer<Object, SerializedGenericRecord> {
 
     Unsafe unsafe = UnsafeUtil.UNSAFE;
 
@@ -53,6 +52,7 @@ public class ReflectiveCompactSerializer {
     public ReflectiveCompactSerializer() {
     }
 
+    @Override
     public void write(CompactWriter writer, Object object) throws IOException {
         Class<?> clazz = object.getClass();
         if (writeFast(clazz, writer, object)) {
@@ -85,12 +85,12 @@ public class ReflectiveCompactSerializer {
         return false;
     }
 
-    public Object read(Class associatedClass, Schema schema, CompactReader reader) throws IOException {
+    public Object read(SerializedGenericRecord reader) throws IOException {
         try {
-            Object object;
+            Class associatedClass = reader.getAssociatedClass();
             Constructor constructor = associatedClass.getDeclaredConstructor();
             constructor.setAccessible(true);
-            object = constructor.newInstance();
+            Object object = constructor.newInstance();
             if (readFast(associatedClass, reader, object)) {
                 return object;
             }
@@ -110,6 +110,8 @@ public class ReflectiveCompactSerializer {
         if (type.getSuperclass() != null) {
             getAllFields(fields, type.getSuperclass());
         }
+        //because getDeclaredFields does not guarantee that it return in same order each time it is called.
+        fields.sort(Comparator.comparing(Field::getName));
         return fields;
     }
 
@@ -120,8 +122,6 @@ public class ReflectiveCompactSerializer {
         BiConsumerEx<CompactReader, Object>[] readers = new BiConsumerEx[allFields.size()];
 
         int index = 0;
-        //because getDeclaredFields does not guarantee that it return in same order each time it is called.
-        allFields.sort(Comparator.comparing(Field::getName));
         for (Field field : allFields) {
             field.setAccessible(true);
             Class<?> type = field.getType();
@@ -249,7 +249,7 @@ public class ReflectiveCompactSerializer {
                     writers[index++] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
                 }
             } else if (type.equals(ArrayList.class)) {
-                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> field.set(o, reader.readObjectArrayList(name));
+                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> field.set(o, reader.readObjectList(name));
                 writers[index++] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectArrayList(name, (ArrayList<Object>) field.get(o));
             } else {
                 readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> field.set(o, reader.readObject(name));

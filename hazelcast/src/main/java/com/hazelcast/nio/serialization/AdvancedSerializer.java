@@ -17,16 +17,13 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.serialization.compact.MetaDataService;
+import com.hazelcast.internal.serialization.impl.compact.MetaDataService;
 
 import java.io.IOException;
 
 public interface AdvancedSerializer extends Serializer {
-
-    void setInternalSerializationService(InternalSerializationService internalSerializationService);
 
     void setMetaDataService(MetaDataService metaDataService);
 

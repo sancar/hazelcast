@@ -16,13 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl.compact.reader;
 
-import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
-import com.hazelcast.nio.serialization.compact.Compact;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -54,19 +51,7 @@ public class CompactValueReaderBenchmark extends HazelcastTestSupport {
 
     @Setup
     public void setup() throws Exception {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-        Compact compact = new Compact();
-        compact.register(CompactValueReaderQuickTest.Car.class, 1);
-        compact.register(CompactValueReaderQuickTest.Wheel.class, 2);
-        compact.register(CompactValueReaderQuickTest.Engine.class, 3);
-        compact.register(CompactValueReaderQuickTest.Chip.class, 4);
-        compact.register(CompactValueReaderTestStructure.PrimitiveObject.class, 5);
-        globalSerializerConfig.setImplementation(compact);
-        globalSerializerConfig.setOverrideJavaSerialization(true);
-        serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-
-        ss = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        ss = new DefaultSerializationServiceBuilder().build();
 
         CompactValueReaderTestStructure.PrimitiveObject primitive = new CompactValueReaderTestStructure.PrimitiveObject();
 
