@@ -64,7 +64,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecord.Builder {
 
     @Override
     public GenericRecord.Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
-        return write(fieldName, value, FieldType.PORTABLE);
+        return write(fieldName, value, FieldType.OBJECT);
     }
 
     @Override

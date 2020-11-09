@@ -32,7 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
@@ -63,7 +63,6 @@ import static com.hazelcast.nio.serialization.FieldType.OBJECT;
 import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
@@ -74,7 +73,7 @@ public class DefaultCompactWriter implements CompactWriter {
     protected final Compact serializer;
     protected final Schema schema;
     protected final BufferObjectDataOutput out;
-    private final int offset;
+    protected final int offset;
     private final int[] fieldPositions;
 
     public DefaultCompactWriter(Compact serializer,
@@ -190,7 +189,7 @@ public class DefaultCompactWriter implements CompactWriter {
         }
     }
 
-    private <T> void writeNullable(String fieldName, T object, FieldType fieldType, Writer<BufferObjectDataOutput, T> writer) {
+    protected  <T> void writeNullable(String fieldName, T object, FieldType fieldType, Writer<BufferObjectDataOutput, T> writer) {
         try {
             if (object == null) {
                 setPositionAsNull(fieldName, fieldType);
@@ -303,7 +302,7 @@ public class DefaultCompactWriter implements CompactWriter {
         void write(O out, T value) throws IOException;
     }
 
-    private <T> void writeObjectArrayField(String fieldName, FieldType fieldType, T[] values, Writer<BufferObjectDataOutput, T> writer) {
+    protected  <T> void writeObjectArrayField(String fieldName, FieldType fieldType, T[] values, Writer<BufferObjectDataOutput, T> writer) {
         //TODO sancar make it same with writeArrayList
         if (values == null) {
             setPositionAsNull(fieldName, fieldType);
@@ -315,7 +314,7 @@ public class DefaultCompactWriter implements CompactWriter {
             out.writeInt(len);
 
             int offset = out.position();
-            out.writeZeroBytes(len * 4);
+            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
             for (int i = 0; i < len; i++) {
                 if (values[i] != null) {
                     int position = out.position();
@@ -360,19 +359,18 @@ public class DefaultCompactWriter implements CompactWriter {
         writeObjectArrayField(fieldName, OFFSET_DATE_TIME_ARRAY, values, IOUtil::writeOffsetDateTime);
     }
 
-    private void setPositionAsNull(String fieldName, FieldType fieldType) {
+    protected void setPositionAsNull(String fieldName, FieldType fieldType) {
         FieldDescriptorImpl field = checkFieldDefinition(fieldName, fieldType);
         int index = field.getIndex();
         fieldPositions[index] = -1;
     }
 
-    private void setPosition(String fieldName, FieldType fieldType) {
+    protected void setPosition(String fieldName, FieldType fieldType) {
         FieldDescriptorImpl field = checkFieldDefinition(fieldName, fieldType);
         int pos = out.position();
         int fieldPosition = pos - offset;
         int index = field.getIndex();
         fieldPositions[index] = fieldPosition;
-
     }
 
     private int getPrimitivePosition(String fieldName, FieldType fieldType) {
@@ -381,7 +379,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @NotNull
-    private FieldDescriptorImpl checkFieldDefinition(String fieldName, FieldType fieldType) {
+    protected FieldDescriptorImpl checkFieldDefinition(String fieldName, FieldType fieldType) {
         FieldDescriptorImpl field = (FieldDescriptorImpl) schema.getField(fieldName);
         if (field == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
@@ -402,17 +400,17 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeObjectArrayList(String fieldName, ArrayList<T> values) {
+    public <T> void writeObjectList(String fieldName, List<T> values) {
         try {
             if (values == null) {
-                setPositionAsNull(fieldName, PORTABLE_ARRAY);
+                setPositionAsNull(fieldName, OBJECT_ARRAY);
                 return;
             }
-            setPosition(fieldName, PORTABLE_ARRAY);
+            setPosition(fieldName, OBJECT_ARRAY);
             int len = values.size();
             out.writeInt(len);
             int offset = out.position();
-            out.writeZeroBytes(offset + len * INT_SIZE_IN_BYTES);
+            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
             for (int i = 0; i < len; i++) {
                 Object value = values.get(i);
                 if (value != null) {

@@ -11,8 +11,19 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class CompactSerializationConfig {
 
-    private final Map<String, TriTuple<Class, String, CompactSerializer>> classNameToRegistryMap = new ConcurrentHashMap<>();
-    private final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistryMap = new ConcurrentHashMap<>();
+    private final Map<String, TriTuple<Class, String, CompactSerializer>> classNameToRegistryMap;
+    private final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistryMap;
+
+    public CompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
+        this.classNameToRegistryMap = compactSerializationConfig.classNameToRegistryMap;
+        this.classToRegistryMap = compactSerializationConfig.classToRegistryMap;
+    }
+
+    public CompactSerializationConfig() {
+        this.classNameToRegistryMap = new ConcurrentHashMap<>();
+        this.classToRegistryMap = new ConcurrentHashMap<>();
+    }
+
 
     /**
      * Register class to be serialized via compact serializer.

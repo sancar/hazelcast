@@ -25,7 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 public final class SchemaWriter implements CompactWriter {
 
@@ -82,7 +82,7 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public void writeObject(String fieldName, Object object) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OBJECT));
     }
 
     @Override
@@ -191,13 +191,13 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeObjectArrayList(String fieldName, ArrayList<T> arrayList) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE_ARRAY));
+    public <T> void writeObjectList(String fieldName, List<T> arrayList) {
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OBJECT_ARRAY));
     }
 
     @Override
     public void writeObjectArray(String fieldName, Object[] values) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.PORTABLE_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OBJECT_ARRAY));
     }
 
 }

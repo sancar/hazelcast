@@ -24,6 +24,12 @@ class SchemaRegistrar {
         }
     };
 
+    public SchemaRegistrar(MetaDataService metaDataService) {
+        if (metaDataService != null) {
+            this.metaDataService = metaDataService;
+        }
+    }
+
     void registerSchemaToLocalAndCluster(SchemaImpl schema) {
         long schemaId = schema.getSchemaId();
         if (schemaCache.get(schemaId) != null) {

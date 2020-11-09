@@ -108,7 +108,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
-        Compact compact = new Compact(builder.compactSerializationConfig, this, managedContext);
+        CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null ?
+                new CompactSerializationConfig() : builder.compactSerializationConfig;
+        Compact compact = new Compact(compactSerializationCfg, this, managedContext, builder.metaDataService);
         this.compactSerializerAdapter = createSerializerAdapter(compact);
     }
 
@@ -520,6 +522,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         if (serializer == null) {
             return compactSerializerAdapter;
+            //TODO sancar cleanup
+//            if (active) {
+//                throw new HazelcastSerializationException("There is no suitable serializer for " + type);
+//            }
+//            throw notActiveExceptionSupplier.get();
         }
         return serializer;
     }
@@ -604,6 +611,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
         private CompactSerializationConfig compactSerializationConfig;
+        private MetaDataService metaDataService;
 
         protected Builder() {
         }
@@ -656,6 +664,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         public final T withCompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
             this.compactSerializationConfig = compactSerializationConfig;
+            return self();
+        }
+
+        public final T withMetaDataService(MetaDataService metaDataService) {
+            this.metaDataService = metaDataService;
             return self();
         }
     }

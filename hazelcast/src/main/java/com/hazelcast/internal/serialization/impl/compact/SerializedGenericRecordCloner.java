@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactReader;
+import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactWriter;
+
 public class SerializedGenericRecordCloner implements GenericRecord.Builder {
 
     interface Writer {
@@ -24,19 +27,19 @@ public class SerializedGenericRecordCloner implements GenericRecord.Builder {
     }
 
     private final Schema schema;
-    private final SerializedGenericRecord genericRecord;
+    private final DefaultCompactReader genericRecord;
     private final DefaultCompactWriter compactWriter;
     private final Compact serializer;
     private final Map<String, Writer> overwrittenFields = new HashMap<>();
     private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
 
-    public SerializedGenericRecordCloner(Compact serializer, Schema schema, SerializedGenericRecord record,
+    public SerializedGenericRecordCloner(Compact serializer, Schema schema, DefaultCompactReader record,
                                          Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
                                          Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
         this.serializer = serializer;
         this.schema = schema;
         this.genericRecord = record;
-        this.compactWriter = new DefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), (SchemaImpl) schema);
+        this.compactWriter = createDefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), (SchemaImpl) schema);
         this.bufferObjectDataInputFunc = bufferObjectDataInputFunc;
     }
 
@@ -51,7 +54,7 @@ public class SerializedGenericRecordCloner implements GenericRecord.Builder {
                     continue;
                 }
                 switch (field.getType()) {
-                    case PORTABLE:
+                    case OBJECT:
                         compactWriter.writeGenericRecord(fieldName, genericRecord.readGenericRecord(fieldName));
                         break;
                     case BYTE:
@@ -99,7 +102,7 @@ public class SerializedGenericRecordCloner implements GenericRecord.Builder {
                     case OFFSET_DATE_TIME:
                         compactWriter.writeOffsetDateTime(fieldName, genericRecord.readOffsetDateTime(fieldName));
                         break;
-                    case PORTABLE_ARRAY:
+                    case OBJECT_ARRAY:
                         compactWriter.writeGenericRecordArray(fieldName, genericRecord.readGenericRecordArray(fieldName));
                         break;
                     case BYTE_ARRAY:
@@ -154,7 +157,7 @@ public class SerializedGenericRecordCloner implements GenericRecord.Builder {
             compactWriter.end();
             byte[] bytes = compactWriter.toByteArray();
             Class associatedClass = genericRecord.getAssociatedClass();
-            return new SerializedGenericRecord(serializer, bufferObjectDataInputFunc.apply(bytes), schema, associatedClass);
+            return createDefaultCompactReader(serializer, bufferObjectDataInputFunc.apply(bytes), schema, associatedClass);
         } catch (IOException e) {
             throw new HazelcastSerializationException(e);
         }

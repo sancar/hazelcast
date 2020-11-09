@@ -79,30 +79,27 @@ import static com.hazelcast.nio.serialization.FieldType.OBJECT;
 import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
-import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
-public class SerializedGenericRecord implements InternalGenericRecord, CompactReader {
+public class DefaultCompactReader implements InternalGenericRecord, CompactReader {
 
-    private static final int NULL_POSITION = -1;
-    private final Schema schema;
+    protected static final int NULL_POSITION = -1;
     private final Compact serializer;
 
-    private final BufferObjectDataInput in;
-    private final int finalPosition;
-    private final int offset;
+    protected final SchemaImpl schema;
+    protected final BufferObjectDataInput in;
+    protected final int finalPosition;
+    protected final int offset;
 
     private final @Nullable Class associatedClass;
 
-
-    public SerializedGenericRecord(Compact serializer, BufferObjectDataInput in, Schema schema, @Nullable Class associatedClass) {
+    public DefaultCompactReader(Compact serializer, BufferObjectDataInput in, Schema schema, @Nullable Class associatedClass) {
         this.in = in;
         this.serializer = serializer;
-        this.schema = schema;
+        this.schema = (SchemaImpl) schema;
         this.associatedClass = associatedClass;
 
         try {
@@ -374,7 +371,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
 
     @Override
     public GenericRecord readGenericRecord(@Nonnull String fieldName) {
-        return readNullableField(fieldName, PORTABLE, serializer::readGenericRecord);
+        return readNullableField(fieldName, OBJECT, serializer::readGenericRecord);
     }
 
     @Override
@@ -556,16 +553,16 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
     public <T> List<T> readObjectList(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
-            int beginOffset = readPosition(fieldName, PORTABLE_ARRAY);
-            if (beginOffset == Bits.NULL_ARRAY_LENGTH) {
+            int position = readPosition(fieldName, OBJECT_ARRAY);
+            if (position == Bits.NULL_ARRAY_LENGTH) {
                 return null;
             }
-            in.position(beginOffset);
+            in.position(position);
             int len = in.readInt();
-
             ArrayList<T> objects = new ArrayList<>(len);
+            int offset = in.position();
             for (int i = 0; i < len; i++) {
-                int pos = in.readInt((beginOffset + INT_SIZE_IN_BYTES) + i * INT_SIZE_IN_BYTES);
+                int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                 if (pos != Bits.NULL_ARRAY_LENGTH) {
                     in.position(pos);
                     objects.add(serializer.readObject(in));
@@ -622,7 +619,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
     }
 
     @NotNull
-    private FieldDescriptorImpl getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
+    protected FieldDescriptorImpl getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
         FieldDescriptorImpl fd = (FieldDescriptorImpl) schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
@@ -633,7 +630,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
         return fd;
     }
 
-    private int readPosition(@Nonnull String fieldName, FieldType fieldType) {
+    protected int readPosition(@Nonnull String fieldName, FieldType fieldType) {
         try {
             FieldDescriptorImpl fd = getFieldDefinition(fieldName, fieldType);
             int index = fd.getIndex();
@@ -644,7 +641,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
         }
     }
 
-    private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
+    protected HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
         return new HazelcastSerializationException("Unknown field name: '" + fieldName
                 + "' for " + schema);
     }
@@ -763,7 +760,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
 
     @Override
     public GenericRecord readGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, PORTABLE_ARRAY, serializer::readGenericRecord, index);
+        return readObjectFromArrayField(fieldName, OBJECT_ARRAY, serializer::readGenericRecord, index);
     }
 
     @Override
@@ -798,7 +795,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
 
     @Override
     public Object readObjectFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, PORTABLE_ARRAY, serializer::readObject, index);
+        return readObjectFromArrayField(fieldName, OBJECT_ARRAY, serializer::readObject, index);
     }
 
     private <T> T readObjectFromArrayField(@Nonnull String fieldName, FieldType fieldType,
@@ -831,7 +828,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
             return false;
         }
 
-        SerializedGenericRecord that = (SerializedGenericRecord) o;
+        DefaultCompactReader that = (DefaultCompactReader) o;
         if (finalPosition - offset != that.finalPosition - that.offset) {
             return false;
         }
@@ -848,7 +845,7 @@ public class SerializedGenericRecord implements InternalGenericRecord, CompactRe
         return true;
     }
 
-    private IllegalStateException illegalStateException(IOException e) {
+    protected IllegalStateException illegalStateException(IOException e) {
         return new IllegalStateException("IOException is not expected since we read from a well known format and position");
     }
 

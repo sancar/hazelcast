@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.nio.serialization.FieldType;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -33,7 +35,7 @@ public class SchemaImpl implements Schema {
     private final int primitiveOffsetEnd;
 
     public SchemaImpl(String className, Map<String, FieldDescriptor> fieldDefinitionMap, long schemaId, byte[] serialized,
-                       int numberOfComplexFields, int primitiveOffsetEnd) {
+                      int numberOfComplexFields, int primitiveOffsetEnd) {
         this.className = className;
         this.fieldDefinitionMap = fieldDefinitionMap;
         this.schemaId = schemaId;
@@ -41,7 +43,6 @@ public class SchemaImpl implements Schema {
         this.numberOfComplexFields = numberOfComplexFields;
         this.primitiveOffsetEnd = primitiveOffsetEnd;
     }
-
 
     /**
      * The class name provided when building a schema
@@ -91,8 +92,9 @@ public class SchemaImpl implements Schema {
 
     @Override
     public String toString() {
-        return "SchemaImpl{" +
-                "map=" + fieldDefinitionMap +
+        return "Schema {" +
+                " className = " + className +
+                ", map = " + fieldDefinitionMap +
                 '}';
     }
 

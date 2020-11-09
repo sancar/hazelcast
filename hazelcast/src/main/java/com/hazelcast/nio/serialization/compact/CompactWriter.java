@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 public interface CompactWriter {
 
@@ -90,6 +90,6 @@ public interface CompactWriter {
 
     <T> void writeObjectArray(String fieldName, T[] value);
 
-    <T> void writeObjectArrayList(String fieldName, ArrayList<T> arrayList);
+    <T> void writeObjectList(String fieldName, List<T> arrayList);
 
 }

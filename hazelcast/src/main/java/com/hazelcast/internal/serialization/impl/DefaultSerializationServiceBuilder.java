@@ -31,8 +31,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationClassNameFilter;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
+import com.hazelcast.internal.serialization.impl.compact.MetaDataService;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.nio.serialization.AdvancedSerializer;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -57,45 +57,30 @@ import static java.nio.ByteOrder.nativeOrder;
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
     static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
-
     // System property to override configured byte order for tests
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
-
     protected final Map<Integer, DataSerializableFactory> dataSerializableFactories = new HashMap<>();
-
     protected final Map<Integer, PortableFactory> portableFactories = new HashMap<>();
-
     protected final Set<ClassDefinition> classDefinitions = new HashSet<>();
-
     protected ClassLoader classLoader;
     protected SerializationConfig config;
-
     protected byte version = -1;
     protected int portableVersion = -1;
-
     protected boolean checkClassDefErrors = true;
-
     protected ManagedContext managedContext;
-
     protected boolean useNativeByteOrder;
     protected ByteOrder byteOrder = DEFAULT_BYTE_ORDER;
-
     protected boolean enableCompression;
     protected boolean enableSharedObject;
     protected boolean allowUnsafe;
-
     protected int initialOutputBufferSize = DEFAULT_OUT_BUFFER_SIZE;
-
     protected PartitioningStrategy partitioningStrategy;
-
     protected HazelcastInstance hazelcastInstance;
-
     protected CompactSerializationConfig compactSerializationConfig;
-
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
-
     protected ClassNameFilter classNameFilter;
+    private MetaDataService metaDataService;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -229,6 +214,12 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
+    public SerializationServiceBuilder setMetaDataService(MetaDataService metaDataService) {
+        this.metaDataService = metaDataService;
+        return this;
+    }
+
+    @Override
     public InternalSerializationService build() {
         initVersions();
         if (config != null) {
@@ -303,6 +294,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                         .withClassNameFilter(classNameFilter)
                         .withCheckClassDefErrors(checkClassDefErrors)
                         .withCompactSerializationConfig(compactSerializationConfig)
+                        .withMetaDataService(metaDataService)
                         .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;
