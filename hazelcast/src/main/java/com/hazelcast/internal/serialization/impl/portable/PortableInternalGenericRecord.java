@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -48,6 +49,7 @@ import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.combineToLong;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BIG_INTEGER_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_ARRAY;
@@ -55,7 +57,7 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 
-public class PortableInternalGenericRecord implements InternalGenericRecord {
+public class PortableInternalGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
@@ -877,5 +879,10 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     @Override
     public Object readObject(@Nonnull String fieldName) {
         return readNested(fieldName, true);
+    }
+
+    @Override
+    protected Object getClassIdentifier() {
+        return combineToLong(cd.getClassId(), cd.getFactoryId());
     }
 }

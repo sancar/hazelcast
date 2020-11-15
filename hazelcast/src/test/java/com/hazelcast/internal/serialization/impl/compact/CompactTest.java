@@ -32,20 +32,23 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.nio.serialization.GenericRecord.Builder.compact;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactTest {
 
-//    { TODO sancar cleanup
+    { //TODO sancar cleanup
 //        System.setProperty("com.hazelcast.serialization.compact.no_offset", "true");
-//    }
+    }
 
     MetaDataService metaDataService = new MetaDataService() {
         private Map<Object, byte[]> map = new ConcurrentHashMap<>();
@@ -181,13 +184,21 @@ public class CompactTest {
 
 
     @Test
-    public void testSerializeWithGenericRecord() {
+    public void testGenericRecordHashcode_Equals() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .build();
 
-        GenericRecord.Builder builder = GenericRecord.Builder.compact("fooBarClassName");
+        GenericRecord.Builder builder = compact("fooBarClassName");
         builder.writeInt("foo", 1);
         builder.writeLong("bar", 1231L);
+        builder.writeLongArray("barArray", new long[]{1L, 2L});
+        builder.writeBigDecimal("dec", new BigDecimal(12131321));
+        builder.writeGenericRecord("nestedField",
+                compact("nested").writeInt("a", 2).build());
+        builder.writeGenericRecordArray("nestedFieldArray", new GenericRecord[]{
+                compact("nested").writeInt("a", 2).build(),
+                compact("nested").writeInt("a", 3).build(),
+        });
         GenericRecord expectedGenericRecord = builder.build();
 
         Data data = serializationService.toData(expectedGenericRecord);
@@ -195,10 +206,9 @@ public class CompactTest {
         Object object = serializationService.toObject(data);
         GenericRecord genericRecord = (GenericRecord) object;
 
-        //TODO sancar these are not equal because one is serialized and other is not
-//        assertEquals(expectedGenericRecord, genericRecord);
-        assertEquals(1, genericRecord.readInt("foo"));
-        assertEquals(1231L, genericRecord.readLong("bar"));
+        assertTrue(expectedGenericRecord.equals(genericRecord));
+        assertTrue(genericRecord.equals(expectedGenericRecord));
+        assertEquals(expectedGenericRecord.hashCode(), genericRecord.hashCode());
     }
 
     @Test
@@ -260,20 +270,20 @@ public class CompactTest {
 
         Schema schema = schemaBuilder.build();
 
-        assertEquals (((FieldDescriptorImpl)schema.getField("age")).getOffset(), 4 );
-        assertEquals (((FieldDescriptorImpl)schema.getField("age")).getIndex(), -1 );
+        assertEquals(((FieldDescriptorImpl) schema.getField("age")).getOffset(), 4);
+        assertEquals(((FieldDescriptorImpl) schema.getField("age")).getIndex(), -1);
 
-        assertEquals (((FieldDescriptorImpl)schema.getField("ids")).getOffset(), -1 );
-        assertEquals (((FieldDescriptorImpl)schema.getField("ids")).getIndex(), 0 );
+        assertEquals(((FieldDescriptorImpl) schema.getField("ids")).getOffset(), -1);
+        assertEquals(((FieldDescriptorImpl) schema.getField("ids")).getIndex(), 0);
 
-        assertEquals (((FieldDescriptorImpl)schema.getField("name")).getOffset(), -1 );
-        assertEquals (((FieldDescriptorImpl)schema.getField("name")).getIndex(), 1 );
+        assertEquals(((FieldDescriptorImpl) schema.getField("name")).getOffset(), -1);
+        assertEquals(((FieldDescriptorImpl) schema.getField("name")).getIndex(), 1);
 
-        assertEquals (((FieldDescriptorImpl)schema.getField("otherEmployees")).getOffset(), -1 );
-        assertEquals (((FieldDescriptorImpl)schema.getField("otherEmployees")).getIndex(), 2 );
+        assertEquals(((FieldDescriptorImpl) schema.getField("otherEmployees")).getOffset(), -1);
+        assertEquals(((FieldDescriptorImpl) schema.getField("otherEmployees")).getIndex(), 2);
 
-        assertEquals (((FieldDescriptorImpl)schema.getField("singleEmployee")).getOffset(), -1 );
-        assertEquals (((FieldDescriptorImpl)schema.getField("singleEmployee")).getIndex(), 3);
+        assertEquals(((FieldDescriptorImpl) schema.getField("singleEmployee")).getOffset(), -1);
+        assertEquals(((FieldDescriptorImpl) schema.getField("singleEmployee")).getIndex(), 3);
     }
 
     @Test
@@ -282,7 +292,7 @@ public class CompactTest {
                 .setMetaDataService(metaDataService)
                 .build();
 
-        GenericRecord.Builder builder = GenericRecord.Builder.compact("fooBarClassName");
+        GenericRecord.Builder builder = compact("fooBarClassName");
         builder.writeInt("foo", 1);
         builder.writeLong("bar", 1231L);
         GenericRecord expectedGenericRecord = builder.build();
@@ -293,7 +303,7 @@ public class CompactTest {
                 .setMetaDataService(metaDataService)
                 .build();
 
-        GenericRecord.Builder builder2 = GenericRecord.Builder.compact("fooBarClassName");
+        GenericRecord.Builder builder2 = compact("fooBarClassName");
         builder2.writeInt("foo", 1);
         builder2.writeLong("bar", 1231L);
         builder2.writeUTF("foobar", "new field");
@@ -304,8 +314,6 @@ public class CompactTest {
 
         assertFalse(genericRecord.hasField("foobar"));
 
-        //TODO sancar these are not equal because one is serialized and other is not
-//        assertEquals(expectedGenericRecord, genericRecord);
         assertEquals(1, genericRecord.readInt("foo"));
         assertEquals(1231L, genericRecord.readLong("bar"));
     }

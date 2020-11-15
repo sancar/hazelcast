@@ -114,6 +114,6 @@ public class SchemaImpl implements Schema {
 
     @Override
     public int hashCode() {
-        return (int) (schemaId ^ (schemaId >>> 32));
+        return (int) (schemaId);
     }
 }

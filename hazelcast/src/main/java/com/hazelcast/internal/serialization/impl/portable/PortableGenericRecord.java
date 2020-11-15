@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -34,7 +35,9 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Set;
 
-public class PortableGenericRecord implements GenericRecord {
+import static com.hazelcast.internal.nio.Bits.combineToLong;
+
+public class PortableGenericRecord extends AbstractGenericRecord {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
@@ -271,5 +274,10 @@ public class PortableGenericRecord implements GenericRecord {
         return "PortableGenericRecord{classDefinition=" + classDefinition
                 + ", objects=" + Arrays.toString(objects)
                 + '}';
+    }
+
+    @Override
+    protected Object getClassIdentifier() {
+        return combineToLong(classDefinition.getClassId(), classDefinition.getFactoryId());
     }
 }

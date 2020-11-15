@@ -414,8 +414,6 @@ public interface GenericRecord {
     @Nullable
     GenericRecord[] readGenericRecordArray(@Nonnull String fieldName);
 
-
-
     /**
      * Interface for creating {@link GenericRecord} instances.
      */

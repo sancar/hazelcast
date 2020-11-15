@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -84,7 +85,7 @@ import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
-public class DefaultCompactReader implements InternalGenericRecord, CompactReader {
+public class DefaultCompactReader extends AbstractGenericRecord implements InternalGenericRecord, CompactReader {
 
     protected static final int NULL_POSITION = -1;
     private final Compact serializer;
@@ -94,7 +95,8 @@ public class DefaultCompactReader implements InternalGenericRecord, CompactReade
     protected final int finalPosition;
     protected final int offset;
 
-    private final @Nullable Class associatedClass;
+    private final @Nullable
+    Class associatedClass;
 
     public DefaultCompactReader(Compact serializer, BufferObjectDataInput in, Schema schema, @Nullable Class associatedClass) {
         this.in = in;
@@ -820,46 +822,12 @@ public class DefaultCompactReader implements InternalGenericRecord, CompactReade
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        DefaultCompactReader that = (DefaultCompactReader) o;
-        if (finalPosition - offset != that.finalPosition - that.offset) {
-            return false;
-        }
-        int thatIndex = that.offset;
-        for (int thisIndex = offset; thisIndex < finalPosition; thisIndex++, thatIndex++) {
-            try {
-                if (in.readByte(thisIndex) != that.in.readByte(thatIndex)) {
-                    return false;
-                }
-            } catch (IOException e) {
-                return false;
-            }
-        }
-        return true;
+    protected Object getClassIdentifier() {
+        return schema.getClassName();
     }
 
     protected IllegalStateException illegalStateException(IOException e) {
         return new IllegalStateException("IOException is not expected since we read from a well known format and position");
-    }
-
-    @Override
-    public int hashCode() {
-        int result = 1;
-        try {
-            for (int i = offset; i < finalPosition; i++) {
-                result = 31 * result + in.readByte(i);
-            }
-        } catch (IOException e) {
-            assert false;
-        }
-        return result;
     }
 
     @Override
