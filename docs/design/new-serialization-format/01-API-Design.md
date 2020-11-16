@@ -46,30 +46,30 @@ public class Employee {
 For Employee object to be serialized in the new format, one of the following two should be satisfied: 
     1. It should not implement Portable, IdentifiedDataSerializable, DataSerializable, Serializable, and the user should not configure a global serializer.  This is to ensure backward compatibility. In any existing code migrating from an old version, the serialization method should not change for existing objects.
         ```
-         HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+         HazelcastInstance client = HazelcastClient.newHazelcastClient();
          IMap<Object, Object> map = instance.getMap("map");
          map.put(1, new Employee("John", 20));
          Employee employee = (Employee) map.get(1);
         ```
-    2. User should register Employee class explicitly. This API will be useful when the user does not have access to the `Employee` class, but using it from another library.      
+    2. User should register Employee class explicitly. This API will be useful when the user does not have write-access to the `Employee` class, but using it from another library.      
         ```
-        Config config = new Config();
+        ClientConfig config = new ClientConfig();
         CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
         compactSerializationConfig.register(Employee.class);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         IMap<Object, Object> map = instance.getMap("map");
         map.put(1, new Employee("John", 20));
         Employee employee = (Employee) map.get(1);
         ```
     For this use case, the `Employee` class must have an empty constructor.  
-    All non-transient fields will be serialized. Any field to a type that is not natively supported in this format, see 
-    [Compact Reader API](#CompactReader) to see supported types as an object. And it will be also serialized as the root object
-    `Employee` is serialized.  
+    All non-transient fields will be serialized. Any field with a type that is not natively supported in this format
+    ( see [Compact Reader API](#CompactReader) for supported types) will be serialized recursively using reflection
+    in the new format. So any custom field of `Employee` class also required to have an empty constructor.
 
 2. A second use case is when the domain class is not in our class path
     1. In case of read, since the user object can not be created, `GenericRecord` will be returned instead: 
         ``` 
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<Object, Object> map = instance.getMap("map");
         GenericRecord employee = (GenericRecord) map.get(1);
         int age = employee.readInt("age");
@@ -79,7 +79,7 @@ For Employee object to be serialized in the new format, one of the following two
     2. In the case of a write, we will create a `GenericRecord` that represents our class. 
        The only addition to the existing GenericRecord API is `GenericRecord.Builder.compact(String className)` method.
         ```
-       HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+       HazelcastInstance client = HazelcastClient.newHazelcastClient();
        IMap<Object, Object> map = instance.getMap("map");
 
        GenericRecord genericRecord = GenericRecord.Builder.compact("employee")
@@ -108,11 +108,11 @@ When a user does not give an explicit serializer, we will try to create a reflec
     - C++ does not have this.
     - Node js does not have different types for integer, long, etc. Not clear in which type we should write a number.
     ```
-    Config config = new Config();
+    ClientConfig config = new ClientConfig();
     CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
     compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
                    @Override
-                   public Employee read(Schema schema, CompactReader in) throws IOException {
+                   public Employee read(CompactReader in) throws IOException {
                        String name = in.readUTF("name");
                        int age = in.readInt("age");
                        return new Employee(name, age);
@@ -125,7 +125,7 @@ When a user does not give an explicit serializer, we will try to create a reflec
                    }
                });
                       
-    HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+    HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
     IMap<Object, Object> map = instance.getMap("map");
     map.put(1, new Employee());
     Employee employee = (Employee) map.get(1);      
@@ -135,7 +135,7 @@ When a user does not give an explicit serializer, we will try to create a reflec
     1. The basic example where a user does not give any serializer will work. We will be able to write any version of the `Employee`
         to the cluster.
         ```
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<Object, Object> map = instance.getMap("map");
         map.put(1, new Employee("John", 20, "Smith"));
        ```
@@ -154,7 +154,7 @@ When a user does not give an explicit serializer, we will try to create a reflec
     2.  Another use case is when a user configures an explicit serializer and the data evolves.    
        The user should plan ahead in this case. Any field that could be removed in the future, should be read by providing a default value. Note that `read*(fieldName)` methods throw HazelcastSerializationException when the field is not found.   
         ```
-        Config config = new Config();
+        ClientConfig config = new ClientConfig();
         CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
         compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
            @Override
@@ -173,7 +173,7 @@ When a user does not give an explicit serializer, we will try to create a reflec
            }
         });
         
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         IMap<Object, Object> map = instance.getMap("map");
         map.put(1, new Employee());
         Employee employee = (Employee) map.get(1);
@@ -181,7 +181,7 @@ When a user does not give an explicit serializer, we will try to create a reflec
         The example above could be interpreted as the new version of the application which will work with an existing cluster. In the version, we just added a new field, and existing data on the cluster is missing the `surname` field.
     3.  It could be the case that the class is not in our class path. The `GenericRecord` could also be used with the schema evolution as follows:
         ```
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<Object, Object> map = instance.getMap("map");
 
         GenericRecord genericRecord = GenericRecord.Builder.compact("employee")
@@ -543,7 +543,10 @@ public class CompactSerializationConfig {
 
 #### XML
 
-TODO: Should a user be able to define a schema in config as an alternative to a serializer class?
+Note that XML and Yaml configuration is for the client-side and only when interoperability between different languages is needed. 
+It could also be used for the embedded member use-case,but not needed on the cluster when applications are accessing from the client. 
+Declarative configuration is alternative of the programming configuration that is used in the use case examples on this document.
+See the use cases examples for more details about when the explicit configuration is needed.
 
 ```
  <serialization>
@@ -565,6 +568,11 @@ TODO: Should a user be able to define a schema in config as an alternative to a 
 Note that com.sample.serializers.InternSerializer should be instance of `CompactSerializer`
 
 #### YAML
+
+Note that XML and Yaml configuration is for the client-side and only when interoperability between different languages is needed. 
+It could also be used for the embedded member use-case,but not needed on the cluster when applications are accessing from the client. 
+Declarative configuration is alternative of the programming configuration that is used in the use case examples on this document.
+See the use cases examples for more details about when the explicit configuration is needed.
 
 ```
 serialization:
