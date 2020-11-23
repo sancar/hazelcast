@@ -133,7 +133,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public Builder cloneWithBuilder() {
-        return new SerializedGenericRecordCloner(serializer, schema, this,
+        return new SerializingGenericRecordCloner(serializer, schema, this,
                 bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
                 () -> serializer.getInternalSerializationService().createObjectDataOutput());
     }

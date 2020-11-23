@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactReader;
 import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactWriter;
 
-public class SerializedGenericRecordCloner implements GenericRecord.Builder {
+public class SerializingGenericRecordCloner implements GenericRecord.Builder {
 
     interface Writer {
         void write() throws IOException;
@@ -33,9 +33,9 @@ public class SerializedGenericRecordCloner implements GenericRecord.Builder {
     private final Map<String, Writer> overwrittenFields = new HashMap<>();
     private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
 
-    public SerializedGenericRecordCloner(Compact serializer, Schema schema, DefaultCompactReader record,
-                                         Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
-                                         Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
+    public SerializingGenericRecordCloner(Compact serializer, Schema schema, DefaultCompactReader record,
+                                          Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
+                                          Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
         this.serializer = serializer;
         this.schema = schema;
         this.genericRecord = record;

@@ -106,6 +106,12 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         return COMPACT_SERIALIZER;
     }
 
+    GenericRecord.Builder createGenericRecordBuilder(Schema schema) {
+        return new SerializingGenericRecordBuilder(this, schema,
+                internalSerializationService::createObjectDataInput,
+                internalSerializationService::createObjectDataOutput);
+    }
+
     //========================== WRITE =============================//
     @Override
     public void write(ObjectDataOutput out, Object o) throws IOException {
