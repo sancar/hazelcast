@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -172,6 +173,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public PortableContext getPortableContext() {
         return delegate.getPortableContext();
+    }
+
+    @Override
+    public Compact getCompact() {
+        return delegate.getCompact();
     }
 
     @Override

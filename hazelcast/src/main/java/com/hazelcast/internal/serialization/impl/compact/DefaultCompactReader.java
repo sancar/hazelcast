@@ -128,7 +128,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public GenericRecord.Builder newBuilder() {
-        return new DeserializedSchemaBoundGenericRecordBuilder(schema);
+        return serializer.createGenericRecordBuilder(schema);
     }
 
     @Override

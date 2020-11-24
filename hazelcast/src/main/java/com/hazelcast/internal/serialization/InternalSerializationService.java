@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -95,9 +96,11 @@ public interface InternalSerializationService extends SerializationService, Disp
      * @return InternalGenericRecord if data type supports it, otherwise returns null
      * @throws IOException
      */
-    InternalGenericRecord readAsInternalGenericRecord(Data data)  throws IOException ;
+    InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
 
     PortableContext getPortableContext();
+
+    Compact getCompact();
 
     ClassLoader getClassLoader();
 

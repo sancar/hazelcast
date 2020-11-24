@@ -80,6 +80,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
     protected SerializerAdapter compactSerializerAdapter;
+    protected Compact compact;
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<>(
             CONSTANT_SERIALIZERS_LENGTH);
@@ -110,7 +111,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null ?
                 new CompactSerializationConfig() : builder.compactSerializationConfig;
-        Compact compact = new Compact(compactSerializationCfg, this, managedContext, builder.metaDataService);
+        compact = new Compact(compactSerializationCfg, this, managedContext, builder.metaDataService);
         this.compactSerializerAdapter = createSerializerAdapter(compact);
     }
 

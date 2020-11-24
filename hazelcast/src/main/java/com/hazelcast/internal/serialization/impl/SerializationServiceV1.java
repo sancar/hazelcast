@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
+import com.hazelcast.internal.serialization.impl.compact.Compact;
+import com.hazelcast.internal.serialization.impl.compact.SchemaRegistrar;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayBlockingQueueStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayDequeStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayListStreamSerializer;
@@ -196,6 +198,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     public PortableContext getPortableContext() {
         return portableContext;
+    }
+
+    @Override
+    public Compact getCompact() {
+        return compact;
     }
 
     private void registerConstantSerializers() {

@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-class SchemaRegistrar {
+public class SchemaRegistrar {
     private final Map<Class, SchemaImpl> classToSchemaMap = new ConcurrentHashMap<>();
     private final Map<Long, SchemaImpl> schemaCache = new ConcurrentHashMap<>();
 
@@ -42,7 +42,7 @@ class SchemaRegistrar {
         metaDataService.put(id, serialized);
     }
 
-    SchemaImpl lookupSchema(long schemaId) {
+    public SchemaImpl lookupSchema(long schemaId) {
         SchemaImpl schema = schemaCache.get(schemaId);
         if (schema != null) {
             return schema;

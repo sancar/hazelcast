@@ -106,7 +106,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         return COMPACT_SERIALIZER;
     }
 
-    GenericRecord.Builder createGenericRecordBuilder(Schema schema) {
+    public GenericRecord.Builder createGenericRecordBuilder(Schema schema) {
         return new SerializingGenericRecordBuilder(this, schema,
                 internalSerializationService::createObjectDataInput,
                 internalSerializationService::createObjectDataOutput);
@@ -334,6 +334,10 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         //make sure that this is not returned to pool
         input.steal();
         return createDefaultCompactReader(this, input, schema, null);
+    }
+
+    public SchemaRegistrar getSchemaRegistrar() {
+        return schemaRegistrar;
     }
 
     interface CompactWriterFactory {
