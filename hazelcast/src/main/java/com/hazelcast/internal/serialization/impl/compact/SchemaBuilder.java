@@ -163,25 +163,25 @@ public class SchemaBuilder {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         DataOutputStream objectOutputStream = new DataOutputStream(out);
 
-        writeBasicString(objectOutputStream, className);
-        Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
-        out.write(fields.size());
-        for (FieldDescriptor field : fields) {
-            writeBasicString(objectOutputStream, field.getName());
-            out.write(field.getType().getId());
+        try {
+            writeBasicString(objectOutputStream, className);
+            Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
+            objectOutputStream.writeInt(fields.size());
+            for (FieldDescriptor field : fields) {
+                writeBasicString(objectOutputStream, field.getName());
+                out.write(field.getType().getId());
+            }
+        } catch (IOException e) {
+            // ByteArrayOutputStream guarantees that underlying stream will grow without throwing exception.
+            EmptyStatement.ignore(e);
         }
         return out.toByteArray();
     }
 
-    private static void writeBasicString(DataOutputStream out, String value) {
-        try {
-            byte[] bytes = value.getBytes();
-            out.writeInt(bytes.length);
-            out.write(bytes);
-        } catch (IOException e) {
-            // callers of `writeBasicString` guarantees that underlying stream will grow without throwing exception.
-            EmptyStatement.ignore(e);
-        }
+    private static void writeBasicString(DataOutputStream out, String value) throws IOException {
+        byte[] bytes = value.getBytes();
+        out.writeInt(bytes.length);
+        out.write(bytes);
     }
 
     public Schema build() {

@@ -13,6 +13,9 @@ This work is intended to introduce a new format that will supersede Portable. Th
 - Schema Evolution: The format should support schema evolution.    
 - Querying friendly/Partial deserialization: The format should allow partial deserialization to provide optimal performance on queries.
 
+This document will contains background and also API interaction. We also have following related documents.
+[Wire Level Format Specification](02-Format-Specification.md)
+
 # API Interaction 
 
 API usage will differ from use case to use case. In this document, we will try to describe each use case and how will the usage looks like. Sample domain class to be used in examples:

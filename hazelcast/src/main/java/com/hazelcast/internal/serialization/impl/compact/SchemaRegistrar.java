@@ -65,7 +65,7 @@ public class SchemaRegistrar {
         ByteBuffer in = ByteBuffer.wrap(bytes);
         String className = readBasicString(in);
         SchemaBuilder builder = new SchemaBuilder(className);
-        int fieldCount = in.get();
+        int fieldCount = in.getInt();
         for (int i = 0; i < fieldCount; i++) {
             String name = readBasicString(in);
             FieldType type = FieldType.get(in.get());
