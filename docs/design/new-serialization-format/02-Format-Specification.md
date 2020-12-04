@@ -76,12 +76,31 @@ void initFPTable() {
 
 ## Data Types
 
+using bnf description of ansi sql as a reference for sql types:
+http://jakewheat.github.io/sql-overview/sql-2011-foundation-grammar.html
 
+| Type                                                                                                                                                                                                           | SQL             | Java                     | C++ | Python | Nodejs | C# | Go |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|--------------------------|-----|--------|--------|----|----|
+| boolean: true/false, 1-bit packed to one-byte. <br>up-to 8 booleans take 1 byte on a data,up-to 16 booleans take 2 byte on a data so on                                                                        | BOOLEAN         | boolean                  |     |        |        |    |    |
+| i8 : 8 bit two's complement signed integer                                                                                                                                                                     | TINYINT         | Byte                     |     |        |        |    |    |
+| i16: 16-bit two's-complement signed integer                                                                                                                                                                    | SMALLINT        | short                    |     |        |        |    |    |
+| i32: 32-bit two's-complement signed integer                                                                                                                                                                    | INTEGER         | int                      |     |        |        |    |    |
+| i64: 64-bit two's-complement signed integer                                                                                                                                                                    | BIGINT          | long                     |     |        |        |    |    |
+| float : 32-bit IEEE 754 floating-point number                                                                                                                                                                  | REAL            | float                    |     |        |        |    |    |
+| double: 64-bit IEEE 754 floating-point number                                                                                                                                                                  | DOUBLE          | double                   |     |        |        |    |    |
+| utf8 : utf8 string https://tools.ietf.org/html/rfc3629                                                                                                                                                         | VARCHAR         | String                   |     |        |        |    |    |
+| utf16: utf16 string https://tools.ietf.org/html/rfc2781                                                                                                                                                        | VARCHAR         | String                   |     |        |        |    |    |
+| arbitrary precision two's-complement signed integer: represented as series of byte                                                                                                                             | DECIMAL         | java.math.BigInteger     |     |        |        |    |    |
+| arbitrary precision and scale floating-point number: represented as unscaledValue x 10 ^ -scale <br>unscaledValue: series of byte  scale : single i32 for scale                                                | DECIMAL         | java.math.BigDecimal     |     |        |        |    |    |
+| Date YYYY-MM-DD<br>from 1753-Jan-1 to 9999-Dec-31:<br>i16: year, i8: month, i8:dayOfMonth                                                                                                                      | DATE            | java.time.LocalDate      |     |        |        |    |    |
+| Time: HH-MI-SS-NN<br>i8: hour, i8: minute, i8: seconds, i32: nanoseconds                                                                                                                                       | TIME            | java.time.LocalTime      |     |        |        |    |    |
+| Timestamp: YYYY-MM-DD-HH-MI-SS-NN<br>i16: year, i8: month,  i8:dayOfMonth,<br>i8 : hour, i8: minute, i8: seconds, i32: nanoseconds                                                                             | TIMESTAMP       | java.time.LocalDateTime  |     |        |        |    |    |
+| Timestamp: YYYY-MM-DD-HH-MI-SS-MM Zone<br>i16: year, i8: month, i8:dayOfMonth,<br>i8 : hour, i8: minute,i8: seconds, i32: nanoseconds<br>i8 : offsetHours, i8:offsetMinutes  offsetHours range from -18 to +18 | TIMESTAMP W/ TZ | java.time.OffsetDateTime |     |        |        |    |    |
 
 Flat buffers 
- Each scalar is also always represented in little-endian format, 
- as this corresponds to all commonly used CPUs today. 
- FlatBuffers will also work on big-endian machines, but will be slightly slower because of additional byte-swap intrinsics.
+Each scalar is also always represented in little-endian format, 
+as this corresponds to all commonly used CPUs today. 
+FlatBuffers will also work on big-endian machines, but will be slightly slower because of additional byte-swap intrinsics.
 IEEE-754 for floatıng poınt
 The two's complemented representation is used for signed integers.
 The endianness is the same for floating-point numbers as for integers.
