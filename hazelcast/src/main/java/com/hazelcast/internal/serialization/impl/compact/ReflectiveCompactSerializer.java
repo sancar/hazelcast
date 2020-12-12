@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import sun.misc.Unsafe;
@@ -35,6 +36,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -133,7 +135,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
         }
     }
 
-    private static List<Field> getAllFields(List<Field> fields, Class<?> type) {
+    public static List<Field> getAllFields(List<Field> fields, Class<?> type) {
         fields.addAll(Arrays.stream(type.getDeclaredFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> !Modifier.isTransient(f.getModifiers()))
@@ -293,7 +295,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                 }
             } else if (type.equals(ArrayList.class)) {
                 readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OBJECT_ARRAY, () -> field.set(o, reader.readObjectList(name)));
-                writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectList(name, (ArrayList<Object>) field.get(o));
+                writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectCollection(name, (Collection<Object>) field.get(o));
             } else {
                 readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OBJECT, () -> field.set(o, reader.readObject(name)));
                 writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObject(name, field.get(o));

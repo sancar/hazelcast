@@ -30,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.DataInput;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -51,6 +50,7 @@ import static com.hazelcast.internal.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL_ARRAY;
@@ -87,30 +87,34 @@ import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 public class DefaultCompactReader extends AbstractGenericRecord implements InternalGenericRecord, CompactReader {
 
+    private final boolean isDebug = !System.getProperty("com.hazelcast.serialization.compact.debug").isEmpty();
     protected static final int NULL_POSITION = -1;
     private final Compact serializer;
 
     protected final SchemaImpl schema;
     protected final BufferObjectDataInput in;
     protected final int finalPosition;
+    protected final int totalLength;
     protected final int offset;
 
+    private final int variableLengthFieldOffsetsStart;
     private final @Nullable
     Class associatedClass;
 
-    public DefaultCompactReader(Compact serializer, BufferObjectDataInput in, Schema schema, @Nullable Class associatedClass) {
+    public DefaultCompactReader(Compact serializer, BufferObjectDataInput in, Schema schema,
+                                @Nullable Class associatedClass, int totalLength) {
         this.in = in;
         this.serializer = serializer;
         this.schema = (SchemaImpl) schema;
         this.associatedClass = associatedClass;
-
-        try {
-            offset = in.position();
-            finalPosition = in.readInt(offset) + offset;
-            in.position(finalPosition);
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        this.offset = in.position();
+        this.variableLengthFieldOffsetsStart = offset + ((SchemaImpl) schema).getPrimitiveOffsetEnd();
+        this.totalLength = totalLength;
+        finalPosition = totalLength + offset;
+        if (isDebug) {
+            System.out.print("DEBUG READ DefaultCompactReader::new length " + totalLength + ", offset " + offset + ", in " + in);
         }
+        in.position(finalPosition);
     }
 
     @Nullable
@@ -276,18 +280,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public String readUTF(@Nonnull String fieldName) {
-        //TODO sancar can we use readNullableField as we do in BigInteger etc.
-        //in.readUTF already supports nullable
-        final int currentPos = in.position();
-        try {
-            int pos = readPosition(fieldName, UTF);
-            in.position(pos);
-            return in.readUTF();
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        return readVariableLength(fieldName, UTF, BufferObjectDataInput::readUTF);
     }
 
     @Override
@@ -295,15 +288,21 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         return isFieldExists(fieldName, UTF) ? readUTF(fieldName) : defaultValue;
     }
 
-    private <T> T readNullableField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader) {
+    private <T> T readVariableLength(@Nonnull String fieldName, FieldType fieldType,
+                                     VariableLengthFieldReader<BufferObjectDataInput, T> reader) {
         int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, fieldType);
-            if (pos == NULL_POSITION) {
+            int index = getFieldDefinition(fieldName, fieldType).getIndex();
+            int variableLengthFieldOffset = in.readInt(variableLengthFieldOffsetsStart + index * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
                 return null;
             }
-            in.position(pos);
-            return reader.read(in);
+            in.position(variableLengthFieldOffset + offset);
+            int length = getLength(index, variableLengthFieldOffset + offset);
+            if (isDebug) {
+                System.out.println("DEBUG READ " + schema.getClassName() + " " + fieldType + " " + fieldName + " pos " + variableLengthFieldOffset + ", length " + length + " with offset " + (variableLengthFieldOffset + offset));
+            }
+            return reader.read(in, length);
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -311,9 +310,24 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         }
     }
 
+    private int getLength(int index, int variableLengthFieldPos) {
+        try {
+            int length;
+            if (index + 1 == schema.getNumberOfVariableLengthFields()) {
+                length = totalLength - variableLengthFieldPos;
+            } else {
+                length = Math.abs(in.readInt(variableLengthFieldOffsetsStart + (index + 1) * INT_SIZE_IN_BYTES)) -
+                        variableLengthFieldPos;
+            }
+            return length;
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
     @Override
     public BigInteger readBigInteger(@Nonnull String fieldName) {
-        return readNullableField(fieldName, BIG_INTEGER, IOUtil::readBigInteger);
+        return readVariableLength(fieldName, BIG_INTEGER, DefaultCompactReader::readBigInteger);
     }
 
     @Override
@@ -323,7 +337,13 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public BigDecimal readBigDecimal(@Nonnull String fieldName) {
-        return readNullableField(fieldName, BIG_DECIMAL, IOUtil::readBigDecimal);
+        return readVariableLength(fieldName, BIG_DECIMAL, (bufferObjectDataInput, length) -> {
+            final byte[] bytes = new byte[length - INT_SIZE_IN_BYTES];
+            in.readFully(bytes);
+            BigInteger bigInteger = new BigInteger(bytes);
+            int scale = in.readInt();
+            return new BigDecimal(bigInteger, scale);
+        });
     }
 
     @Override
@@ -333,7 +353,15 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public LocalTime readLocalTime(@Nonnull String fieldName) {
-        return readNullableField(fieldName, LOCAL_TIME, IOUtil::readLocalTime);
+        int currentPos = in.position();
+        try {
+            in.position(readPrimitivePosition(fieldName, LOCAL_TIME));
+            return IOUtil.readLocalTime(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     @Override
@@ -343,7 +371,15 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public LocalDate readLocalDate(@Nonnull String fieldName) {
-        return readNullableField(fieldName, LOCAL_DATE, IOUtil::readLocalDate);
+        int currentPos = in.position();
+        try {
+            in.position(readPrimitivePosition(fieldName, LOCAL_DATE));
+            return IOUtil.readLocalDate(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     @Override
@@ -353,7 +389,15 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public LocalDateTime readLocalDateTime(@Nonnull String fieldName) {
-        return readNullableField(fieldName, LOCAL_DATE_TIME, IOUtil::readLocalDateTime);
+        int currentPos = in.position();
+        try {
+            in.position(readPrimitivePosition(fieldName, LOCAL_DATE_TIME));
+            return IOUtil.readLocalDateTime(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     @Override
@@ -363,7 +407,15 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public OffsetDateTime readOffsetDateTime(@Nonnull String fieldName) {
-        return readNullableField(fieldName, OFFSET_DATE_TIME, IOUtil::readOffsetDateTime);
+        int currentPos = in.position();
+        try {
+            in.position(readPrimitivePosition(fieldName, OFFSET_DATE_TIME));
+            return IOUtil.readOffsetDateTime(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     @Override
@@ -373,12 +425,12 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public GenericRecord readGenericRecord(@Nonnull String fieldName) {
-        return readNullableField(fieldName, OBJECT, serializer::readGenericRecord);
+        return readVariableLength(fieldName, OBJECT, serializer::readGenericRecord);
     }
 
     @Override
     public <T> T readObject(@Nonnull String fieldName) {
-        return readNullableField(fieldName, OBJECT, serializer::readObject);
+        return readVariableLength(fieldName, OBJECT, serializer::readObject);
     }
 
     @Override
@@ -388,7 +440,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public byte[] readByteArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
+        return readVariableLength(fieldName, BYTE_ARRAY, DefaultCompactReader::readByteArray);
     }
 
     @Override
@@ -398,7 +450,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public boolean[] readBooleanArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, BOOLEAN_ARRAY, ObjectDataInput::readBooleanArray);
+        return readVariableLength(fieldName, BOOLEAN_ARRAY, DefaultCompactReader::readBooleanArray);
     }
 
     @Override
@@ -408,7 +460,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public char[] readCharArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, CHAR_ARRAY, ObjectDataInput::readCharArray);
+        return readVariableLength(fieldName, CHAR_ARRAY, DefaultCompactReader::readCharArray);
     }
 
     @Override
@@ -418,7 +470,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public int[] readIntArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, INT_ARRAY, ObjectDataInput::readIntArray);
+        return readVariableLength(fieldName, INT_ARRAY, DefaultCompactReader::readIntArray);
     }
 
     @Override
@@ -428,7 +480,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public long[] readLongArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, LONG_ARRAY, ObjectDataInput::readLongArray);
+        return readVariableLength(fieldName, LONG_ARRAY, DefaultCompactReader::readLongArray);
     }
 
     @Override
@@ -438,7 +490,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public double[] readDoubleArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, DOUBLE_ARRAY, ObjectDataInput::readDoubleArray);
+        return readVariableLength(fieldName, DOUBLE_ARRAY, DefaultCompactReader::readDoubleArray);
     }
 
     @Override
@@ -448,7 +500,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public float[] readFloatArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FLOAT_ARRAY, ObjectDataInput::readFloatArray);
+        return readVariableLength(fieldName, FLOAT_ARRAY, DefaultCompactReader::readFloatArray);
     }
 
     @Override
@@ -458,7 +510,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public short[] readShortArray(@Nonnull String fieldName) {
-        return readNullableField(fieldName, SHORT_ARRAY, ObjectDataInput::readShortArray);
+        return readVariableLength(fieldName, SHORT_ARRAY, DefaultCompactReader::readShortArray);
     }
 
     @Override
@@ -468,7 +520,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public String[] readUTFArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, UTF_ARRAY, String[]::new, DataInput::readUTF);
+        return readVariableLengthFieldArray(fieldName, UTF_ARRAY, String[]::new, BufferObjectDataInput::readUTF);
     }
 
     @Override
@@ -478,7 +530,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public BigInteger[] readBigIntegerArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, BIG_INTEGER_ARRAY, BigInteger[]::new, IOUtil::readBigInteger);
+        return readVariableLengthFieldArray(fieldName, BIG_INTEGER_ARRAY, BigInteger[]::new, DefaultCompactReader::readBigInteger);
     }
 
     @Override
@@ -488,7 +540,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public BigDecimal[] readBigDecimalArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, BIG_DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
+        return readVariableLengthFieldArray(fieldName, BIG_DECIMAL_ARRAY, BigDecimal[]::new, DefaultCompactReader::readBigDecimal);
     }
 
     @Override
@@ -498,7 +550,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public LocalTime[] readLocalTimeArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, LOCAL_TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
+        return readVariableLength(fieldName, LOCAL_TIME_ARRAY, DefaultCompactReader::readLocalTimeArray);
     }
 
     @Override
@@ -508,7 +560,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public LocalDate[] readLocalDateArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, LOCAL_DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
+        return readVariableLength(fieldName, LOCAL_DATE_ARRAY, DefaultCompactReader::readLocalDateArray);
     }
 
     @Override
@@ -518,7 +570,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public LocalDateTime[] readLocalDateTimeArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, LOCAL_DATE_TIME_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
+        return readVariableLength(fieldName, LOCAL_DATE_TIME_ARRAY, DefaultCompactReader::readLocalDateTimeArray);
     }
 
     @Override
@@ -528,7 +580,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public OffsetDateTime[] readOffsetDateTimeArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, OFFSET_DATE_TIME_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+        return readVariableLength(fieldName, OFFSET_DATE_TIME_ARRAY, DefaultCompactReader::readOffsetDateTimeArray);
     }
 
     @Override
@@ -538,12 +590,12 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, OBJECT_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
+        return readVariableLengthFieldArray(fieldName, OBJECT_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
     }
 
     @Override
     public Object[] readObjectArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, OBJECT_ARRAY, Object[]::new, serializer::readObject);
+        return readVariableLengthFieldArray(fieldName, OBJECT_ARRAY, Object[]::new, serializer::readObject);
     }
 
     @Override
@@ -555,22 +607,23 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
     public <T> List<T> readObjectList(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
-            int position = readPosition(fieldName, OBJECT_ARRAY);
-            if (position == Bits.NULL_ARRAY_LENGTH) {
+            int index = getFieldDefinition(fieldName, OBJECT_ARRAY).getIndex();
+            int variableLengthFieldOffset = in.readInt(variableLengthFieldOffsetsStart + index * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
                 return null;
             }
-            in.position(position);
-            int len = in.readInt();
-            ArrayList<T> objects = new ArrayList<>(len);
-            int offset = in.position();
-            for (int i = 0; i < len; i++) {
-                int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                if (pos != Bits.NULL_ARRAY_LENGTH) {
-                    in.position(pos);
-                    objects.add(serializer.readObject(in));
-                }
+            in.position(variableLengthFieldOffset + offset);
+            int length = getLength(index, variableLengthFieldOffset);
+            ArrayList<T> values = new ArrayList<>(length);
+            int arrayOffsets = variableLengthFieldOffset + offset;
+            int pos = in.readInt(arrayOffsets);
+            for (int i = 0; i < length; i++) {
+                arrayOffsets += INT_SIZE_IN_BYTES;
+                int nextPos = in.readInt(arrayOffsets);
+                values.add(serializer.readObject(in, nextPos - pos));
+                pos = nextPos;
             }
-            return objects;
+            return values;
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -583,28 +636,32 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         return isFieldExists(fieldName, OBJECT_ARRAY) ? readObjectList(fieldName) : defaultValue;
     }
 
-    protected interface Reader<T, R> {
-        R read(T t) throws IOException;
+    protected interface VariableLengthFieldReader<T, R> {
+        R read(T t, int length) throws IOException;
     }
 
-    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, Function<Integer, T[]> constructor,
-                                         Reader<ObjectDataInput, T> reader) {
+    private <T> T[] readVariableLengthFieldArray(@Nonnull String fieldName, FieldType fieldType,
+                                                 Function<Integer, T[]> constructor,
+                                                 VariableLengthFieldReader<BufferObjectDataInput, T> reader) {
         int currentPos = in.position();
         try {
-            int position = readPosition(fieldName, fieldType);
-            if (position == Bits.NULL_ARRAY_LENGTH) {
+            int fieldOffsetIndex = getFieldDefinition(fieldName, fieldType).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
                 return null;
             }
-            in.position(position);
-            int len = in.readInt();
-            T[] values = constructor.apply(len);
-            int offset = in.position();
-            for (int i = 0; i < len; i++) {
-                int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                if (pos != Bits.NULL_ARRAY_LENGTH) {
-                    in.position(pos);
-                    values[i] = reader.read(in);
-                }
+            in.position(variableLengthFieldOffset + offset);
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            T[] values = constructor.apply(length);
+            int arrayOffsets = variableLengthFieldOffset + offset;
+            int pos = in.readInt(arrayOffsets);
+            for (int i = 0; i < length; i++) {
+                arrayOffsets += INT_SIZE_IN_BYTES;
+                int nextPos = in.readInt(arrayOffsets);
+                in.position(pos);
+                values[i] = reader.read(in, nextPos - pos);
+                pos = nextPos;
             }
             return values;
         } catch (IOException e) {
@@ -617,7 +674,11 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
     private int readPrimitivePosition(@Nonnull String fieldName, FieldType fieldType) {
         FieldDescriptorImpl fd = getFieldDefinition(fieldName, fieldType);
         int primitiveOffset = fd.getOffset();
-        return primitiveOffset + offset;
+        int readOffset = primitiveOffset + offset;
+        if (isDebug) {
+            System.out.println("DEBUG READ " + schema.getClassName() + " " + fieldType + " " + fieldName + " " + primitiveOffset + " withOffset " + readOffset);
+        }
+        return readOffset;
     }
 
     @NotNull
@@ -636,7 +697,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         try {
             FieldDescriptorImpl fd = getFieldDefinition(fieldName, fieldType);
             int index = fd.getIndex();
-            int pos = in.readInt(finalPosition - (index + 1) * INT_SIZE_IN_BYTES);
+            int pos = in.readInt(variableLengthFieldOffsetsStart + index * INT_SIZE_IN_BYTES);
             return pos == NULL_POSITION ? NULL_POSITION : pos + offset;
         } catch (IOException e) {
             throw illegalStateException(e);
@@ -650,106 +711,145 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     //indexed methods//
 
-    private boolean doesNotHaveIndex(int beginPosition, int index) {
-        try {
-            int numberOfItems = in.readInt(beginPosition);
-            return numberOfItems <= index;
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
     public Byte readByteFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, BYTE_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readByte(INT_SIZE_IN_BYTES + position + (index * BYTE_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, BYTE_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readByte(variableLengthFieldOffset + offset + (index * BYTE_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Boolean readBooleanFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, BOOLEAN_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readBoolean(INT_SIZE_IN_BYTES + position + (index * BOOLEAN_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, BYTE_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readBoolean(variableLengthFieldOffset + offset + (index * BOOLEAN_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Character readCharFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, CHAR_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readChar(INT_SIZE_IN_BYTES + position + (index * CHAR_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, CHAR_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readChar(variableLengthFieldOffset + offset + (index * CHAR_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Integer readIntFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, INT_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readInt(INT_SIZE_IN_BYTES + position + (index * INT_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, INT_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readInt(variableLengthFieldOffset + offset + (index * INT_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Long readLongFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, LONG_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readLong(INT_SIZE_IN_BYTES + position + (index * LONG_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, LONG_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readLong(variableLengthFieldOffset + offset + (index * LONG_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Double readDoubleFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, DOUBLE_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readDouble(INT_SIZE_IN_BYTES + position + (index * DOUBLE_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, DOUBLE_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readDouble(variableLengthFieldOffset + offset + (index * DOUBLE_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Float readFloatFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, FLOAT_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readFloat(INT_SIZE_IN_BYTES + position + (index * FLOAT_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, FLOAT_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readFloat(variableLengthFieldOffset + offset + (index * FLOAT_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
     public Short readShortFromArray(@Nonnull String fieldName, int index) {
-        int position = readPosition(fieldName, SHORT_ARRAY);
-        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
-            return null;
-        }
         try {
-            return in.readShort(INT_SIZE_IN_BYTES + position + (index * SHORT_SIZE_IN_BYTES));
+            int fieldOffsetIndex = getFieldDefinition(fieldName, SHORT_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            return in.readShort(variableLengthFieldOffset + offset + (index * SHORT_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -757,7 +857,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public String readUTFFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, UTF_ARRAY, ObjectDataInput::readUTF, index);
+        return readObjectFromArrayField(fieldName, UTF_ARRAY, BufferObjectDataInput::readUTF, index);
     }
 
     @Override
@@ -767,32 +867,92 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public BigInteger readBigIntegerFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, BIG_INTEGER_ARRAY, IOUtil::readBigInteger, index);
+        return readObjectFromArrayField(fieldName, BIG_INTEGER_ARRAY, DefaultCompactReader::readBigInteger, index);
     }
 
     @Override
     public BigDecimal readBigDecimalFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, BIG_DECIMAL_ARRAY, IOUtil::readBigDecimal, index);
+        return readObjectFromArrayField(fieldName, BIG_DECIMAL_ARRAY, DefaultCompactReader::readBigDecimal, index);
     }
 
     @Override
     public LocalTime readLocalTimeFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, LOCAL_TIME_ARRAY, IOUtil::readLocalTime, index);
+        try {
+            int fieldOffsetIndex = getFieldDefinition(fieldName, LOCAL_TIME_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            in.position(variableLengthFieldOffset + offset + (index * LOCAL_TIME_ARRAY.getTypeSize()));
+            return IOUtil.readLocalTime(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
     }
 
     @Override
     public LocalDate readLocalDateFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, LOCAL_DATE_ARRAY, IOUtil::readLocalDate, index);
+        try {
+            int fieldOffsetIndex = getFieldDefinition(fieldName, LOCAL_DATE_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            in.position(variableLengthFieldOffset + offset + (index * LOCAL_DATE.getTypeSize()));
+            return IOUtil.readLocalDate(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
     }
 
     @Override
     public LocalDateTime readLocalDateTimeFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, LOCAL_DATE_TIME_ARRAY, IOUtil::readLocalDateTime, index);
+        try {
+            int fieldOffsetIndex = getFieldDefinition(fieldName, LOCAL_DATE_TIME_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            in.position(variableLengthFieldOffset + offset + (index * LOCAL_DATE_TIME.getTypeSize()));
+            return IOUtil.readLocalDateTime(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
     }
 
     @Override
     public OffsetDateTime readOffsetDateTimeFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, OFFSET_DATE_TIME_ARRAY, IOUtil::readOffsetDateTime, index);
+        try {
+            int fieldOffsetIndex = getFieldDefinition(fieldName, OFFSET_DATE_TIME_ARRAY).getIndex();
+            int variableLengthFieldOffset
+                    = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
+                return null;
+            }
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
+            }
+            in.position(variableLengthFieldOffset + offset + (index * OFFSET_DATE_TIME.getTypeSize()));
+            return IOUtil.readOffsetDateTime(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
     }
 
     @Override
@@ -801,19 +961,24 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
     }
 
     private <T> T readObjectFromArrayField(@Nonnull String fieldName, FieldType fieldType,
-                                           Reader<ObjectDataInput, T> reader, int index) {
+                                           VariableLengthFieldReader<BufferObjectDataInput, T> reader, int index) {
         int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, fieldType);
-            if (pos == NULL_POSITION || doesNotHaveIndex(pos, index)) {
+            int fieldOffsetIndex = getFieldDefinition(fieldName, fieldType).getIndex();
+            int variableLengthFieldOffset = in.readInt(variableLengthFieldOffsetsStart + fieldOffsetIndex * INT_SIZE_IN_BYTES);
+            if (variableLengthFieldOffset < 0) {
                 return null;
             }
-            int indexedItemPosition = in.readInt((pos + INT_SIZE_IN_BYTES) + index * INT_SIZE_IN_BYTES);
-            if (indexedItemPosition != NULL_POSITION) {
-                in.position(indexedItemPosition);
-                return reader.read(in);
+            in.position(variableLengthFieldOffset + offset);
+            int length = getLength(fieldOffsetIndex, variableLengthFieldOffset);
+            if (length <= index) {
+                return null;
             }
-            return null;
+            in.position(variableLengthFieldOffset + offset + (index) * Bits.INT_SIZE_IN_BYTES);
+            int indexedItemPosition = in.readInt();
+            int nextIndexedItemPosition = in.readInt();
+            in.position(indexedItemPosition);
+            return reader.read(in, nextIndexedItemPosition - indexedItemPosition);
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -828,6 +993,196 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     protected IllegalStateException illegalStateException(IOException e) {
         return new IllegalStateException("IOException is not expected since we read from a well known format and position");
+    }
+
+    public static byte[] readByteArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            byte[] b = new byte[size];
+            in.readFully(b);
+            return b;
+        }
+        return new byte[0];
+    }
+
+    public static boolean[] readBooleanArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            boolean[] values = new boolean[size];
+            for (int i = 0; i < size; i++) {
+                values[i] = in.readBoolean();
+            }
+            return values;
+        }
+        return new boolean[0];
+    }
+
+    public static char[] readCharArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 1;
+            char[] values = new char[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readChar();
+            }
+            return values;
+        }
+        return new char[0];
+    }
+
+    public static int[] readIntArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 2;
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readInt();
+            }
+            return values;
+        }
+        return new int[0];
+    }
+
+    public static long[] readLongArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 3;
+            long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readLong();
+            }
+            return values;
+        }
+        return new long[0];
+    }
+
+    public static double[] readDoubleArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 3;
+            double[] values = new double[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readDouble();
+            }
+            return values;
+        }
+        return new double[0];
+    }
+
+    public static float[] readFloatArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 2;
+            float[] values = new float[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readFloat();
+            }
+            return values;
+        }
+        return new float[0];
+    }
+
+    public static short[] readShortArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 1;
+            short[] values = new short[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readShort();
+            }
+            return values;
+        }
+        return new short[0];
+    }
+
+    public static LocalDate[] readLocalDateArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 2;
+            LocalDate[] values = new LocalDate[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = IOUtil.readLocalDate(in);
+            }
+            return values;
+        }
+        return new LocalDate[0];
+    }
+
+    public static LocalTime[] readLocalTimeArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size / 7;
+            LocalTime[] values = new LocalTime[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = IOUtil.readLocalTime(in);
+            }
+            return values;
+        }
+        return new LocalTime[0];
+    }
+
+    public static LocalDateTime[] readLocalDateTimeArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size >> 3;
+            LocalDateTime[] values = new LocalDateTime[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = IOUtil.readLocalDateTime(in);
+            }
+            return values;
+        }
+        return new LocalDateTime[0];
+    }
+
+    public static OffsetDateTime[] readOffsetDateTimeArray(ObjectDataInput in, int size) throws IOException {
+        if (size == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (size > 0) {
+            int len = size / 9;
+            OffsetDateTime[] values = new OffsetDateTime[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = IOUtil.readOffsetDateTime(in);
+            }
+            return values;
+        }
+        return new OffsetDateTime[0];
+    }
+
+    public static BigDecimal readBigDecimal(ObjectDataInput in, int size) throws IOException {
+        final byte[] bytes = new byte[size - INT_SIZE_IN_BYTES];
+        in.readFully(bytes);
+        BigInteger bigInteger = new BigInteger(bytes);
+        int scale = in.readInt();
+        return new BigDecimal(bigInteger, scale);
+    }
+
+    public static BigInteger readBigInteger(ObjectDataInput in, int size) throws IOException {
+        final byte[] bytes = new byte[size];
+        in.readFully(bytes);
+        return new BigInteger(bytes);
     }
 
     @Override

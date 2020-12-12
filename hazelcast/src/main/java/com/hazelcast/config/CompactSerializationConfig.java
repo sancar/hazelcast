@@ -54,10 +54,10 @@ public class CompactSerializationConfig {
      *
      * @param clazz Class to be serialized via compact serializer
      */
-    public <T> void register(Class<T> clazz, String aliasClassName) {
-        checkNotNull(aliasClassName, "aliasClassName");
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, aliasClassName, null);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(aliasClassName, registry);
+    public <T> void register(Class<T> clazz, String typeName) {
+        checkNotNull(typeName, "typeName");
+        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, null);
+        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(typeName, registry);
         if (oldRegistry != null) {
             throw new InvalidConfigurationException("Already have a registry for class name " + clazz.getName());
         }
@@ -73,13 +73,13 @@ public class CompactSerializationConfig {
      *
      * @param clazz Class to be serialized via compact serializer
      */
-    public <T> void register(Class<T> clazz, String aliasClassName, CompactSerializer<T> explicitSerializer) {
-        checkNotNull(aliasClassName, "aliasClassName");
+    public <T> void register(Class<T> clazz, String typeName, CompactSerializer<T> explicitSerializer) {
+        checkNotNull(typeName, "typeName");
         checkNotNull(explicitSerializer, "explicitSerializer");
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, aliasClassName, explicitSerializer);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(aliasClassName, registry);
+        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, explicitSerializer);
+        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(typeName, registry);
         if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class name " + aliasClassName);
+            throw new InvalidConfigurationException("Already have a registry for class name " + typeName);
         }
         oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
         if (oldRegistry != null) {

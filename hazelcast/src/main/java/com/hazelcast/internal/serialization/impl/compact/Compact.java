@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -32,7 +33,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.COMPACT_SERIALIZER;
 
 public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
-
+    private final boolean isDebug = !System.getProperty("com.hazelcast.serialization.compact.debug").isEmpty();
     private final Map<Class, ConfigurationRegistry> classToRegistryMap = new ConcurrentHashMap<>();
     private final Map<String, ConfigurationRegistry> classNameToRegistryMap = new ConcurrentHashMap<>();
 
@@ -50,8 +50,6 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     private final ManagedContext managedContext;
     //TODO sancar cleanup by solving enterprise integration better. We should not need all the serialization servie
     private final InternalSerializationService internalSerializationService;
-    private final CompactWriterFactory compactWriterFactory;
-    private final CompactReaderFactory compactReaderFactory;
 
     public Compact(CompactSerializationConfig compactSerializationConfig,
                    InternalSerializationService internalSerializationService,
@@ -61,30 +59,13 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         this.schemaRegistrar = new SchemaRegistrar(metaDataService);
         Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
         for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registries.entrySet()) {
-            String aliasClassName = entry.getKey();
+            String typeName = entry.getKey();
             CompactSerializer serializer = entry.getValue().element3;
             InternalCompactSerializer compactSerializer = serializer == null ? reflectiveSerializer : serializer;
             Class clazz = entry.getValue().element1;
-            classToRegistryMap.put(clazz, new ConfigurationRegistry(clazz, aliasClassName, compactSerializer));
-            classNameToRegistryMap.put(aliasClassName, new ConfigurationRegistry(clazz, aliasClassName, compactSerializer));
+            classToRegistryMap.put(clazz, new ConfigurationRegistry(clazz, typeName, compactSerializer));
+            classNameToRegistryMap.put(typeName, new ConfigurationRegistry(clazz, typeName, compactSerializer));
         }
-        if (System.getProperty("com.hazelcast.serialization.compact.no_offset") == null) {
-            compactWriterFactory = DefaultCompactWriter::new;
-            compactReaderFactory = DefaultCompactReader::new;
-        } else {
-            compactWriterFactory = CompactWriterWithoutOffset::new;
-            compactReaderFactory = CompactReaderWithoutOffset::new;
-        }
-    }
-
-    public static DefaultCompactWriter createDefaultCompactWriter(Compact serializer, BufferObjectDataOutput out,
-                                                                  SchemaImpl schema) {
-        return serializer.compactWriterFactory.create(serializer, out, schema);
-    }
-
-    public static DefaultCompactReader createDefaultCompactReader(Compact serializer, BufferObjectDataInput in,
-                                                                  Schema schema, @Nullable Class associatedClass) {
-        return serializer.compactReaderFactory.create(serializer, in, schema, associatedClass);
     }
 
     public InternalSerializationService getInternalSerializationService() {
@@ -117,11 +98,18 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     public void write(ObjectDataOutput out, Object o) throws IOException {
         assert out instanceof BufferObjectDataOutput;
         BufferObjectDataOutput bufferObjectDataOutput = (BufferObjectDataOutput) out;
+        int lengthPos = bufferObjectDataOutput.position();
+        bufferObjectDataOutput.writeZeroBytes(Bits.INT_SIZE_IN_BYTES);
+        int startPos = bufferObjectDataOutput.position();
         if (o instanceof GenericRecord) {
             writeGenericRecord(bufferObjectDataOutput, (GenericRecord) o);
+        } else {
+            writeObject(bufferObjectDataOutput, o);
         }
-        writeObject(bufferObjectDataOutput, o);
-
+        bufferObjectDataOutput.writeInt(lengthPos, bufferObjectDataOutput.position() - startPos);
+        if (isDebug) {
+            System.out.println("DEBUG WRITE length at  " + lengthPos + ", " + (bufferObjectDataOutput.position() - startPos) + ", out " + bufferObjectDataOutput);
+        }
     }
 
     void writeGenericRecord(BufferObjectDataOutput out, GenericRecord o) throws IOException {
@@ -136,7 +124,6 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
                                       DefaultCompactReader record) throws IOException {
         SchemaImpl schema = (SchemaImpl) record.getSchema();
         schemaRegistrar.registerSchemaToLocalAndCluster(schema);
-        out.writeLong(schema.getSchemaId());
         record.getIn().readTo(out);
     }
 
@@ -145,9 +132,8 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
                                         DeserializedGenericRecord record) throws IOException {
         SchemaImpl schema = (SchemaImpl) record.getSchema();
         schemaRegistrar.registerSchemaToLocalAndCluster(schema);
-        output.writeLong(schema.getSchemaId());
 
-        DefaultCompactWriter writer = createDefaultCompactWriter(this, output, schema);
+        DefaultCompactWriter writer = new DefaultCompactWriter(this, output, schema);
         Collection<FieldDescriptor> fields = schema.getFields();
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getName();
@@ -255,20 +241,19 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         writer.end();
     }
 
-    public void writeObject(ObjectDataOutput out, Object o) throws IOException {
+    public void writeObject(BufferObjectDataOutput out, Object o) throws IOException {
         Class<?> aClass = o.getClass();
         ConfigurationRegistry registry = getOrCreateRegistry(aClass);
 
         SchemaImpl schema = schemaRegistrar.lookupSchema(aClass);
         if (schema == null) {
-            SchemaBuilder builder = new SchemaBuilder(registry.aliasClassName);
+            SchemaBuilder builder = new SchemaBuilder(registry.typeName);
             SchemaWriter writer = new SchemaWriter(builder);
             registry.compactSerializer.write(writer, o);
             schema = (SchemaImpl) builder.build();
             schemaRegistrar.registerSchema(schema, aClass);
         }
-        out.writeLong(schema.getSchemaId());
-        DefaultCompactWriter writer = createDefaultCompactWriter(this, (BufferObjectDataOutput) out, schema);
+        DefaultCompactWriter writer = new DefaultCompactWriter(this, out, schema);
         registry.compactSerializer.write(writer, o);
         writer.end();
     }
@@ -279,23 +264,39 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     @Override
     public Object read(ObjectDataInput in) throws IOException {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        long schemaId = input.readLong();
+        if (isDebug) {
+            System.out.print("DEBUG READ pos " + input.position());
+        }
+        int totalLength = input.readInt();
+        if (isDebug) {
+            System.out.println(" length " + totalLength);
+        }
+        if (isDebug) {
+            System.out.print("DEBUG READ pos " + input.position());
+        }
+        long schemaId = input.readLong(input.position());
+        if (isDebug) {
+            System.out.println(" schemaId " + schemaId);
+        }
         Schema schema = schemaRegistrar.lookupSchema(schemaId);
+        if (isDebug) {
+            System.out.println("DEBUG READ schema class name " + schema.getClassName());
+        }
         ConfigurationRegistry registry = getOrCreateRegistry(schema.getClassName());
 
         if (registry == null) {
             //we have tried to load class via class loader, it did not work. We are returning a GenericRecord.
             input.steal();
-            return createDefaultCompactReader(this, input, schema, null);
+            return new DefaultCompactReader(this, input, schema, null, totalLength);
         }
 
-        DefaultCompactReader genericRecord = createDefaultCompactReader(this, input, schema, registry.clazz);
+        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema, registry.clazz, totalLength);
         Object object = registry.compactSerializer.read(genericRecord);
         return managedContext != null ? managedContext.initialize(object) : object;
 
     }
 
-    public <T> T readObject(ObjectDataInput in) throws IOException {
+    public <T> T readObject(ObjectDataInput in, int length) throws IOException {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         long schemaId = input.readLong();
         Schema schema = schemaRegistrar.lookupSchema(schemaId);
@@ -306,7 +307,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
                     "Associated schema for the data : " + schema);
         }
 
-        DefaultCompactReader genericRecord = createDefaultCompactReader(this, input, schema, registry.clazz);
+        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema, registry.clazz, length);
         Object object = registry.compactSerializer.read(genericRecord);
         return managedContext != null ? (T) managedContext.initialize(object) : (T) object;
     }
@@ -328,24 +329,21 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
     }
 
     public GenericRecord readGenericRecord(ObjectDataInput in) throws IOException {
+        int length = in.readInt();
+        return readGenericRecord(in, length);
+    }
+
+    public GenericRecord readGenericRecord(ObjectDataInput in, int length) throws IOException {
         long schemaId = in.readLong();
         Schema schema = schemaRegistrar.lookupSchema(schemaId);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         //make sure that this is not returned to pool
         input.steal();
-        return createDefaultCompactReader(this, input, schema, null);
+        return new DefaultCompactReader(this, input, schema, null, length);
     }
 
     public SchemaRegistrar getSchemaRegistrar() {
         return schemaRegistrar;
     }
 
-    interface CompactWriterFactory {
-        DefaultCompactWriter create(Compact serializer, BufferObjectDataOutput out, SchemaImpl schema);
-    }
-
-    interface CompactReaderFactory {
-        DefaultCompactReader create(Compact serializer, BufferObjectDataInput in,
-                                    Schema schema, @Nullable Class associatedClass);
-    }
 }

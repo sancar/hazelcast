@@ -28,11 +28,12 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.Collection;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
@@ -70,21 +71,39 @@ import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 public class DefaultCompactWriter implements CompactWriter {
 
+    private final boolean isDebug = !System.getProperty("com.hazelcast.serialization.compact.debug").isEmpty();
     protected final Compact serializer;
     protected final Schema schema;
     protected final BufferObjectDataOutput out;
     protected final int offset;
     private final int[] fieldPositions;
+    private final int variableLengthFieldOffsetsStart;
 
     public DefaultCompactWriter(Compact serializer,
                                 BufferObjectDataOutput out, SchemaImpl schema) {
         this.serializer = serializer;
         this.out = out;
         this.schema = schema;
-        this.fieldPositions = new int[schema.getNumberOfComplexFields()];
+        int numberOfVariableLengthFields = schema.getNumberOfVariableLengthFields();
+        this.fieldPositions = new int[numberOfVariableLengthFields];
         offset = out.position();
-        //skip for length and primitives
-        out.writeZeroBytes(schema.getPrimitiveOffsetEnd());
+        out.writeZeroBytes(schema.getPrimitiveOffsetEnd() + (INT_SIZE_IN_BYTES * numberOfVariableLengthFields));
+        if (isDebug) {
+            System.out.println("DEBUG WRITE schema id  pos " + offset + " " + schema.getClassName() + " " + schema.getSchemaId());
+        }
+        try {
+            out.writeLong(offset, schema.getSchemaId());
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+        variableLengthFieldOffsetsStart = schema.getPrimitiveOffsetEnd() + offset;
+        //skip  primitives and variableLengthFieldOffsets
+        if (isDebug) {
+            System.out.println("DEBUG WRITE offset " + offset);
+            System.out.println("DEBUG WRITE getPrimitiveOffsetEnd " + schema.getPrimitiveOffsetEnd());
+            System.out.println("DEBUG WRITE numberOfVariableLengthFields " + numberOfVariableLengthFields);
+            System.out.println("DEBUG WRITE start position of variable length " + out.position());
+        }
     }
 
     public byte[] toByteArray() {
@@ -92,22 +111,20 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     public void end() {
+        int position = out.position();
         try {
-            for (int i = fieldPositions.length - 1; i >= 0; i--) {
-                out.writeInt(fieldPositions[i]);
-            }
-            int position = out.position();
-            int length = position - offset;
-            //write length
-            out.writeInt(offset, length);
+            out.position(variableLengthFieldOffsetsStart);
+            writeIntArray0(out, fieldPositions);
         } catch (IOException e) {
             throw illegalStateException(e);
+        } finally {
+            out.position(position);
         }
     }
 
     @Override
     public void writeInt(String fieldName, int value) {
-        int position = getPrimitivePosition(fieldName, INT);
+        int position = getFixedLengthFieldPosition(fieldName, INT);
         try {
             out.writeInt(position, value);
         } catch (IOException e) {
@@ -117,7 +134,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeLong(String fieldName, long value) {
-        int position = getPrimitivePosition(fieldName, LONG);
+        int position = getFixedLengthFieldPosition(fieldName, LONG);
         try {
             out.writeLong(position, value);
         } catch (IOException e) {
@@ -127,7 +144,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeBoolean(String fieldName, boolean value) {
-        int position = getPrimitivePosition(fieldName, BOOLEAN);
+        int position = getFixedLengthFieldPosition(fieldName, BOOLEAN);
         try {
             out.writeBoolean(position, value);
         } catch (IOException e) {
@@ -141,7 +158,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeByte(String fieldName, byte value) {
-        int position = getPrimitivePosition(fieldName, BYTE);
+        int position = getFixedLengthFieldPosition(fieldName, BYTE);
         try {
             out.writeByte(position, value);
         } catch (IOException e) {
@@ -151,7 +168,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeChar(String fieldName, char value) {
-        int position = getPrimitivePosition(fieldName, CHAR);
+        int position = getFixedLengthFieldPosition(fieldName, CHAR);
         try {
             out.writeChar(position, value);
         } catch (IOException e) {
@@ -161,7 +178,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeDouble(String fieldName, double value) {
-        int position = getPrimitivePosition(fieldName, DOUBLE);
+        int position = getFixedLengthFieldPosition(fieldName, DOUBLE);
         try {
             out.writeDouble(position, value);
         } catch (IOException e) {
@@ -171,7 +188,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeFloat(String fieldName, float value) {
-        int position = getPrimitivePosition(fieldName, FLOAT);
+        int position = getFixedLengthFieldPosition(fieldName, FLOAT);
         try {
             out.writeFloat(position, value);
         } catch (IOException e) {
@@ -181,7 +198,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeShort(String fieldName, short value) {
-        int position = getPrimitivePosition(fieldName, SHORT);
+        int position = getFixedLengthFieldPosition(fieldName, SHORT);
         try {
             out.writeShort(position, value);
         } catch (IOException e) {
@@ -189,12 +206,12 @@ public class DefaultCompactWriter implements CompactWriter {
         }
     }
 
-    protected  <T> void writeNullable(String fieldName, T object, FieldType fieldType, Writer<BufferObjectDataOutput, T> writer) {
+    protected <T> void writeVariableLength(String fieldName, T object, FieldType fieldType, Writer<BufferObjectDataOutput, T> writer) {
         try {
             if (object == null) {
-                setPositionAsNull(fieldName, fieldType);
+                setPosition(fieldName, fieldType, true);
             } else {
-                setPosition(fieldName, fieldType);
+                setPosition(fieldName, fieldType, false);
                 writer.write(out, object);
             }
         } catch (IOException e) {
@@ -204,96 +221,126 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeUTF(String fieldName, String str) {
-        setPosition(fieldName, UTF);
-        try {
-            out.writeUTF(str);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
+        writeVariableLength(fieldName, str, UTF, (out, value) -> out.write(str.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override
     public void writeObject(String fieldName, Object value) {
-        writeNullable(fieldName, value, OBJECT, serializer::writeObject);
+        writeVariableLength(fieldName, value, OBJECT, serializer::writeObject);
     }
 
     public void writeGenericRecord(String fieldName, GenericRecord value) {
-        writeNullable(fieldName, value, OBJECT, serializer::writeGenericRecord);
+        writeVariableLength(fieldName, value, OBJECT, serializer::writeGenericRecord);
     }
 
     @Override
     public void writeBigInteger(String fieldName, BigInteger value) {
-        writeNullable(fieldName, value, BIG_INTEGER, IOUtil::writeBigInteger);
+        writeVariableLength(fieldName, value, BIG_INTEGER, (out, v) -> out.write(v.toByteArray()));
     }
 
     @Override
     public void writeBigDecimal(String fieldName, BigDecimal value) {
-        writeNullable(fieldName, value, BIG_DECIMAL, IOUtil::writeBigDecimal);
+        writeVariableLength(fieldName, value, BIG_DECIMAL, (out, v) -> {
+            out.write(v.unscaledValue().toByteArray());
+            out.writeInt(v.scale());
+        });
     }
 
     @Override
     public void writeLocalTime(String fieldName, LocalTime value) {
-        writeNullable(fieldName, value, LOCAL_TIME, IOUtil::writeLocalTime);
+        int lastPos = out.position();
+        try {
+            out.position(getFixedLengthFieldPosition(fieldName, LOCAL_TIME));
+            IOUtil.writeLocalTime(out, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            out.position(lastPos);
+        }
     }
 
     @Override
     public void writeLocalDate(String fieldName, LocalDate value) {
-        writeNullable(fieldName, value, LOCAL_DATE, IOUtil::writeLocalDate);
+        int lastPos = out.position();
+        try {
+            out.position(getFixedLengthFieldPosition(fieldName, LOCAL_DATE));
+            IOUtil.writeLocalDate(out, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            out.position(lastPos);
+        }
     }
 
     @Override
     public void writeLocalDateTime(String fieldName, LocalDateTime value) {
-        writeNullable(fieldName, value, LOCAL_DATE_TIME, IOUtil::writeLocalDateTime);
+        int lastPos = out.position();
+        try {
+            out.position(getFixedLengthFieldPosition(fieldName, LOCAL_DATE_TIME));
+            IOUtil.writeLocalDateTime(out, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            out.position(lastPos);
+        }
     }
 
     @Override
     public void writeOffsetDateTime(String fieldName, OffsetDateTime value) {
-        writeNullable(fieldName, value, OFFSET_DATE_TIME, IOUtil::writeOffsetDateTime);
+        int lastPos = out.position();
+        try {
+            out.position(getFixedLengthFieldPosition(fieldName, OFFSET_DATE_TIME));
+            IOUtil.writeOffsetDateTime(out, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            out.position(lastPos);
+        }
     }
 
     @Override
     public void writeByteArray(String fieldName, byte[] values) {
-        writeNullable(fieldName, values, BYTE_ARRAY, ObjectDataOutput::writeByteArray);
+        writeVariableLength(fieldName, values, BYTE_ARRAY, DefaultCompactWriter::writeByteArray0);
     }
 
     @Override
     public void writeBooleanArray(String fieldName, boolean[] values) {
-        writeNullable(fieldName, values, BOOLEAN_ARRAY, ObjectDataOutput::writeBooleanArray);
+        writeVariableLength(fieldName, values, BOOLEAN_ARRAY, DefaultCompactWriter::writeBooleanArray0);
     }
 
     @Override
     public void writeCharArray(String fieldName, char[] values) {
-        writeNullable(fieldName, values, CHAR_ARRAY, ObjectDataOutput::writeCharArray);
+        writeVariableLength(fieldName, values, CHAR_ARRAY, DefaultCompactWriter::writeCharArray0);
     }
 
     @Override
     public void writeIntArray(String fieldName, int[] values) {
-        writeNullable(fieldName, values, INT_ARRAY, ObjectDataOutput::writeIntArray);
+        writeVariableLength(fieldName, values, INT_ARRAY, DefaultCompactWriter::writeIntArray0);
     }
 
     @Override
     public void writeLongArray(String fieldName, long[] values) {
-        writeNullable(fieldName, values, LONG_ARRAY, ObjectDataOutput::writeLongArray);
+        writeVariableLength(fieldName, values, LONG_ARRAY, DefaultCompactWriter::writeLongArray0);
     }
 
     @Override
     public void writeDoubleArray(String fieldName, double[] values) {
-        writeNullable(fieldName, values, DOUBLE_ARRAY, ObjectDataOutput::writeDoubleArray);
+        writeVariableLength(fieldName, values, DOUBLE_ARRAY, DefaultCompactWriter::writeDoubleArray0);
     }
 
     @Override
     public void writeFloatArray(String fieldName, float[] values) {
-        writeNullable(fieldName, values, FLOAT_ARRAY, ObjectDataOutput::writeFloatArray);
+        writeVariableLength(fieldName, values, FLOAT_ARRAY, DefaultCompactWriter::writeFloatArray0);
     }
 
     @Override
     public void writeShortArray(String fieldName, short[] values) {
-        writeNullable(fieldName, values, SHORT_ARRAY, ObjectDataOutput::writeShortArray);
+        writeVariableLength(fieldName, values, SHORT_ARRAY, DefaultCompactWriter::writeShortArray0);
     }
 
     @Override
     public void writeUTFArray(String fieldName, String[] values) {
-        writeObjectArrayField(fieldName, UTF_ARRAY, values, ObjectDataOutput::writeUTF);
+        writeObjectArrayField(fieldName, UTF_ARRAY, values,(out, value) -> out.write(value.getBytes(StandardCharsets.UTF_8)));
     }
 
 
@@ -302,28 +349,24 @@ public class DefaultCompactWriter implements CompactWriter {
         void write(O out, T value) throws IOException;
     }
 
-    protected  <T> void writeObjectArrayField(String fieldName, FieldType fieldType, T[] values, Writer<BufferObjectDataOutput, T> writer) {
+    protected <T> void writeObjectArrayField(String fieldName, FieldType fieldType, T[] values, Writer<BufferObjectDataOutput, T> writer) {
         //TODO sancar make it same with writeArrayList
         if (values == null) {
-            setPositionAsNull(fieldName, fieldType);
+            setPosition(fieldName, fieldType, true);
             return;
         }
         try {
-            setPosition(fieldName, fieldType);
+            setPosition(fieldName, fieldType, false);
             int len = values.length;
-            out.writeInt(len);
 
-            int offset = out.position();
-            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
+            int arrayOffset = out.position();
+            out.writeZeroBytes((len + 1) * INT_SIZE_IN_BYTES);
             for (int i = 0; i < len; i++) {
-                if (values[i] != null) {
-                    int position = out.position();
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                    writer.write(out, values[i]);
-                } else {
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
-                }
+                int position = out.position();
+                out.writeInt(arrayOffset + i * INT_SIZE_IN_BYTES, position);
+                writer.write(out, values[i]);
             }
+            out.writeInt(arrayOffset + (len + 1) * INT_SIZE_IN_BYTES, out.position());
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -359,23 +402,28 @@ public class DefaultCompactWriter implements CompactWriter {
         writeObjectArrayField(fieldName, OFFSET_DATE_TIME_ARRAY, values, IOUtil::writeOffsetDateTime);
     }
 
-    protected void setPositionAsNull(String fieldName, FieldType fieldType) {
-        FieldDescriptorImpl field = checkFieldDefinition(fieldName, fieldType);
-        int index = field.getIndex();
-        fieldPositions[index] = -1;
-    }
-
-    protected void setPosition(String fieldName, FieldType fieldType) {
+    protected void setPosition(String fieldName, FieldType fieldType, boolean isNull) {
         FieldDescriptorImpl field = checkFieldDefinition(fieldName, fieldType);
         int pos = out.position();
         int fieldPosition = pos - offset;
         int index = field.getIndex();
-        fieldPositions[index] = fieldPosition;
+        if (isNull) {
+            fieldPositions[index] = -fieldPosition;
+        } else {
+            fieldPositions[index] = fieldPosition;
+        }
+        if (isDebug) {
+            System.out.println("DEBUG WRITE " + schema.getClassName() + " " + fieldType + " " + fieldName + " " + fieldPositions[index] + ", with offset " + pos + " at index " + index);
+        }
     }
 
-    private int getPrimitivePosition(String fieldName, FieldType fieldType) {
+    private int getFixedLengthFieldPosition(String fieldName, FieldType fieldType) {
         FieldDescriptorImpl fieldDefinition = checkFieldDefinition(fieldName, fieldType);
-        return fieldDefinition.getOffset() + offset;
+        int writeOffset = fieldDefinition.getOffset() + offset;
+        if (isDebug) {
+            System.out.println("DEBUG WRITE " + schema.getClassName() + " " + fieldType + " " + fieldName + " " + fieldDefinition.getOffset() + ", with offset " + writeOffset);
+        }
+        return writeOffset;
     }
 
     @NotNull
@@ -400,29 +448,96 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeObjectList(String fieldName, List<T> values) {
+    public <T> void writeObjectCollection(String fieldName, Collection<T> values) {
         try {
             if (values == null) {
-                setPositionAsNull(fieldName, OBJECT_ARRAY);
+                setPosition(fieldName, OBJECT_ARRAY, true);
                 return;
             }
-            setPosition(fieldName, OBJECT_ARRAY);
+            setPosition(fieldName, OBJECT_ARRAY, false);
             int len = values.size();
-            out.writeInt(len);
-            int offset = out.position();
-            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-            for (int i = 0; i < len; i++) {
-                Object value = values.get(i);
-                if (value != null) {
-                    int position = out.position();
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                    serializer.writeObject(out, value);
-                } else {
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
-                }
+            int arrayOffset = out.position();
+            out.writeZeroBytes((len + 1) * INT_SIZE_IN_BYTES);
+            int i = 0;
+            for (T value : values) {
+                int position = out.position();
+                out.writeInt(arrayOffset + i * INT_SIZE_IN_BYTES, position);
+                serializer.writeObject(out, value);
+                i++;
             }
+            out.writeInt(arrayOffset + (len + 1) * INT_SIZE_IN_BYTES, out.position());
         } catch (IOException e) {
             throw illegalStateException(e);
+        }
+    }
+
+    public static void writeByteArray0(ObjectDataOutput out, byte[] value) throws IOException {
+        out.write(value);
+    }
+
+    public static void writeBooleanArray0(ObjectDataOutput out, boolean[] value) throws IOException {
+        for (boolean b : value) {
+            out.writeBoolean(b);
+        }
+    }
+
+    public static void writeCharArray0(ObjectDataOutput out, char[] value) throws IOException {
+        for (char c : value) {
+            out.writeChar(c);
+        }
+    }
+
+    public static void writeIntArray0(ObjectDataOutput out, int[] value) throws IOException {
+        for (int i : value) {
+            out.writeInt(i);
+        }
+    }
+
+    public static void writeLongArray0(ObjectDataOutput out, long[] value) throws IOException {
+        for (long l : value) {
+            out.writeLong(l);
+        }
+    }
+
+    public static void writeDoubleArray0(ObjectDataOutput out, double[] value) throws IOException {
+        for (double d : value) {
+            out.writeDouble(d);
+        }
+    }
+
+    public static void writeFloatArray0(ObjectDataOutput out, float[] value) throws IOException {
+        for (float f : value) {
+            out.writeFloat(f);
+        }
+    }
+
+    public static void writeShortArray0(ObjectDataOutput out, short[] value) throws IOException {
+        for (short s : value) {
+            out.writeShort(s);
+        }
+    }
+
+    public static void writeLocalDateArray0(ObjectDataOutput out, LocalDate[] value) throws IOException {
+        for (LocalDate localDate : value) {
+            IOUtil.writeLocalDate(out, localDate);
+        }
+    }
+
+    public static void writeLocalTimeArray0(ObjectDataOutput out, LocalTime[] value) throws IOException {
+        for (LocalTime localTime : value) {
+            IOUtil.writeLocalTime(out, localTime);
+        }
+    }
+
+    public static void writeLocalDateTimeArray0(ObjectDataOutput out, LocalDateTime[] value) throws IOException {
+        for (LocalDateTime localDateTime : value) {
+            IOUtil.writeLocalDateTime(out, localDateTime);
+        }
+    }
+
+    public static void writeOffsetDateTimeArray0(ObjectDataOutput out, OffsetDateTime[] value) throws IOException {
+        for (OffsetDateTime offsetDateTime : value) {
+            IOUtil.writeOffsetDateTime(out, offsetDateTime);
         }
     }
 

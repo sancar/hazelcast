@@ -65,6 +65,8 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataR
 
     short readShort(int position, ByteOrder byteOrder) throws IOException;
 
+    String readUTF(int length);
+
     int position();
 
     void position(int newPos);

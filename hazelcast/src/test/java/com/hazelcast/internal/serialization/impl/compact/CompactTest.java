@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -47,11 +48,11 @@ import static org.junit.Assert.assertTrue;
 public class CompactTest {
 
     { //TODO sancar cleanup
-//        System.setProperty("com.hazelcast.serialization.compact.no_offset", "true");
+        System.setProperty("com.hazelcast.serialization.compact.debug", "true");
     }
 
     MetaDataService metaDataService = new MetaDataService() {
-        private Map<Object, byte[]> map = new ConcurrentHashMap<>();
+        private final Map<Object, byte[]> map = new ConcurrentHashMap<>();
 
         @Override
         public byte[] get(Object key) {
@@ -126,6 +127,65 @@ public class CompactTest {
     @Test
     public void testDefaultsReflection_nested() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
+        long[] ids = new long[2];
+        ids[0] = 22;
+        ids[1] = 44;
+
+        EmployeeDTO[] employeeDTOS = new EmployeeDTO[5];
+        for (int j = 0; j < employeeDTOS.length; j++) {
+            employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
+        }
+        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, ids, employeeDTO, employeeDTOS);
+
+        Data data = serializationService.toData(employerDTO);
+
+        Object object = serializationService.toObject(data);
+        EmployerDTO o = (EmployerDTO) object;
+        assertEquals(employerDTO, o);
+    }
+
+    @Test
+    public void testWithExplicitSerializer_nested() {
+        SerializationConfig serializationConfig = new SerializationConfig();
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        compactSerializationConfig.register(EmployeeDTO.class, "employee",
+                new CompactSerializer<EmployeeDTO>() {
+                    @Override
+                    public EmployeeDTO read(CompactReader in) {
+                        return new EmployeeDTO(in.readInt("a"), in.readLong("i"));
+                    }
+
+                    @Override
+                    public void write(CompactWriter out, EmployeeDTO object) {
+                        out.writeInt("a", object.getAge());
+                        out.writeLong("i", object.getId());
+                    }
+                });
+        compactSerializationConfig.register(EmployerDTO.class, "employer",
+                new CompactSerializer<EmployerDTO>() {
+                    @Override
+                    public EmployerDTO read(CompactReader in) {
+                        String name = in.readUTF("n");
+                        int age = in.readInt("a");
+                        long[] ids = in.readLongArray("ids");
+//                        EmployeeDTO s = in.readObject("s");
+//                        EmployeeDTO[] ss = (EmployeeDTO[]) in.readObjectArray("ss");
+                        return new EmployerDTO(name, age, ids, null, null);
+                    }
+
+                    @Override
+                    public void write(CompactWriter out, EmployerDTO object) {
+                        out.writeUTF("n", object.getName());
+                        out.writeInt("a", object.getAge());
+                        out.writeLongArray("ids", object.getIds());
+//                        out.writeObject("s", object.getSingleEmployee());
+//                        out.writeObjectArray("ss", object.getOtherEmployees());
+                    }
+                });;
+
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         long[] ids = new long[2];

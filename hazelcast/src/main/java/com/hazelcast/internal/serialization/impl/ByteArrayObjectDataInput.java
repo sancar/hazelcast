@@ -573,13 +573,18 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      */
     @Override
     public final String readUTF() throws IOException {
-        int numberOfBytes = readInt();
-        if (numberOfBytes == NULL_ARRAY_LENGTH) {
+        int length = readInt();
+        return readUTF(length);
+    }
+
+    @Override
+    public String readUTF(int length) {
+        if (length == NULL_ARRAY_LENGTH) {
             return null;
         }
 
-        String result = new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
-        pos += numberOfBytes;
+        String result = new String(data, pos, length, StandardCharsets.UTF_8);
+        pos += length;
         return result;
     }
 

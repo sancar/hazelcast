@@ -17,9 +17,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactReader;
-import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactWriter;
-
 public class SerializingGenericRecordCloner implements GenericRecord.Builder {
 
     interface Writer {
@@ -39,7 +36,7 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
         this.serializer = serializer;
         this.schema = schema;
         this.genericRecord = record;
-        this.compactWriter = createDefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), (SchemaImpl) schema);
+        this.compactWriter = new DefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), (SchemaImpl) schema);
         this.bufferObjectDataInputFunc = bufferObjectDataInputFunc;
     }
 
@@ -157,7 +154,8 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
             compactWriter.end();
             byte[] bytes = compactWriter.toByteArray();
             Class associatedClass = genericRecord.getAssociatedClass();
-            return createDefaultCompactReader(serializer, bufferObjectDataInputFunc.apply(bytes), schema, associatedClass);
+            BufferObjectDataInput dataInput = bufferObjectDataInputFunc.apply(bytes);
+            return new DefaultCompactReader(serializer, dataInput, schema, associatedClass, bytes.length);
         } catch (IOException e) {
             throw new HazelcastSerializationException(e);
         }

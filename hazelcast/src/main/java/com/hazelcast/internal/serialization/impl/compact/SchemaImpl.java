@@ -59,7 +59,7 @@ public class SchemaImpl implements Schema {
         return fieldDefinitionMap.values();
     }
 
-    public int getNumberOfComplexFields() {
+    public int getNumberOfVariableLengthFields() {
         return numberOfComplexFields;
     }
 

@@ -24,9 +24,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class SchemaBuilder {
 
@@ -43,8 +45,8 @@ public class SchemaBuilder {
         }
     }
 
-    private Map<String, FieldDescriptor> fieldDefinitionMap = new HashMap<>();
-    private String className;
+    private final Map<String, FieldDescriptor> fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
+    private final String className;
 
     protected SchemaBuilder(String className) {
         this.className = className;
@@ -187,24 +189,23 @@ public class SchemaBuilder {
     public Schema build() {
         List<FieldDescriptor> list = new ArrayList<>(fieldDefinitionMap.values());
         list.sort((o1, o2) -> {
-            if (o1.getType().isPrimitive()) {
-                if (!o2.getType().isPrimitive()) {
+            if (o1.getType().hasDefiniteSize()) {
+                if (!o2.getType().hasDefiniteSize()) {
                     return 1;
                 } else {
                     return o1.getType().getTypeSize() - o2.getType().getTypeSize();
                 }
-            } else if (o2.getType().isPrimitive()) {
+            } else if (o2.getType().hasDefiniteSize()) {
                 return -1;
             }
 
             return o1.getName().compareTo(o2.getName());
         });
         int index = 0;
-        //first field is length
-        int offset = Bits.INT_SIZE_IN_BYTES;
+        int offset = Bits.LONG_SIZE_IN_BYTES;//schema id
         for (FieldDescriptor value : list) {
             FieldDescriptorImpl fieldDefinition = (FieldDescriptorImpl) value;
-            if (fieldDefinition.getType().isPrimitive()) {
+            if (fieldDefinition.getType().hasDefiniteSize()) {
                 fieldDefinition.setOffset(offset);
                 offset += fieldDefinition.getType().getTypeSize();
             } else {

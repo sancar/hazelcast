@@ -54,7 +54,6 @@ import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.values;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -120,11 +119,5 @@ public class FieldTypeTest {
         assertEquals(LOCAL_DATE, LOCAL_DATE_ARRAY.getSingleType());
         assertEquals(LOCAL_DATE_TIME, LOCAL_DATE_TIME_ARRAY.getSingleType());
         assertEquals(OFFSET_DATE_TIME, OFFSET_DATE_TIME_ARRAY.getSingleType());
-    }
-
-    @Test
-    public void assertCorrectTypesCount() {
-        assertEquals("Wrong types count! See isArrayType() implementation for details what will break",
-                32, values().length);
     }
 }
