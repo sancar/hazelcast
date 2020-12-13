@@ -21,12 +21,12 @@ import javax.annotation.Nonnull;
 public class ConfigurationRegistry {
     public final Class clazz;
     public final InternalCompactSerializer compactSerializer;
-    public final String aliasClassName;
+    public final String typeName;
 
-    public ConfigurationRegistry(@Nonnull Class clazz, @Nonnull String aliasClassName,
+    public ConfigurationRegistry(@Nonnull Class clazz, @Nonnull String typeName,
                                  @Nonnull InternalCompactSerializer compactSerializer) {
         this.clazz = clazz;
-        this.aliasClassName = aliasClassName;
+        this.typeName = typeName;
         this.compactSerializer = compactSerializer;
     }
 }

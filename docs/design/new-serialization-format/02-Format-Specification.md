@@ -1,50 +1,111 @@
 # New Serialization Format Specification
 
-Every serialized object will consist of a header and the data and the footer.
-We will also have a schema seperate from the serialized object. 
+Every serialized user object will consist of a header and the composed data.
+We will also have a schema separate from the serialized object. 
+
+This document will first describe the data types that will be used as building blocks, then will continue
+with composed data
+
+## Data Types
+
+| Type                                                                                                                                                                                                           | Type id | Fixed-Length| SQL             | Java                     | C++ | Python | Nodejs | C# | Go |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|------------|-----------------|--------------------------|-----|--------|--------|----|----|
+| boolean: true/false, 1-bit packed to one-byte. <br>up-to 8 booleans take 1 byte on a data,up-to 16 booleans take 2 byte on a data so on                                                                        | 0       | Yes        | BOOLEAN         | boolean                  |     |        |        |    |    |
+| i8 : 8 bit two's complement signed integer                                                                                                                                                                     | 2       | Yes        | TINYINT         | Byte                     |     |        |        |    |    |
+| i16: 16-bit two's-complement signed integer                                                                                                                                                                    | 4       | Yes        | SMALLINT        | short                    |     |        |        |    |    |
+| i32: 32-bit two's-complement signed integer                                                                                                                                                                    | 6       | Yes        | INTEGER         | int                      |     |        |        |    |    |
+| i64: 64-bit two's-complement signed integer                                                                                                                                                                    | 8       | Yes        | BIGINT          | long                     |     |        |        |    |    |
+| float : 32-bit IEEE 754 floating-point number                                                                                                                                                                  | 10      | Yes        | REAL            | float                    |     |        |        |    |    |
+| double: 64-bit IEEE 754 floating-point number                                                                                                                                                                  | 12      | No         | DOUBLE          | double                   |     |        |        |    |    |
+| utf8 : utf8 string https://tools.ietf.org/html/rfc3629                                                                                                                                                         | 14      | No         | VARCHAR         | String                   |     |        |        |    |    |
+| utf16: utf16 string https://tools.ietf.org/html/rfc2781                                                                                                                                                        | 16      | No         | VARCHAR         | String                   |     |        |        |    |    | //TODO sancar  not implemented yet
+| arbitrary precision two's-complement signed integer: represented as: Array of i8                                                                                                                               | 18      | No         | DECIMAL         | java.math.BigInteger     |     |        |        |    |    |
+| arbitrary precision and scale floating-point number: represented as unscaledValue x 10 ^ -scale <br>unscaledValue: Array of i8  scale : single i32 for scale                                                   | 20      | No         | DECIMAL         | java.math.BigDecimal     |     |        |        |    |    |
+| Date YYYY-MM-DD<br>from 1753-Jan-1 to 9999-Dec-31:<br>i16: year, i8: month, i8:dayOfMonth                                                                                                                      | 22      | Yes        | DATE            | java.time.LocalDate      |     |        |        |    |    |
+| Time: HH-MI-SS-NN<br>i8: hour, i8: minute, i8: seconds, i32: nanoseconds                                                                                                                                       | 24      | Yes        | TIME            | java.time.LocalTime      |     |        |        |    |    |
+| Timestamp: YYYY-MM-DD-HH-MI-SS-NN<br>i16: year, i8: month,  i8:dayOfMonth,<br>i8 : hour, i8: minute, i8: seconds, i32: nanoseconds                                                                             | 26      | Yes        | TIMESTAMP       | java.time.LocalDateTime  |     |        |        |    |    |
+| Timestamp: YYYY-MM-DD-HH-MI-SS-MM Zone<br>i16: year, i8: month, i8:dayOfMonth,<br>i8 : hour, i8: minute,i8: seconds, i32: nanoseconds<br>i32 : offsetSeconds. offsetSeconds range between +/-18:00:00 hour     | 28      | Yes        | TIMESTAMP W/ TZ | java.time.OffsetDateTime |     |        |        |    |    |
+| Composed Data: A user defined type composed of data & array & map types                                                                                                                                        | 30      | No         | COMPOSED        | java.lang.Object         |     |        |        |    |    |
+
+Bnf description of ansi sql used as a reference for sql types:
+http://jakewheat.github.io/sql-overview/sql-2011-foundation-grammar.html
 
 ## Header 
 
-| Name      | Number of bytes | Explanation                                                                |
-|-----------|-----------------|----------------------------------------------------------------------------|
-| Hash      | 4               | BIG_ENDIAN integer, used for key objects. Not applicable to value objects. |
-| Type id   | 4               | integer, determines the serializer to be used. -59 for compact.            |
-| Schema id | 8               | long,  Hash of the schema                                                  |
+The Hash and Type id is common for all serialization methods at Hazelcast.
 
-## Data
+| Name      | Type  | Explanation                                                                |
+|-----------|------ |----------------------------------------------------------------------------|
+| Hash      | i32   | BIG_ENDIAN integer, used for key objects. Not applicable to value objects. |
+| Type id   | i32   | integer, determines the serializer to be used. -60 for compact.            |
 
-| Name                  | Number of bytes | Explanation                                                    |
-|-----------------------|-----------------|----------------------------------------------------------------|
-| Schema Id             | 8               | long, Hash of the schema                                       |
-| Length                | 4               | integer, length of the data starting and the end of schema id  |
-| FixedLength Fields    | .....           | Offsets of these fields can be found on the schema             |
-| VariableLength Fields | .....           | Offsets of these field will be written in the footer           |
+## Composed Data
 
-## Footer
+In this section, we will describe how a user defined type will be represented in the wire level.
 
-| Name                   | Number of bytes | Explanation                                          |
-|------------------------|-----------------|------------------------------------------------------|
-| VariableFieldOffset 0  | 4               | Offsets of variable length fields.                   |
-| VariableFieldOffset 1  | 4               | The index of a field offset is written in the Schema |
-| VariableFieldOffset n  | 4               |                                                      |
-| Length                 | 4               | int, length of the footer section                    |
+| Name                                | Type            | Explanation                                                   |
+|-------------------------------------|-----------------|---------------------------------------------------------------|
+| Schema Id                           | i64             | Hash of the schema                                            |
+| Length                              | i32             | length of the rest of the data                                |
+| Fixed-Length Fields                 | .....           | Offsets of these fields will be deduced from the schema       |
+| Variable-Length Fields              | .....           |                                                               |
+| Variable-Length FieldOffset index n | i32             | The index of a field offset is written in the Schema          |
+| Variable-Length FieldOffset index 1 | i32             | Offsets of variable length fields. -1 for null                |
+| Variable-Length FieldOffset index 0 | i32             |                                                               |
+
+Note that if composed data does not include any variable length field in the schema, "Variable-Length FieldOffset"s and 
+"Number of Variable-Length Fields" will not exist on the wire.
+Similarly, if there is no fixed length field in the schema, "Fixed-Length Fields" will not exist on the wire. 
+
+Offsets are calculated from the end of the `Length` field. 
+
+Length is written before offsets so that the binary can be skipped even when the schema cannot be found.  
+ 
+A Variable-length FieldOffset is `-1` if a Variable-Length field is `null`.
+Fixed-Length Fields cannot be `null`. 
+ 
+### Fixed-Length Fields
+
+The fixed length fields are written write after `length` field consecutively. They are accessed via `offset` written the Schema.
+
+On the schema, the offset for a fixed length field is determined as follows:
+The first field always starts from offset 0. 
+Fields are ordered by their size in descending order. 
+When sizes are same the fields are ordered by field name.
+Each offset is calculated by adding size of the last field to the last offset.
+
+### Variable-Length Fields
+
+The offsets of variable length fields are written at the end in reverse order. To read a variable length field from the data,
+one should read the index of the offset from the Schema. Then read the related index is read from the end of the data to get
+the offset. The variable length field can be read from this offset.    
+
+On the schema, the index for a variable length field is determined as follows:
+The fields are given the index incrementally according to the order of the field names starting from 0.  
 
 ## Schema
 
-| Name                       | Number of bytes | Explanation                       |
-|----------------------------|-----------------|-----------------------------------|
-| length of class name       | 4               | int                               |
-| class name                 | n               | unicode character sequence        |
-| number of fields           | 4               | int                               |
-| length of the field name 0 | 4               | int, length of the footer section |
-| field name 0               | n               | unicode character sequence        |
-| type of the field 0        | 1               | byte                              |
-| length of the field name 1 | 4               | int, length of the footer section |
-| field name 1               | n               | unicode character sequence        |
-| type of the field 1        | 1               | byte                              |
-| length of the field name n | 4               | int, length of the footer section |
-| field name n               | n               | unicode character sequence        |
-| type of the field n        | 1               | byte                              |
+| Name                       | Type |
+|----------------------------|------|
+| length of the class name   | i32  |
+| class name                 | utf8 |
+| number of fields           | i32  |
+| length of the field name 0 | i32  |
+| field name 0               | utf8 |
+| type of the field 0        | i8   |
+| length of the field name 1 | i32  |
+| field name 1               | utf8 |
+| type of the field 1        | i8   |
+| length of the field name n | i32  |
+| field name n               | utf8 |
+| type of the field n        | i8   |
+
+When writing a Schema to the wire, fields will be ordered according to their name so that same structure will
+result in same byte representation and produces same schema id.
+
+On the Schema API, we each field will  either
+1. have positive offset, if it is a fixed length field  
+2. have positive index, if it is a variable length field
 
 ### Schema id 
 We are using 64bit [Rabin fingerprint](https://en.wikipedia.org/wiki/Rabin_fingerprint) to create a schema id.  
@@ -74,105 +135,61 @@ void initFPTable() {
 }
 ```
 
-## Data Types
 
-using bnf description of ansi sql as a reference for sql types:
-http://jakewheat.github.io/sql-overview/sql-2011-foundation-grammar.html
+### Arrays 
 
-| Type                                                                                                                                                                                                           | SQL             | Java                     | C++ | Python | Nodejs | C# | Go |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|--------------------------|-----|--------|--------|----|----|
-| boolean: true/false, 1-bit packed to one-byte. <br>up-to 8 booleans take 1 byte on a data,up-to 16 booleans take 2 byte on a data so on                                                                        | BOOLEAN         | boolean                  |     |        |        |    |    |
-| i8 : 8 bit two's complement signed integer                                                                                                                                                                     | TINYINT         | Byte                     |     |        |        |    |    |
-| i16: 16-bit two's-complement signed integer                                                                                                                                                                    | SMALLINT        | short                    |     |        |        |    |    |
-| i32: 32-bit two's-complement signed integer                                                                                                                                                                    | INTEGER         | int                      |     |        |        |    |    |
-| i64: 64-bit two's-complement signed integer                                                                                                                                                                    | BIGINT          | long                     |     |        |        |    |    |
-| float : 32-bit IEEE 754 floating-point number                                                                                                                                                                  | REAL            | float                    |     |        |        |    |    |
-| double: 64-bit IEEE 754 floating-point number                                                                                                                                                                  | DOUBLE          | double                   |     |        |        |    |    |
-| utf8 : utf8 string https://tools.ietf.org/html/rfc3629                                                                                                                                                         | VARCHAR         | String                   |     |        |        |    |    |
-| utf16: utf16 string https://tools.ietf.org/html/rfc2781                                                                                                                                                        | VARCHAR         | String                   |     |        |        |    |    |
-| arbitrary precision two's-complement signed integer: represented as series of byte                                                                                                                             | DECIMAL         | java.math.BigInteger     |     |        |        |    |    |
-| arbitrary precision and scale floating-point number: represented as unscaledValue x 10 ^ -scale <br>unscaledValue: series of byte  scale : single i32 for scale                                                | DECIMAL         | java.math.BigDecimal     |     |        |        |    |    |
-| Date YYYY-MM-DD<br>from 1753-Jan-1 to 9999-Dec-31:<br>i16: year, i8: month, i8:dayOfMonth                                                                                                                      | DATE            | java.time.LocalDate      |     |        |        |    |    |
-| Time: HH-MI-SS-NN<br>i8: hour, i8: minute, i8: seconds, i32: nanoseconds                                                                                                                                       | TIME            | java.time.LocalTime      |     |        |        |    |    |
-| Timestamp: YYYY-MM-DD-HH-MI-SS-NN<br>i16: year, i8: month,  i8:dayOfMonth,<br>i8 : hour, i8: minute, i8: seconds, i32: nanoseconds                                                                             | TIMESTAMP       | java.time.LocalDateTime  |     |        |        |    |    |
-| Timestamp: YYYY-MM-DD-HH-MI-SS-MM Zone<br>i16: year, i8: month, i8:dayOfMonth,<br>i8 : hour, i8: minute,i8: seconds, i32: nanoseconds<br>i8 : offsetHours, i8:offsetMinutes  offsetHours range from -18 to +18 | TIMESTAMP W/ TZ | java.time.OffsetDateTime |     |        |        |    |    |
+The type id's for array types are as follows:
 
-Flat buffers 
-Each scalar is also always represented in little-endian format, 
-as this corresponds to all commonly used CPUs today. 
-FlatBuffers will also work on big-endian machines, but will be slightly slower because of additional byte-swap intrinsics.
-IEEE-754 for floatıng poınt
-The two's complemented representation is used for signed integers.
-The endianness is the same for floating-point numbers as for integers.
-https://google.github.io/flatbuffers/flatbuffers_internals.html
+| Type                                                         | Type id | Fixed Size |
+|--------------------------------------------------------------|---------|------------|
+| Array of boolean                                             | 1       | No         |
+| Array of i8                                                  | 3       | No         |
+| Array of i16                                                 | 5       | No         |
+| Array of i32                                                 | 7       | No         |
+| Array of i64                                                 | 9       | No         |
+| Array of float                                               | 11      | No         |
+| Array of double                                              | 13      | No         |
+| Array of utf8                                                | 15      | No         |
+| Array of utf16                                               | 17      | No         |
+| Array of arbitrary precision two's-complement signed integer | 19      | No         |
+| Array of arbitrary precision and scale floating-point number | 21      | No         |
+| Array of Date                                                | 23      | No         |
+| Array of Time                                                | 25      | No         |
+| Array of Timestamp                                           | 27      | No         |
+| Array of Timestamp                                           | 29      | No         |
+| Array of Composed Data                                       | 31      | No         |
 
-Avro
-Primitive Types
-The set of primitive type names is:
-null: no value
-boolean: a binary value
-int: 32-bit signed integer
-long: 64-bit signed integer
-float: single precision (32-bit) IEEE 754 floating-point number
-double: double precision (64-bit) IEEE 754 floating-point number
-bytes: sequence of 8-bit unsigned bytes
-string: unicode character sequence
+The binary representation of an array will change depending on whether the contained type is fixed size or variable sized.
+An array cannot have `null` item. 
 
-Capn Proto
-The built-in primitive types are encoded as follows:
-Void: Not encoded at all. It has only one possible value thus carries no information.
-Bool: One bit. 1 = true, 0 = false.
-Integers: Encoded in little-endian format. Signed integers use two’s complement.
-Floating-points: Encoded in little-endian IEEE-754 format.
-Primitive types must always be aligned to a multiple of their size. Note that since the size of a Bool is one bit, this means eight Bool values can be encoded in a single byte – this differs from C++, where the bool type takes a whole byte.
 
-Thrift
-Base Types
-bool: A boolean value (true or false), one byte
-byte: A signed byte
-i16: A 16-bit signed integer
-i32: A 32-bit signed integer
-i64: A 64-bit signed integer
-double: A 64-bit floating point number
-binary: A byte array
-string: Encoding agnostic text or binary string
-Note that Thrift does not support unsigned integers because they have no direct translation to native (primitive) types in many of Thrift’s target languages.
-Thrift maps the various base and container types to Java types as follows:
-bool: boolean
-binary: byte[]
-byte: byte
-i16: short
-i32: int
-i64: long
-double: double
-string: String
-list<t1>: List<t1>
-set<t1>: Set<t1>
-map<t1,t2>: Map<t1, t2>
-As you can see, the mapping is straight forward and one-to-one for the most part. This is not surprising given that Java was the primary target language when the Thrift project
+#### Array of fixed-length items 
 
-Protobuf
-.proto Type	Notes	C++ Type	Java Type	Python Type[2]	Go Type	Ruby Type	C# Type	PHP Type	Dart Type
-double		double	double	float	float64	Float	double	float	double
-float		float	float	float	float32	Float	float	float	double
-int32	Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.	int32	int	int	int32	Fixnum or Bignum (as required)	int	integer	int
-int64	Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.	int64	long	int/long[3]	int64	Bignum	long	integer/string[5]	Int64
-uint32	Uses variable-length encoding.	uint32	int[1]	int/long[3]	uint32	Fixnum or Bignum (as required)	uint	integer	int
-uint64	Uses variable-length encoding.	uint64	long[1]	int/long[3]	uint64	Bignum	ulong	integer/string[5]	Int64
-sint32	Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.	int32	int	int	int32	Fixnum or Bignum (as required)	int	integer	int
-sint64	Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.	int64	long	int/long[3]	int64	Bignum	long	integer/string[5]	Int64
-fixed32	Always four bytes. More efficient than uint32 if values are often greater than 228.	uint32	int[1]	int/long[3]	uint32	Fixnum or Bignum (as required)	uint	integer	int
-fixed64	Always eight bytes. More efficient than uint64 if values are often greater than 256.	uint64	long[1]	int/long[3]	uint64	Bignum	ulong	integer/string[5]	Int64
-sfixed32	Always four bytes.	int32	int	int	int32	Fixnum or Bignum (as required)	int	integer	int
-sfixed64	Always eight bytes.	int64	long	int/long[3]	int64	Bignum	long	integer/string[5]	Int64
-bool		bool	boolean	bool	bool	TrueClass/FalseClass	bool	boolean	bool
-string	A string must always contain UTF-8 encoded or 7-bit ASCII text, and cannot be longer than 232.	string	String	str/unicode[4]	string	String (UTF-8)	string	string	String
-bytes	May contain any arbitrary sequence of bytes no longer than 232.	string	ByteString	str	[]byte	String (ASCII-8BIT)	ByteString	string
+| Name            | Type      |
+|-----------------|-----------|
+| Number of items | i32       |
+| Item 0          | item type |
+| Item 1          | item type |
+| Item 2          | item type |
+| Item n          | item type |
 
-### Fixed Length Types
+#### Array of variable-length sized items 
 
-### Variable Length Fields
+| Name            | Type      |
+|-----------------|-----------|
+| Number of items | i32       |
+| Item 0 offset   | i32       |
+| Item 1 offset   | i32       |
+| Item 2 offset   | i32       |
+| Item n offset   | i32       |
+| Item 0          | item type |
+| Item 1          | item type |
+| Item 2          | item type |
+| Item n          | item type |
 
-### List,Array,Collection
+Offsets are calculated from the end of `Number of items` 
 
-### Map 
+### Maps
+//TODO sancar  not implemented yet
+Maps can be represented as two equal size arrays where the same index key and value belongs to the same entry.
+This way if key and/or values are fixed-length, the map will have much more compact representation  without needing the offsets.  

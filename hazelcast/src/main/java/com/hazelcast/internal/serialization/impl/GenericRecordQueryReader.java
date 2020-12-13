@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.portable.PortableInternalGeneri
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueReader;
@@ -327,8 +328,9 @@ public final class GenericRecordQueryReader implements ValueReader {
             case OBJECT:
                 return record.readObject(path);
             case PORTABLE_ARRAY:
+                return record.readObjectArray(path, Portable.class);
             case OBJECT_ARRAY:
-                return record.readObjectArray(path);
+                return record.readObjectArray(path, Object.class);
             case BIG_INTEGER:
                 return record.readBigInteger(path);
             case BIG_INTEGER_ARRAY:

@@ -32,6 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -872,8 +873,8 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
 
     @Override
-    public Object[] readObjectArray(@Nonnull String fieldName) {
-        return readNestedArray(fieldName, Portable[]::new, true);
+    public <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType) {
+        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), true);
     }
 
     @Override

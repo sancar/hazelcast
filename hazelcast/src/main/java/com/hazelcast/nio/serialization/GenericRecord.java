@@ -213,7 +213,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    @Nullable
     BigInteger readBigInteger(@Nonnull String fieldName);
 
     /**
@@ -222,7 +221,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    @Nullable
     BigDecimal readBigDecimal(@Nonnull String fieldName);
 
     /**
@@ -231,7 +229,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    @Nullable
     LocalTime readLocalTime(@Nonnull String fieldName);
 
     /**
@@ -240,7 +237,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    @Nullable
     LocalDate readLocalDate(@Nonnull String fieldName);
 
     /**
@@ -249,7 +245,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    @Nullable
     LocalDateTime readLocalDateTime(@Nonnull String fieldName);
 
     /**

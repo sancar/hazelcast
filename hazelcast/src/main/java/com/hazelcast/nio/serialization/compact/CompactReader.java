@@ -164,9 +164,9 @@ public interface CompactReader {
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
-    Object[] readObjectArray(String fieldName);
+    <T> T[] readObjectArray(String fieldName, Class<T> componentType);
 
-    Object[] readObjectArray(String fieldName, Object[] defaultValue);
+    <T> T[] readObjectArray(String fieldName, Class<T> componentType, T[] defaultValue);
 
     /**
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be

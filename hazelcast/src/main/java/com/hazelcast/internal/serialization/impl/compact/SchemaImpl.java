@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
-
 import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Represents the schema of a class.
@@ -28,20 +27,20 @@ import java.util.Map;
 public class SchemaImpl implements Schema {
 
     private final String className;
-    private final Map<String, FieldDescriptor> fieldDefinitionMap;
+    private final TreeMap<String, FieldDescriptor> fieldDefinitionMap;
     private final long schemaId;
     private final byte[] serialized;
     private final int numberOfComplexFields;
-    private final int primitiveOffsetEnd;
+    private final int primitivesLength;
 
-    public SchemaImpl(String className, Map<String, FieldDescriptor> fieldDefinitionMap, long schemaId, byte[] serialized,
-                      int numberOfComplexFields, int primitiveOffsetEnd) {
+    public SchemaImpl(String className, TreeMap<String, FieldDescriptor> fieldDefinitionMap, long schemaId, byte[] serialized,
+                      int numberOfComplexFields, int primitivesLength) {
         this.className = className;
         this.fieldDefinitionMap = fieldDefinitionMap;
         this.schemaId = schemaId;
         this.serialized = serialized;
         this.numberOfComplexFields = numberOfComplexFields;
-        this.primitiveOffsetEnd = primitiveOffsetEnd;
+        this.primitivesLength = primitivesLength;
     }
 
     /**
@@ -59,12 +58,16 @@ public class SchemaImpl implements Schema {
         return fieldDefinitionMap.values();
     }
 
-    public int getNumberOfComplexFields() {
+    public Set<String> getFieldNames() {
+        return fieldDefinitionMap.keySet();
+    }
+
+    public int getNumberOfVariableLengthFields() {
         return numberOfComplexFields;
     }
 
-    public int getPrimitiveOffsetEnd() {
-        return primitiveOffsetEnd;
+    public int getPrimitivesLength() {
+        return primitivesLength;
     }
 
     public long getSchemaId() {

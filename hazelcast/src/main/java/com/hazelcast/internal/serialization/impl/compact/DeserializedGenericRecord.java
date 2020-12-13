@@ -15,13 +15,14 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class DeserializedGenericRecord extends AbstractGenericRecord {
 
-    public final Map<String, Object> objects;
+    public final TreeMap<String, Object> objects;
     public final Schema schema;
 
-    public DeserializedGenericRecord(Schema schema, Map<String, Object> objects) {
+    public DeserializedGenericRecord(Schema schema, TreeMap<String, Object> objects) {
         this.schema = schema;
         this.objects = objects;
     }

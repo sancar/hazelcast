@@ -152,7 +152,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Object[] readObjectArray(@Nonnull String fieldName);
+    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType);
 
     /**
      * Reads same value {@link GenericRecord#readGenericRecord(String)} }, but in deserialized form.

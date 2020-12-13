@@ -8,13 +8,14 @@ import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilder {
-    private final Map<String, Object> objects;
+    private final TreeMap<String, Object> objects;
     private final Schema schema;
     private final Set<String> overwrittenFields = new HashSet<>();
 
-    public DeserializedGenericRecordCloner(Schema schema, Map<String, Object> objects) {
+    public DeserializedGenericRecordCloner(Schema schema, TreeMap<String, Object> objects) {
         this.objects = objects;
         this.schema = schema;
     }

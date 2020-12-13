@@ -31,8 +31,6 @@ import java.time.OffsetDateTime;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.serialization.impl.compact.Compact.createDefaultCompactReader;
-
 public class SerializingGenericRecordBuilder implements GenericRecord.Builder {
 
     private final DefaultCompactWriter defaultCompactWriter;
@@ -52,7 +50,7 @@ public class SerializingGenericRecordBuilder implements GenericRecord.Builder {
     public @NotNull GenericRecord build() {
         defaultCompactWriter.end();
         byte[] bytes = defaultCompactWriter.toByteArray();
-        return createDefaultCompactReader(serializer, bufferObjectDataInputFunc.apply(bytes), schema, null);
+        return new DefaultCompactReader(serializer, bufferObjectDataInputFunc.apply(bytes), schema, null);
     }
 
     @Override

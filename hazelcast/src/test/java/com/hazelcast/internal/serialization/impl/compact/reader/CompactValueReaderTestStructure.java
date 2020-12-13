@@ -134,6 +134,10 @@ public class CompactValueReaderTestStructure {
             double_ = seed + 60.01d;
             boolean_ = seed % 2 == 0;
             char_ = (char) (seed + 'a');
+            localTime_ = LocalTime.of(17, 41, 47, 874000000);
+            localDate_ = LocalDate.of(1, 1, 1);
+            localDateTime_ = LocalDateTime.of(localDate_, localTime_);
+            offsetDateTime_ = OffsetDateTime.of(localDateTime_, ZoneOffset.ofHours(2));
 
             Random rnd = new Random(seed);
             if (init == Init.FULL) {
@@ -184,10 +188,6 @@ public class CompactValueReaderTestStructure {
 
                 bigInteger_ = new BigInteger(32, rnd);
                 bigDecimal_ = new BigDecimal(bigInteger_, 2);
-                localTime_ = LocalTime.of(17, 41, 47, 874000000);
-                localDate_ = LocalDate.of(1, 1, 1);
-                localDateTime_ = LocalDateTime.of(localDate_, localTime_);
-                offsetDateTime_ = OffsetDateTime.of(localDateTime_, ZoneOffset.ofHours(2));
                 string_ = "";
             }
         }

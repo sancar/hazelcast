@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.EmptyStatement;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class SchemaBuilder {
 
@@ -43,8 +43,8 @@ public class SchemaBuilder {
         }
     }
 
-    private Map<String, FieldDescriptor> fieldDefinitionMap = new HashMap<>();
-    private String className;
+    private final TreeMap<String, FieldDescriptor> fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
+    private final String className;
 
     protected SchemaBuilder(String className) {
         this.className = className;
@@ -185,31 +185,24 @@ public class SchemaBuilder {
     }
 
     public Schema build() {
-        List<FieldDescriptor> list = new ArrayList<>(fieldDefinitionMap.values());
-        list.sort((o1, o2) -> {
-            if (o1.getType().isPrimitive()) {
-                if (!o2.getType().isPrimitive()) {
-                    return 1;
-                } else {
-                    return o1.getType().getTypeSize() - o2.getType().getTypeSize();
-                }
-            } else if (o2.getType().isPrimitive()) {
-                return -1;
-            }
-
-            return o1.getName().compareTo(o2.getName());
-        });
-        int index = 0;
-        //first field is length
-        int offset = Bits.INT_SIZE_IN_BYTES;
-        for (FieldDescriptor value : list) {
+        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
+                .sorted(Comparator.comparingInt(o -> o.getType().getTypeSize())).collect(Collectors.toList());
+        int offset = 0;
+        for (FieldDescriptor value : definiteSizedList) {
             FieldDescriptorImpl fieldDefinition = (FieldDescriptorImpl) value;
-            if (fieldDefinition.getType().isPrimitive()) {
-                fieldDefinition.setOffset(offset);
-                offset += fieldDefinition.getType().getTypeSize();
-            } else {
-                fieldDefinition.setIndex(index++);
-            }
+            fieldDefinition.setOffset(offset);
+            offset += fieldDefinition.getType().getTypeSize();
+        }
+
+        int index = 0;
+        List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> !fieldDescriptor.getType().hasDefiniteSize())
+                .collect(Collectors.toList());
+
+        for (FieldDescriptor value : varSizeList) {
+            FieldDescriptorImpl fieldDefinition = (FieldDescriptorImpl) value;
+            fieldDefinition.setIndex(index++);
         }
         byte[] serializedSchema = toBytes(className, fieldDefinitionMap);
         long schemaId = fingerprint64(serializedSchema);

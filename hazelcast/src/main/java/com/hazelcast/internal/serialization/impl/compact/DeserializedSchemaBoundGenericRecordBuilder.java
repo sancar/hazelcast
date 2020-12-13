@@ -22,10 +22,11 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
-    private final Map<String, Object> objects = new HashMap<>();
+    private final TreeMap<String, Object> objects = new TreeMap<>();
     private final Schema schema;
 
     public DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {

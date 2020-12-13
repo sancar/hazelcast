@@ -21,8 +21,7 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * This builder is build by user thread via
@@ -32,7 +31,7 @@ import java.util.Map;
  */
 public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
-    private final Map<String, Object> objects = new HashMap<>();
+    private final TreeMap<String, Object> objects = new TreeMap<>();
     private final SchemaBuilderImpl schemaBuilder;
 
     public DeserializedGenericRecordBuilder(String className) {
