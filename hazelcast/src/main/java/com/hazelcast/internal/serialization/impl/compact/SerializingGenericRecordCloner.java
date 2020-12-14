@@ -2,6 +2,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
@@ -50,106 +51,8 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
                     writer.write();
                     continue;
                 }
-                switch (field.getType()) {
-                    case OBJECT:
-                        compactWriter.writeGenericRecord(fieldName, genericRecord.readGenericRecord(fieldName));
-                        break;
-                    case BYTE:
-                        compactWriter.writeByte(fieldName, genericRecord.readByte(fieldName));
-                        break;
-                    case BOOLEAN:
-                        compactWriter.writeBoolean(fieldName, genericRecord.readBoolean(fieldName));
-                        break;
-                    case CHAR:
-                        compactWriter.writeChar(fieldName, genericRecord.readChar(fieldName));
-                        break;
-                    case SHORT:
-                        compactWriter.writeShort(fieldName, genericRecord.readShort(fieldName));
-                        break;
-                    case INT:
-                        compactWriter.writeInt(fieldName, genericRecord.readInt(fieldName));
-                        break;
-                    case LONG:
-                        compactWriter.writeLong(fieldName, genericRecord.readLong(fieldName));
-                        break;
-                    case FLOAT:
-                        compactWriter.writeFloat(fieldName, genericRecord.readFloat(fieldName));
-                        break;
-                    case DOUBLE:
-                        compactWriter.writeDouble(fieldName, genericRecord.readDouble(fieldName));
-                        break;
-                    case UTF:
-                        compactWriter.writeUTF(fieldName, genericRecord.readUTF(fieldName));
-                        break;
-                    case BIG_INTEGER:
-                        compactWriter.writeBigInteger(fieldName, genericRecord.readBigInteger(fieldName));
-                        break;
-                    case BIG_DECIMAL:
-                        compactWriter.writeBigDecimal(fieldName, genericRecord.readBigDecimal(fieldName));
-                        break;
-                    case LOCAL_TIME:
-                        compactWriter.writeLocalTime(fieldName, genericRecord.readLocalTime(fieldName));
-                        break;
-                    case LOCAL_DATE:
-                        compactWriter.writeLocalDate(fieldName, genericRecord.readLocalDate(fieldName));
-                        break;
-                    case LOCAL_DATE_TIME:
-                        compactWriter.writeLocalDateTime(fieldName, genericRecord.readLocalDateTime(fieldName));
-                        break;
-                    case OFFSET_DATE_TIME:
-                        compactWriter.writeOffsetDateTime(fieldName, genericRecord.readOffsetDateTime(fieldName));
-                        break;
-                    case OBJECT_ARRAY:
-                        compactWriter.writeGenericRecordArray(fieldName, genericRecord.readGenericRecordArray(fieldName));
-                        break;
-                    case BYTE_ARRAY:
-                        compactWriter.writeByteArray(fieldName, genericRecord.readByteArray(fieldName));
-                        break;
-                    case BOOLEAN_ARRAY:
-                        compactWriter.writeBooleanArray(fieldName, genericRecord.readBooleanArray(fieldName));
-                        break;
-                    case CHAR_ARRAY:
-                        compactWriter.writeCharArray(fieldName, genericRecord.readCharArray(fieldName));
-                        break;
-                    case SHORT_ARRAY:
-                        compactWriter.writeShortArray(fieldName, genericRecord.readShortArray(fieldName));
-                        break;
-                    case INT_ARRAY:
-                        compactWriter.writeIntArray(fieldName, genericRecord.readIntArray(fieldName));
-                        break;
-                    case LONG_ARRAY:
-                        compactWriter.writeLongArray(fieldName, genericRecord.readLongArray(fieldName));
-                        break;
-                    case FLOAT_ARRAY:
-                        compactWriter.writeFloatArray(fieldName, genericRecord.readFloatArray(fieldName));
-                        break;
-                    case DOUBLE_ARRAY:
-                        compactWriter.writeDoubleArray(fieldName, genericRecord.readDoubleArray(fieldName));
-                        break;
-                    case UTF_ARRAY:
-                        compactWriter.writeUTFArray(fieldName, genericRecord.readUTFArray(fieldName));
-                        break;
-                    case BIG_INTEGER_ARRAY:
-                        compactWriter.writeBigIntegerArray(fieldName, genericRecord.readBigIntegerArray(fieldName));
-                        break;
-                    case BIG_DECIMAL_ARRAY:
-                        compactWriter.writeBigDecimalArray(fieldName, genericRecord.readBigDecimalArray(fieldName));
-                        break;
-                    case LOCAL_TIME_ARRAY:
-                        compactWriter.writeLocalTimeArray(fieldName, genericRecord.readLocalTimeArray(fieldName));
-                        break;
-                    case LOCAL_DATE_ARRAY:
-                        compactWriter.writeLocalDateArray(fieldName, genericRecord.readLocalDateArray(fieldName));
-                        break;
-                    case LOCAL_DATE_TIME_ARRAY:
-                        compactWriter.writeLocalDateTimeArray(fieldName, genericRecord.readLocalDateTimeArray(fieldName));
-                        break;
-                    case OFFSET_DATE_TIME_ARRAY:
-                        compactWriter.writeOffsetDateTimeArray(fieldName, genericRecord.readOffsetDateTimeArray(fieldName));
-                        break;
-                    default:
-                        throw new IllegalStateException("Unexpected value: " + field.getType());
-                }
+                FieldType fieldType = field.getType();
+                fieldType.getRecordToWriter().consume(compactWriter, genericRecord, fieldName);
             }
             compactWriter.end();
             byte[] bytes = compactWriter.toByteArray();

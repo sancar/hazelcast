@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.impl.portable.PortableInternalGeneri
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueReader;
@@ -238,126 +237,21 @@ public final class GenericRecordQueryReader implements ValueReader {
         return multiResult;
     }
 
-    private Object readIndexed(InternalGenericRecord record, String path, int index) throws IOException {
+    private Object readIndexed(InternalGenericRecord record, String path, int index) {
         if (!record.hasField(path)) {
             return null;
         }
         FieldType type = record.getFieldType(path);
-        switch (type) {
-            case BYTE_ARRAY:
-                return record.readByteFromArray(path, index);
-            case SHORT_ARRAY:
-                return record.readShortFromArray(path, index);
-            case INT_ARRAY:
-                return record.readIntFromArray(path, index);
-            case LONG_ARRAY:
-                return record.readLongFromArray(path, index);
-            case FLOAT_ARRAY:
-                return record.readFloatFromArray(path, index);
-            case DOUBLE_ARRAY:
-                return record.readDoubleFromArray(path, index);
-            case BOOLEAN_ARRAY:
-                return record.readBooleanFromArray(path, index);
-            case CHAR_ARRAY:
-                return record.readCharFromArray(path, index);
-            case UTF_ARRAY:
-                return record.readUTFFromArray(path, index);
-            case PORTABLE_ARRAY:
-            case OBJECT_ARRAY:
-                return record.readObjectFromArray(path, index);
-            case BIG_INTEGER_ARRAY:
-                return record.readBigIntegerFromArray(path, index);
-            case BIG_DECIMAL_ARRAY:
-                return record.readBigDecimalFromArray(path, index);
-            case LOCAL_TIME_ARRAY:
-                return record.readLocalTimeFromArray(path, index);
-            case LOCAL_DATE_ARRAY:
-                return record.readLocalDateFromArray(path, index);
-            case LOCAL_DATE_TIME_ARRAY:
-                return record.readLocalDateTimeFromArray(path, index);
-            case OFFSET_DATE_TIME_ARRAY:
-                return record.readOffsetDateTimeFromArray(path, index);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        IndexedReader indexedReader = type.getIndexedObjectReader();
+        return indexedReader.readIndexed(record, path, index);
     }
 
-    private Object readLeaf(InternalGenericRecord record, String path) throws IOException {
+    private Object readLeaf(InternalGenericRecord record, String path) {
         if (!record.hasField(path)) {
             return null;
         }
         FieldType type = record.getFieldType(path);
-        switch (type) {
-            case BYTE:
-                return record.readByte(path);
-            case BYTE_ARRAY:
-                return record.readByteArray(path);
-            case SHORT:
-                return record.readShort(path);
-            case SHORT_ARRAY:
-                return record.readShortArray(path);
-            case INT:
-                return record.readInt(path);
-            case INT_ARRAY:
-                return record.readIntArray(path);
-            case LONG:
-                return record.readLong(path);
-            case LONG_ARRAY:
-                return record.readLongArray(path);
-            case FLOAT:
-                return record.readFloat(path);
-            case FLOAT_ARRAY:
-                return record.readFloatArray(path);
-            case DOUBLE:
-                return record.readDouble(path);
-            case DOUBLE_ARRAY:
-                return record.readDoubleArray(path);
-            case BOOLEAN:
-                return record.readBoolean(path);
-            case BOOLEAN_ARRAY:
-                return record.readBooleanArray(path);
-            case CHAR:
-                return record.readChar(path);
-            case CHAR_ARRAY:
-                return record.readCharArray(path);
-            case UTF:
-                return record.readUTF(path);
-            case UTF_ARRAY:
-                return record.readUTFArray(path);
-            case PORTABLE:
-            case OBJECT:
-                return record.readObject(path);
-            case PORTABLE_ARRAY:
-                return record.readObjectArray(path, Portable.class);
-            case OBJECT_ARRAY:
-                return record.readObjectArray(path, Object.class);
-            case BIG_INTEGER:
-                return record.readBigInteger(path);
-            case BIG_INTEGER_ARRAY:
-                return record.readBigIntegerArray(path);
-            case BIG_DECIMAL:
-                return record.readBigDecimal(path);
-            case BIG_DECIMAL_ARRAY:
-                return record.readBigDecimalArray(path);
-            case LOCAL_TIME:
-                return record.readLocalTime(path);
-            case LOCAL_TIME_ARRAY:
-                return record.readLocalTimeArray(path);
-            case LOCAL_DATE:
-                return record.readLocalDate(path);
-            case LOCAL_DATE_ARRAY:
-                return record.readLocalDateArray(path);
-            case LOCAL_DATE_TIME:
-                return record.readLocalDateTime(path);
-            case LOCAL_DATE_TIME_ARRAY:
-                return record.readLocalDateTimeArray(path);
-            case OFFSET_DATE_TIME:
-                return record.readOffsetDateTime(path);
-            case OFFSET_DATE_TIME_ARRAY:
-                return record.readOffsetDateTimeArray(path);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        return type.getObjectReader().apply(record, path);
     }
 
 }

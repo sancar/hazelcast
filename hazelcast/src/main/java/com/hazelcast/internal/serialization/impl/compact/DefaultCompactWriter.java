@@ -45,6 +45,8 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
@@ -59,8 +61,6 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
@@ -217,11 +217,11 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeObject(String fieldName, Object value) {
-        writeVariableLength(fieldName, OBJECT, value, serializer::writeObject);
+        writeVariableLength(fieldName, COMPOSED, value, serializer::writeObject);
     }
 
     public void writeGenericRecord(String fieldName, GenericRecord value) {
-        writeVariableLength(fieldName, OBJECT, value, serializer::writeGenericRecord);
+        writeVariableLength(fieldName, COMPOSED, value, serializer::writeGenericRecord);
     }
 
     @Override
@@ -432,21 +432,21 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public <T> void writeObjectArray(String fieldName, T[] values) {
-        writeObjectArrayField(fieldName, OBJECT_ARRAY, values, serializer::writeObject);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeObject);
     }
 
     public void writeGenericRecordArray(String fieldName, GenericRecord[] values) {
-        writeObjectArrayField(fieldName, OBJECT_ARRAY, values, serializer::writeGenericRecord);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeGenericRecord);
     }
 
     @Override
     public <T> void writeObjectCollection(String fieldName, Collection<T> values) {
         try {
             if (values == null) {
-                setPositionAsNull(fieldName, OBJECT_ARRAY);
+                setPositionAsNull(fieldName, COMPOSED_ARRAY);
                 return;
             }
-            setPosition(fieldName, OBJECT_ARRAY);
+            setPosition(fieldName, COMPOSED_ARRAY);
             int len = values.size();
             out.writeInt(len);
             int offset = out.position();

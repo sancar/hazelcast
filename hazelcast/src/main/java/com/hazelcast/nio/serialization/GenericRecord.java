@@ -129,6 +129,7 @@ public interface GenericRecord {
 
     /**
      * TODO sancar javadoc
+     *
      * @return
      */
     @Nonnull
@@ -408,6 +409,15 @@ public interface GenericRecord {
      */
     @Nullable
     GenericRecord[] readGenericRecordArray(@Nonnull String fieldName);
+
+    /**
+     * Note that primitives will be boxed to Java Types
+     * If the field is a composed data it will return as GenericRecord/GenericRecord[]
+     *
+     * @return any without checking the type.
+     */
+    <T> T readAny(String fieldName);
+
 
     /**
      * Interface for creating {@link GenericRecord} instances.

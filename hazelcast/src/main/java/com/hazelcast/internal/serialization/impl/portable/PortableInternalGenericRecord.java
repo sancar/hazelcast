@@ -27,7 +27,6 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -870,7 +869,6 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     public OffsetDateTime readOffsetDateTimeFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, OFFSET_DATE_TIME_ARRAY, IOUtil::readOffsetDateTime, index);
     }
-
 
     @Override
     public <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType) {

@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -145,7 +144,7 @@ public class DeserializedGenericRecord extends AbstractGenericRecord {
     @Nullable
     @Override
     public GenericRecord readGenericRecord(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.OBJECT);
+        return read(fieldName, FieldType.COMPOSED);
     }
 
     @Override
@@ -227,7 +226,7 @@ public class DeserializedGenericRecord extends AbstractGenericRecord {
     @Nullable
     @Override
     public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.OBJECT_ARRAY);
+        return read(fieldName, FieldType.COMPOSED_ARRAY);
     }
 
 

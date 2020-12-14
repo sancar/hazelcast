@@ -82,7 +82,7 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public void writeObject(String fieldName, Object object) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OBJECT));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.COMPOSED));
     }
 
     @Override
@@ -192,12 +192,12 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public <T> void writeObjectCollection(String fieldName, Collection<T> arrayList) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OBJECT_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.COMPOSED_ARRAY));
     }
 
     @Override
     public void writeObjectArray(String fieldName, Object[] values) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.OBJECT_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.COMPOSED_ARRAY));
     }
 
 }

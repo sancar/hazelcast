@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.AdvancedSerializer;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -136,106 +137,8 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         Collection<FieldDescriptor> fields = schema.getFields();
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getName();
-            switch (fieldDescriptor.getType()) {
-                case OBJECT:
-                    writer.writeGenericRecord(fieldName, record.readGenericRecord(fieldName));
-                    break;
-                case BYTE:
-                    writer.writeByte(fieldName, record.readByte(fieldName));
-                    break;
-                case BOOLEAN:
-                    writer.writeBoolean(fieldName, record.readBoolean(fieldName));
-                    break;
-                case CHAR:
-                    writer.writeChar(fieldName, record.readChar(fieldName));
-                    break;
-                case SHORT:
-                    writer.writeShort(fieldName, record.readShort(fieldName));
-                    break;
-                case INT:
-                    writer.writeInt(fieldName, record.readInt(fieldName));
-                    break;
-                case LONG:
-                    writer.writeLong(fieldName, record.readLong(fieldName));
-                    break;
-                case FLOAT:
-                    writer.writeFloat(fieldName, record.readFloat(fieldName));
-                    break;
-                case DOUBLE:
-                    writer.writeDouble(fieldName, record.readDouble(fieldName));
-                    break;
-                case UTF:
-                    writer.writeUTF(fieldName, record.readUTF(fieldName));
-                    break;
-                case BIG_INTEGER:
-                    writer.writeBigInteger(fieldName, record.readBigInteger(fieldName));
-                    break;
-                case BIG_DECIMAL:
-                    writer.writeBigDecimal(fieldName, record.readBigDecimal(fieldName));
-                    break;
-                case LOCAL_TIME:
-                    writer.writeLocalTime(fieldName, record.readLocalTime(fieldName));
-                    break;
-                case LOCAL_DATE:
-                    writer.writeLocalDate(fieldName, record.readLocalDate(fieldName));
-                    break;
-                case LOCAL_DATE_TIME:
-                    writer.writeLocalDateTime(fieldName, record.readLocalDateTime(fieldName));
-                    break;
-                case OFFSET_DATE_TIME:
-                    writer.writeOffsetDateTime(fieldName, record.readOffsetDateTime(fieldName));
-                    break;
-                case OBJECT_ARRAY:
-                    writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
-                    break;
-                case BYTE_ARRAY:
-                    writer.writeByteArray(fieldName, record.readByteArray(fieldName));
-                    break;
-                case BOOLEAN_ARRAY:
-                    writer.writeBooleanArray(fieldName, record.readBooleanArray(fieldName));
-                    break;
-                case CHAR_ARRAY:
-                    writer.writeCharArray(fieldName, record.readCharArray(fieldName));
-                    break;
-                case SHORT_ARRAY:
-                    writer.writeShortArray(fieldName, record.readShortArray(fieldName));
-                    break;
-                case INT_ARRAY:
-                    writer.writeIntArray(fieldName, record.readIntArray(fieldName));
-                    break;
-                case LONG_ARRAY:
-                    writer.writeLongArray(fieldName, record.readLongArray(fieldName));
-                    break;
-                case FLOAT_ARRAY:
-                    writer.writeFloatArray(fieldName, record.readFloatArray(fieldName));
-                    break;
-                case DOUBLE_ARRAY:
-                    writer.writeDoubleArray(fieldName, record.readDoubleArray(fieldName));
-                    break;
-                case UTF_ARRAY:
-                    writer.writeUTFArray(fieldName, record.readUTFArray(fieldName));
-                    break;
-                case BIG_INTEGER_ARRAY:
-                    writer.writeBigIntegerArray(fieldName, record.readBigIntegerArray(fieldName));
-                    break;
-                case BIG_DECIMAL_ARRAY:
-                    writer.writeBigDecimalArray(fieldName, record.readBigDecimalArray(fieldName));
-                    break;
-                case LOCAL_TIME_ARRAY:
-                    writer.writeLocalTimeArray(fieldName, record.readLocalTimeArray(fieldName));
-                    break;
-                case LOCAL_DATE_ARRAY:
-                    writer.writeLocalDateArray(fieldName, record.readLocalDateArray(fieldName));
-                    break;
-                case LOCAL_DATE_TIME_ARRAY:
-                    writer.writeLocalDateTimeArray(fieldName, record.readLocalDateTimeArray(fieldName));
-                    break;
-                case OFFSET_DATE_TIME_ARRAY:
-                    writer.writeOffsetDateTimeArray(fieldName, record.readOffsetDateTimeArray(fieldName));
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected field type: " + fieldDescriptor);
-            }
+            FieldType fieldType = fieldDescriptor.getType();
+            fieldType.getRecordToWriter().consume(writer, record, fieldName);
         }
         writer.end();
     }

@@ -37,8 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -54,6 +53,8 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
@@ -68,8 +69,6 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
@@ -392,17 +391,17 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public GenericRecord readGenericRecord(@Nonnull String fieldName) {
-        return readVariableLength(fieldName, OBJECT, serializer::readGenericRecord);
+        return readVariableLength(fieldName, COMPOSED, serializer::readGenericRecord);
     }
 
     @Override
     public <T> T readObject(@Nonnull String fieldName) {
-        return readVariableLength(fieldName, OBJECT, serializer::readObject);
+        return readVariableLength(fieldName, COMPOSED, serializer::readObject);
     }
 
     @Override
     public <T> T readObject(String fieldName, T defaultValue) {
-        return isFieldExists(fieldName, OBJECT) ? readObject(fieldName) : defaultValue;
+        return isFieldExists(fieldName, COMPOSED) ? readObject(fieldName) : defaultValue;
     }
 
     @Override
@@ -557,30 +556,30 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
-        return readVariableLengthArray(fieldName, OBJECT_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
+        return readVariableLengthArray(fieldName, COMPOSED_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
     }
 
     @Override
     public <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return readVariableLengthArray(fieldName, OBJECT_ARRAY, length -> (T[]) Array.newInstance(componentType, length), serializer::readObject);
+        return readVariableLengthArray(fieldName, COMPOSED_ARRAY, length -> (T[]) Array.newInstance(componentType, length), serializer::readObject);
     }
 
     @Override
     public <T> T[] readObjectArray(String fieldName, Class<T> componentType, T[] defaultValue) {
-        return isFieldExists(fieldName, OBJECT_ARRAY) ? readObjectArray(fieldName, componentType) : defaultValue;
+        return isFieldExists(fieldName, COMPOSED_ARRAY) ? readObjectArray(fieldName, componentType) : defaultValue;
     }
 
     @Override
-    public <T> List<T> readObjectList(@Nonnull String fieldName) {
+    public <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor) {
         int currentPos = in.position();
         try {
-            int position = readPosition(fieldName, OBJECT_ARRAY);
+            int position = readPosition(fieldName, COMPOSED_ARRAY);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
             in.position(position);
             int len = in.readInt();
-            ArrayList<T> objects = new ArrayList<>(len);
+            Collection<T> objects = constructor.apply(len);
             int offset = in.position();
             for (int i = 0; i < len; i++) {
                 int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
@@ -598,8 +597,8 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
     }
 
     @Override
-    public <T> List<T> readObjectList(String fieldName, List<T> defaultValue) {
-        return isFieldExists(fieldName, OBJECT_ARRAY) ? readObjectList(fieldName) : defaultValue;
+    public <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor, Collection<T> defaultValue) {
+        return isFieldExists(fieldName, COMPOSED_ARRAY) ? readObjectCollection(fieldName, constructor) : defaultValue;
     }
 
     protected interface Reader<R> {
@@ -742,7 +741,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public GenericRecord readGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return readVarSizeFromArray(fieldName, OBJECT_ARRAY, serializer::readGenericRecord, index);
+        return readVarSizeFromArray(fieldName, COMPOSED_ARRAY, serializer::readGenericRecord, index);
     }
 
     @Override
@@ -777,7 +776,7 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
 
     @Override
     public Object readObjectFromArray(@Nonnull String fieldName, int index) {
-        return readVarSizeFromArray(fieldName, OBJECT_ARRAY, serializer::readObject, index);
+        return readVarSizeFromArray(fieldName, COMPOSED_ARRAY, serializer::readObject, index);
     }
 
     private <T> T readVarSizeFromArray(@Nonnull String fieldName, FieldType fieldType,
