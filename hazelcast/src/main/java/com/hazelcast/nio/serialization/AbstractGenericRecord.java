@@ -77,12 +77,12 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             case UTF_ARRAY:
                 return Arrays.hashCode(record.readUTFArray(path));
             case PORTABLE_ARRAY:
-            case OBJECT_ARRAY:
+            case COMPOSED_ARRAY:
                 return Arrays.hashCode(record.readGenericRecordArray(path));
             case BIG_INTEGER_ARRAY:
                 return Arrays.hashCode(record.readBigDecimalArray(path));
             case BIG_DECIMAL_ARRAY:
-                return Arrays.hashCode(record.readBigDecimalArray(path));
+                return Arrays.hashCode(record.readBigIntegerArray(path));
             case LOCAL_TIME_ARRAY:
                 return Arrays.hashCode(record.readLocalTimeArray(path));
             case LOCAL_DATE_ARRAY:
@@ -95,77 +95,9 @@ public abstract class AbstractGenericRecord implements GenericRecord {
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
     }
+
     private static Object readAny(GenericRecord record, String path, FieldType type) {
-        switch (type) {
-            case BYTE:
-                return record.readByte(path);
-            case BYTE_ARRAY:
-                return record.readByteArray(path);
-            case SHORT:
-                return record.readShort(path);
-            case SHORT_ARRAY:
-                return record.readShortArray(path);
-            case INT:
-                return record.readInt(path);
-            case INT_ARRAY:
-                return record.readIntArray(path);
-            case LONG:
-                return record.readLong(path);
-            case LONG_ARRAY:
-                return record.readLongArray(path);
-            case FLOAT:
-                return record.readFloat(path);
-            case FLOAT_ARRAY:
-                return record.readFloatArray(path);
-            case DOUBLE:
-                return record.readDouble(path);
-            case DOUBLE_ARRAY:
-                return record.readDoubleArray(path);
-            case BOOLEAN:
-                return record.readBoolean(path);
-            case BOOLEAN_ARRAY:
-                return record.readBooleanArray(path);
-            case CHAR:
-                return record.readChar(path);
-            case CHAR_ARRAY:
-                return record.readCharArray(path);
-            case UTF:
-                return record.readUTF(path);
-            case UTF_ARRAY:
-                return record.readUTFArray(path);
-            case PORTABLE:
-            case OBJECT:
-                return record.readGenericRecord(path);
-            case PORTABLE_ARRAY:
-            case OBJECT_ARRAY:
-                return record.readGenericRecordArray(path);
-            case BIG_INTEGER:
-                return record.readBigInteger(path);
-            case BIG_INTEGER_ARRAY:
-                return record.readBigIntegerArray(path);
-            case BIG_DECIMAL:
-                return record.readBigDecimal(path);
-            case BIG_DECIMAL_ARRAY:
-                return record.readBigDecimalArray(path);
-            case LOCAL_TIME:
-                return record.readLocalTime(path);
-            case LOCAL_TIME_ARRAY:
-                return record.readLocalTimeArray(path);
-            case LOCAL_DATE:
-                return record.readLocalDate(path);
-            case LOCAL_DATE_ARRAY:
-                return record.readLocalDateArray(path);
-            case LOCAL_DATE_TIME:
-                return record.readLocalDateTime(path);
-            case LOCAL_DATE_TIME_ARRAY:
-                return record.readLocalDateTimeArray(path);
-            case OFFSET_DATE_TIME:
-                return record.readOffsetDateTime(path);
-            case OFFSET_DATE_TIME_ARRAY:
-                return record.readOffsetDateTimeArray(path);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        return type.getSerializedFormReader().apply(record, path);
     }
 
 }

@@ -44,8 +44,6 @@ public interface CompactWriter {
 
     void writeShort(String fieldName, short value);
 
-    <T> void writeObject(String fieldName, T value);
-
     void writeBigInteger(String fieldName, BigInteger value);
 
     void writeBigDecimal(String fieldName, BigDecimal value);
@@ -88,8 +86,12 @@ public interface CompactWriter {
 
     void writeOffsetDateTimeArray(String fieldName, OffsetDateTime[] values);
 
+    <T> void writeObject(String fieldName, T value);
+
     <T> void writeObjectArray(String fieldName, T[] value);
 
     <T> void writeObjectCollection(String fieldName, Collection<T> arrayList);
+
+    <T> void writeAnyCollection(String fieldName, Collection<T> arrayList);
 
 }

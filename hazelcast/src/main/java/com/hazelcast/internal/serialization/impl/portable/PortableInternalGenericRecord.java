@@ -27,7 +27,6 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -40,6 +39,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
@@ -871,7 +871,6 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         return readObjectFromArrayField(fieldName, OFFSET_DATE_TIME_ARRAY, IOUtil::readOffsetDateTime, index);
     }
 
-
     @Override
     public <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType) {
         return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), true);
@@ -880,6 +879,14 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public Object readObject(@Nonnull String fieldName) {
         return readNested(fieldName, true);
+    }
+
+    @Override
+    public <T> T readAny(@Nonnull String fieldName) {
+        FieldDefinition fd = getClassDefinition().getField(fieldName);
+        FieldType type = fd.getType();
+        BiFunction<GenericRecord, String, Object> reader = type.getObjectReader();
+        return (T) reader.apply(this, fieldName);
     }
 
     @Override

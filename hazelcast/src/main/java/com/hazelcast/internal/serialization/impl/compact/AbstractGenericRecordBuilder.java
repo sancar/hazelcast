@@ -1,7 +1,5 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
-import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -64,7 +62,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecord.Builder {
 
     @Override
     public GenericRecord.Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
-        return write(fieldName, value, FieldType.OBJECT);
+        return write(fieldName, value, FieldType.COMPOSED);
     }
 
     @Override
@@ -99,7 +97,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecord.Builder {
 
     @Override
     public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        return write(fieldName, value, FieldType.OBJECT_ARRAY);
+        return write(fieldName, value, FieldType.COMPOSED_ARRAY);
     }
 
     @Override

@@ -51,7 +51,7 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
                     continue;
                 }
                 switch (field.getType()) {
-                    case OBJECT:
+                    case COMPOSED:
                         compactWriter.writeGenericRecord(fieldName, genericRecord.readGenericRecord(fieldName));
                         break;
                     case BYTE:
@@ -99,7 +99,7 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
                     case OFFSET_DATE_TIME:
                         compactWriter.writeOffsetDateTime(fieldName, genericRecord.readOffsetDateTime(fieldName));
                         break;
-                    case OBJECT_ARRAY:
+                    case COMPOSED_ARRAY:
                         compactWriter.writeGenericRecordArray(fieldName, genericRecord.readGenericRecordArray(fieldName));
                         break;
                     case BYTE_ARRAY:

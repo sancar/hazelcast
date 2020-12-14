@@ -219,4 +219,16 @@ public interface InternalGenericRecord extends GenericRecord {
      */
     @Nullable
     OffsetDateTime readOffsetDateTimeFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * Reads any value in deserialized form.
+     * This is used in query system when the object is leaf of the query.
+     *
+     * @param fieldName the name of the field
+     * @return a field as a concrete deserialized object
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    <T> T readAny(@Nonnull String fieldName);
 }

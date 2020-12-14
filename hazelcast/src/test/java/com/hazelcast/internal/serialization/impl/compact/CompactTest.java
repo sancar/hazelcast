@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -172,8 +171,8 @@ public class CompactTest {
                         String name = in.readUTF("n");
                         int age = in.readInt("a");
                         long[] ids = in.readLongArray("ids");
-                        EmployeeDTO s = in.readObject("s");
-                        EmployeeDTO[] ss = in.readObjectArray("ss", EmployeeDTO.class);
+                        EmployeeDTO s = in.readAny("s");
+                        EmployeeDTO[] ss = in.readAnyArray("ss", EmployeeDTO.class);
                         return new EmployerDTO(name, age, ids, s, ss);
                     }
 

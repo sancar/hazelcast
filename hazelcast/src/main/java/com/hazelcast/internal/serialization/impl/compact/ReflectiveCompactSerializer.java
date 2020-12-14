@@ -34,11 +34,12 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL_ARRAY;
@@ -63,8 +64,8 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
@@ -279,14 +280,14 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                     readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OFFSET_DATE_TIME_ARRAY, () -> field.set(o, reader.readOffsetDateTimeArray(name)));
                     writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeOffsetDateTimeArray(name, (OffsetDateTime[]) field.get(o));
                 } else {
-                    readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OBJECT_ARRAY, () -> field.set(o, reader.readObjectArray(name, componentType)));
+                    readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED_ARRAY, () -> field.set(o, reader.readAnyArray(name, componentType)));
                     writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
                 }
-            } else if (type.equals(ArrayList.class)) {
-                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OBJECT_ARRAY, () -> field.set(o, reader.readObjectList(name)));
+            } else if (Collection.class.isAssignableFrom(type)) {
+                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED_ARRAY, () -> field.set(o, reader.readAnyCollection(name, ArrayList::new) ));
                 writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectCollection(name, (Collection<Object>) field.get(o));
             } else {
-                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OBJECT, () -> field.set(o, reader.readObject(name)));
+                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED, () -> field.set(o, reader.readAny(name)));
                 writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObject(name, field.get(o));
             }
             index++;

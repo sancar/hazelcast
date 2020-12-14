@@ -137,7 +137,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getName();
             switch (fieldDescriptor.getType()) {
-                case OBJECT:
+                case COMPOSED:
                     writer.writeGenericRecord(fieldName, record.readGenericRecord(fieldName));
                     break;
                 case BYTE:
@@ -185,7 +185,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
                 case OFFSET_DATE_TIME:
                     writer.writeOffsetDateTime(fieldName, record.readOffsetDateTime(fieldName));
                     break;
-                case OBJECT_ARRAY:
+                case COMPOSED_ARRAY:
                     writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
                     break;
                 case BYTE_ARRAY:

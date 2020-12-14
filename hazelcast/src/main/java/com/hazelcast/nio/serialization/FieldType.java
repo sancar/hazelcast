@@ -16,6 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.util.function.TriFunction;
+
+import java.util.function.BiFunction;
+
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
@@ -29,43 +34,60 @@ import static java.lang.Integer.MAX_VALUE;
 public enum FieldType {
 
     // SINGLE-VALUE TYPES
-    PORTABLE(0, false, MAX_VALUE),//used to represent any nested object
-    BYTE(1, false, BYTE_SIZE_IN_BYTES),
-    BOOLEAN(2, false, BOOLEAN_SIZE_IN_BYTES),
-    CHAR(3, false, CHAR_SIZE_IN_BYTES),
-    SHORT(4, false, SHORT_SIZE_IN_BYTES),
-    INT(5, false, INT_SIZE_IN_BYTES),
-    LONG(6, false, LONG_SIZE_IN_BYTES),
-    FLOAT(7, false, FLOAT_SIZE_IN_BYTES),
-    DOUBLE(8, false, DOUBLE_SIZE_IN_BYTES),
-    UTF(9, false, MAX_VALUE),
+    PORTABLE(0, MAX_VALUE, (genericRecord, fieldName) -> {
+        return ((InternalGenericRecord) genericRecord).readObject(fieldName);
+    }, GenericRecord::readGenericRecord),//used to represent any nested object
+    BYTE(1, BYTE_SIZE_IN_BYTES, GenericRecord::readByte),
+    BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES, GenericRecord::readBoolean),
+    CHAR(3, CHAR_SIZE_IN_BYTES, GenericRecord::readChar),
+    SHORT(4, SHORT_SIZE_IN_BYTES, GenericRecord::readShort),
+    INT(5, INT_SIZE_IN_BYTES, GenericRecord::readInt),
+    LONG(6, LONG_SIZE_IN_BYTES, GenericRecord::readLong),
+    FLOAT(7, FLOAT_SIZE_IN_BYTES, GenericRecord::readFloat),
+    DOUBLE(8, DOUBLE_SIZE_IN_BYTES, GenericRecord::readDouble),
+    UTF(9, MAX_VALUE, GenericRecord::readUTF),
 
     // ARRAY TYPES
-    PORTABLE_ARRAY(10, true, MAX_VALUE, PORTABLE),//used to represent any nested object array
-    BYTE_ARRAY(11, true, MAX_VALUE, BYTE),
-    BOOLEAN_ARRAY(12, true, MAX_VALUE, BOOLEAN),
-    CHAR_ARRAY(13, true, MAX_VALUE, CHAR),
-    SHORT_ARRAY(14, true, MAX_VALUE, SHORT),
-    INT_ARRAY(15, true, MAX_VALUE, INT),
-    LONG_ARRAY(16, true, MAX_VALUE, LONG),
-    FLOAT_ARRAY(17, true, MAX_VALUE, FLOAT),
-    DOUBLE_ARRAY(18, true, MAX_VALUE, DOUBLE),
-    UTF_ARRAY(19, true, MAX_VALUE, UTF),
+    PORTABLE_ARRAY(10, MAX_VALUE, PORTABLE, (genericRecord, fieldName) -> {
+        return ((InternalGenericRecord) genericRecord).readObjectArray(fieldName, Portable.class);
+    }, GenericRecord::readGenericRecordArray, InternalGenericRecord::readObjectFromArray),
+    BYTE_ARRAY(11, MAX_VALUE, BYTE, GenericRecord::readByteArray, InternalGenericRecord::readByteFromArray),
+    BOOLEAN_ARRAY(12, MAX_VALUE, BOOLEAN, GenericRecord::readBooleanArray, InternalGenericRecord::readBooleanFromArray),
+    CHAR_ARRAY(13, MAX_VALUE, CHAR, GenericRecord::readCharArray, InternalGenericRecord::readCharFromArray),
+    SHORT_ARRAY(14, MAX_VALUE, SHORT, GenericRecord::readShortArray, InternalGenericRecord::readShortFromArray),
+    INT_ARRAY(15, MAX_VALUE, INT, GenericRecord::readIntArray, InternalGenericRecord::readIntFromArray),
+    LONG_ARRAY(16, MAX_VALUE, LONG, GenericRecord::readLongArray, InternalGenericRecord::readLongFromArray),
+    FLOAT_ARRAY(17, MAX_VALUE, FLOAT, GenericRecord::readFloatArray, InternalGenericRecord::readFloatFromArray),
+    DOUBLE_ARRAY(18, MAX_VALUE, DOUBLE, GenericRecord::readDoubleArray, InternalGenericRecord::readDoubleFromArray),
+    UTF_ARRAY(19, MAX_VALUE, UTF, GenericRecord::readUTFArray, InternalGenericRecord::readUTFFromArray),
 
-    BIG_INTEGER(20, false, MAX_VALUE),
-    BIG_INTEGER_ARRAY(21, true, MAX_VALUE, BIG_INTEGER),
-    BIG_DECIMAL(22, false, MAX_VALUE),
-    BIG_DECIMAL_ARRAY(23, true, MAX_VALUE, BIG_DECIMAL),
-    LOCAL_TIME(24, false, 3 * BYTE_SIZE_IN_BYTES  + INT_SIZE_IN_BYTES),
-    LOCAL_TIME_ARRAY(25, true, MAX_VALUE, LOCAL_TIME),
-    LOCAL_DATE(26, false, INT_SIZE_IN_BYTES),
-    LOCAL_DATE_ARRAY(27, true, MAX_VALUE, LOCAL_DATE),
-    LOCAL_DATE_TIME(28, false, LOCAL_TIME.getTypeSize() + LOCAL_DATE.getTypeSize()),
-    LOCAL_DATE_TIME_ARRAY(29, true, MAX_VALUE, LOCAL_DATE_TIME),
-    OFFSET_DATE_TIME(30, false,     LOCAL_DATE_TIME.getTypeSize() + INT_SIZE_IN_BYTES),
-    OFFSET_DATE_TIME_ARRAY(31, true, MAX_VALUE, OFFSET_DATE_TIME),
-    OBJECT(32, false, MAX_VALUE),
-    OBJECT_ARRAY(33, true, MAX_VALUE, OBJECT);
+    BIG_INTEGER(20, MAX_VALUE, GenericRecord::readBigInteger),
+    BIG_INTEGER_ARRAY(21, MAX_VALUE, BIG_INTEGER, GenericRecord::readBigIntegerArray, InternalGenericRecord::readBigIntegerFromArray),
+
+    BIG_DECIMAL(22, MAX_VALUE, GenericRecord::readBigDecimal),
+    BIG_DECIMAL_ARRAY(23, MAX_VALUE, BIG_DECIMAL, GenericRecord::readBigDecimalArray, InternalGenericRecord::readBigDecimalFromArray),
+
+    LOCAL_TIME(24, 3 * BYTE_SIZE_IN_BYTES + INT_SIZE_IN_BYTES, GenericRecord::readLocalTime),
+    LOCAL_TIME_ARRAY(25, MAX_VALUE, LOCAL_TIME, GenericRecord::readLocalTimeArray, InternalGenericRecord::readLocalTimeFromArray),
+
+    LOCAL_DATE(26, INT_SIZE_IN_BYTES, GenericRecord::readLocalDate),
+    LOCAL_DATE_ARRAY(27, MAX_VALUE, LOCAL_DATE, GenericRecord::readLocalDateArray, InternalGenericRecord::readLocalDateFromArray),
+
+    LOCAL_DATE_TIME(28, LOCAL_TIME.getTypeSize() + LOCAL_DATE.getTypeSize(), GenericRecord::readLocalDateTime),
+    LOCAL_DATE_TIME_ARRAY(29, MAX_VALUE, LOCAL_DATE_TIME, GenericRecord::readLocalDateTimeArray, InternalGenericRecord::readLocalDateTimeFromArray),
+
+    OFFSET_DATE_TIME(30, LOCAL_DATE_TIME.getTypeSize() + INT_SIZE_IN_BYTES, GenericRecord::readOffsetDateTime),
+    OFFSET_DATE_TIME_ARRAY(31, MAX_VALUE, OFFSET_DATE_TIME, GenericRecord::readOffsetDateTimeArray, InternalGenericRecord::readOffsetDateTimeFromArray),
+
+    COMPOSED(32, MAX_VALUE, (genericRecord, fieldName) -> {
+        return ((InternalGenericRecord) genericRecord).readObject(fieldName);
+    }, GenericRecord::readGenericRecord),
+    COMPOSED_ARRAY(33, MAX_VALUE, COMPOSED, (genericRecord, fieldName) -> {
+        return ((InternalGenericRecord) genericRecord).readObjectArray(fieldName, Object.class);
+    }, GenericRecord::readGenericRecordArray, InternalGenericRecord::readObjectFromArray),
+
+    NULL(34, 0, (genericRecord, s) -> null),
+    EMPTY_ARRAY(35, 0, NULL, (genericRecord, s) -> null, (internalGenericRecord, s, integer) -> null);
 
     private static final FieldType[] ALL = FieldType.values();
 
@@ -73,19 +95,54 @@ public enum FieldType {
     private final boolean isArrayType;
     private final int elementSize;
     private final FieldType singleType;
+    private final BiFunction<GenericRecord, String, Object> objectReader;
+    private final BiFunction<GenericRecord, String, Object> serializedFormReader;
+    private final TriFunction<InternalGenericRecord, String, Integer, Object> indexedReader;
 
-    FieldType(int type, boolean isArrayType, int elementSize) {
+    FieldType(int type, int elementSize, BiFunction<GenericRecord, String, Object> objectReader) {
         this.type = (byte) type;
-        this.isArrayType = isArrayType;
+        this.isArrayType = false;
         this.elementSize = elementSize;
+        this.objectReader = objectReader;
+        this.serializedFormReader = objectReader;
+        this.indexedReader = null;
         this.singleType = null;
     }
 
-    FieldType(int type, boolean isArrayType, int elementSize, FieldType singleType) {
+    FieldType(int type, int elementSize, BiFunction<GenericRecord, String, Object> objectReader,
+              BiFunction<GenericRecord, String, Object> serializedFormReader) {
         this.type = (byte) type;
-        this.isArrayType = isArrayType;
+        this.isArrayType = false;
+        this.elementSize = elementSize;
+        this.objectReader = objectReader;
+        this.serializedFormReader = serializedFormReader;
+        this.indexedReader = null;
+        this.singleType = null;
+    }
+
+    FieldType(int type, int elementSize, FieldType singleType,
+              BiFunction<GenericRecord, String, Object> objectReader,
+              TriFunction<InternalGenericRecord, String, Integer, Object> indexedReader) {
+        this.type = (byte) type;
+        this.isArrayType = true;
         this.elementSize = elementSize;
         this.singleType = singleType;
+        this.objectReader = objectReader;
+        this.serializedFormReader = objectReader;
+        this.indexedReader = indexedReader;
+    }
+
+    FieldType(int type, int elementSize, FieldType singleType,
+              BiFunction<GenericRecord, String, Object> objectReader,
+              BiFunction<GenericRecord, String, Object> serializedFormReader,
+              TriFunction<InternalGenericRecord, String, Integer, Object> indexedReader) {
+        this.type = (byte) type;
+        this.isArrayType = true;
+        this.elementSize = elementSize;
+        this.singleType = singleType;
+        this.objectReader = objectReader;
+        this.serializedFormReader = serializedFormReader;
+        this.indexedReader = indexedReader;
     }
 
     public byte getId() {
@@ -105,6 +162,18 @@ public enum FieldType {
             return singleType;
         }
         return this;
+    }
+
+    public BiFunction<GenericRecord, String, Object> getObjectReader() {
+        return objectReader;
+    }
+
+    public BiFunction<GenericRecord, String, Object> getSerializedFormReader() {
+        return serializedFormReader;
+    }
+
+    public TriFunction<InternalGenericRecord, String, Integer, Object> getIndexedObjectReader() {
+        return indexedReader;
     }
 
     public boolean hasDefiniteSize() {

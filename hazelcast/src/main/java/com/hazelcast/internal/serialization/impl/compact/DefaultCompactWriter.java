@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.Iterator;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.serialization.FieldType.BIG_DECIMAL;
@@ -59,8 +60,8 @@ import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME;
 import static com.hazelcast.nio.serialization.FieldType.LOCAL_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT;
-import static com.hazelcast.nio.serialization.FieldType.OBJECT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME;
 import static com.hazelcast.nio.serialization.FieldType.OFFSET_DATE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
@@ -217,11 +218,11 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeObject(String fieldName, Object value) {
-        writeVariableLength(fieldName, OBJECT, value, serializer::writeObject);
+        writeVariableLength(fieldName, COMPOSED, value, serializer::writeObject);
     }
 
     public void writeGenericRecord(String fieldName, GenericRecord value) {
-        writeVariableLength(fieldName, OBJECT, value, serializer::writeGenericRecord);
+        writeVariableLength(fieldName, COMPOSED, value, serializer::writeGenericRecord);
     }
 
     @Override
@@ -432,21 +433,21 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public <T> void writeObjectArray(String fieldName, T[] values) {
-        writeObjectArrayField(fieldName, OBJECT_ARRAY, values, serializer::writeObject);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeObject);
     }
 
     public void writeGenericRecordArray(String fieldName, GenericRecord[] values) {
-        writeObjectArrayField(fieldName, OBJECT_ARRAY, values, serializer::writeGenericRecord);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeGenericRecord);
     }
 
     @Override
     public <T> void writeObjectCollection(String fieldName, Collection<T> values) {
         try {
             if (values == null) {
-                setPositionAsNull(fieldName, OBJECT_ARRAY);
+                setPositionAsNull(fieldName, COMPOSED_ARRAY);
                 return;
             }
-            setPosition(fieldName, OBJECT_ARRAY);
+            setPosition(fieldName, COMPOSED_ARRAY);
             int len = values.size();
             out.writeInt(len);
             int offset = out.position();
@@ -464,6 +465,32 @@ public class DefaultCompactWriter implements CompactWriter {
             }
         } catch (IOException e) {
             throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public <T> void writeAnyCollection(String fieldName, Collection<T> values) {
+        if(arrayList.isEmpty()) {
+            return;
+        }
+        Iterator<T> iterator = arrayList.iterator();
+        T next = iterator.next();
+        Class<?> aClass = next.getClass();
+        FieldType arrayFieldType = TypeUtil.getArrayFieldType(aClass);
+        FieldType componentType = arrayFieldType.getSingleType();
+        if(componentType.hasDefiniteSize()) {
+            writeVariableLength(fieldName, componentType, values, new Writer<Collection<T>>() {
+                @Override
+                public void write(BufferObjectDataOutput out, Collection<T> value) throws IOException {
+                    out.writeBooleanArray(v);
+                }
+            });
+        } else {
+
+        }
+
+        while (iterator.hasNext()) {
+
         }
     }
 

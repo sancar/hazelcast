@@ -23,7 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.Collection;
+import java.util.function.Function;
 
 /**
  * All read(String fieldName) methods throw HazelcastSerializationException when the related field is not found or there is a type mismatch.
@@ -92,14 +93,6 @@ public interface CompactReader {
 
     OffsetDateTime readOffsetDateTime(String fieldName, OffsetDateTime defaultValue);
 
-    /**
-     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
-     *                                               found in the classpath
-     */
-    <T> T readObject(String fieldName);
-
-    <T> T readObject(String fieldName, T defaultValue);
-
     byte[] readByteArray(String fieldName);
 
     byte[] readByteArray(String fieldName, byte[] defaultValue);
@@ -164,16 +157,24 @@ public interface CompactReader {
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
-    <T> T[] readObjectArray(String fieldName, Class<T> componentType);
+    <T> T readAny(String fieldName);
 
-    <T> T[] readObjectArray(String fieldName, Class<T> componentType, T[] defaultValue);
+    <T> T readAny(String fieldName, T defaultValue);
 
     /**
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
-    <T> List<T> readObjectList(String fieldName);
+    <T> T[] readAnyArray(String fieldName, Class<T> componentType);
 
-    <T> List<T> readObjectList(String fieldName, List<T> defaultValue);
+    <T> T[] readAnyArray(String fieldName, Class<T> componentType, T[] defaultValue);
+
+    /**
+     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
+     *                                               found in the classpath
+     */
+    <T> Collection<T> readAnyCollection(String fieldName, Function<Integer, Collection<T>> constructor);
+
+    <T> Collection<T> readAnyCollection(String fieldName, Function<Integer, Collection<T>> constructor, Collection<T> defaultValue);
 
 }
