@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
@@ -242,7 +243,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldType type = record.getFieldType(path);
-        IndexedReader indexedReader = type.getIndexedObjectReader();
+        IndexedReader indexedReader = fieldOperations(type).getIndexedObjectReader();
         return indexedReader.readIndexed(record, path, index);
     }
 
@@ -251,7 +252,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldType type = record.getFieldType(path);
-        return type.getObjectReader().apply(record, path);
+        return fieldOperations(type).getObjectReader().apply(record, path);
     }
 
 }

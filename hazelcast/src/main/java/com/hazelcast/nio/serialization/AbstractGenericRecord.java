@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
+
 /**
  * Implementation of GenericRecord interface to give common equals and hashcode implementation
  */
@@ -31,11 +33,11 @@ public abstract class AbstractGenericRecord implements GenericRecord {
                 return false;
             }
             if (thatFieldType.isArrayType()) {
-                if (!Objects.deepEquals(readAny(that, fieldName, thatFieldType), readAny(this, fieldName, thisFieldType))) {
+                if (!Objects.deepEquals(readAny(fieldName), that.readAny(fieldName))) {
                     return false;
                 }
             } else {
-                if (!Objects.equals(readAny(that, fieldName, thatFieldType), readAny(this, fieldName, thisFieldType))) {
+                if (!Objects.equals(readAny(fieldName), that.readAny(fieldName))) {
                     return false;
                 }
             }
@@ -51,24 +53,20 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             if (fieldType.isArrayType()) {
                 result = 31 * result + arrayHashCode(this, fieldName, fieldType);
             } else {
-                result = 31 * result + Objects.hashCode(readAny(this, fieldName, fieldType));
+                result = 31 * result + Objects.hashCode(readAny(fieldName));
             }
         }
         return result;
     }
 
     private static int arrayHashCode(GenericRecord record, String path, FieldType type) {
-        return type.getArrayHashCoder().applyAsInt(record, path);
-    }
-
-    private static Object readAny(GenericRecord record, String path, FieldType type) {
-        return type.getSerializedFormReader().apply(record, path);
+        return fieldOperations(type).getArrayHashCoder().applyAsInt(record, path);
     }
 
     @Override
     public final <T> T readAny(@Nonnull String fieldName) {
         FieldType type = getFieldType(fieldName);
-        BiFunction<GenericRecord, String, Object> reader = type.getSerializedFormReader();
+        BiFunction<GenericRecord, String, Object> reader = fieldOperations(type).getSerializedFormReader();
         return (T) reader.apply(this, fieldName);
     }
 

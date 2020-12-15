@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.COMPACT_SERIALIZER;
 
 public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
@@ -138,7 +139,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getName();
             FieldType fieldType = fieldDescriptor.getType();
-            fieldType.getRecordToWriter().consume(writer, record, fieldName);
+            fieldOperations(fieldType).getRecordToWriter().consume(writer, record, fieldName);
         }
         writer.end();
     }

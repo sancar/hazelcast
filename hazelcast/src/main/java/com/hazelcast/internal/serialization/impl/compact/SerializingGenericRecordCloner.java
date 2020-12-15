@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
+
 public class SerializingGenericRecordCloner implements GenericRecord.Builder {
 
     interface Writer {
@@ -52,7 +54,7 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
                     continue;
                 }
                 FieldType fieldType = field.getType();
-                fieldType.getRecordToWriter().consume(compactWriter, genericRecord, fieldName);
+                fieldOperations(fieldType).getRecordToWriter().consume(compactWriter, genericRecord, fieldName);
             }
             compactWriter.end();
             byte[] bytes = compactWriter.toByteArray();
