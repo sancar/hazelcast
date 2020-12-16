@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +22,9 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COLLECTION;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
+import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
@@ -106,10 +110,16 @@ public class TypeUtil {
     }
 
     static FieldType getFieldType(Class aClass) {
-        return classToFieldType.get(aClass);
-    }
-
-    static FieldType getArrayFieldType(Class aClass) {
-        return classToArrayFieldType.get(aClass);
+        if(Collection.class.isAssignableFrom(aClass)) {
+            return COLLECTION;
+        }
+        FieldType fieldType = classToFieldType.get(aClass);
+        if(fieldType != null) {
+            return fieldType;
+        }
+        if(aClass.isArray()) {
+            return COMPOSED_ARRAY;
+        }
+        return COMPOSED;
     }
 }

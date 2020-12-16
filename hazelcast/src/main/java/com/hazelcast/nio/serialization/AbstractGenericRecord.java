@@ -3,7 +3,6 @@ package com.hazelcast.nio.serialization;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiFunction;
 
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 
@@ -60,14 +59,13 @@ public abstract class AbstractGenericRecord implements GenericRecord {
     }
 
     private static int arrayHashCode(GenericRecord record, String path, FieldType type) {
-        return fieldOperations(type).getArrayHashCoder().applyAsInt(record, path);
+        return fieldOperations(type).hashCodeArray(record, path);
     }
 
     @Override
     public final <T> T readAny(@Nonnull String fieldName) {
         FieldType type = getFieldType(fieldName);
-        BiFunction<GenericRecord, String, Object> reader = fieldOperations(type).getSerializedFormReader();
-        return (T) reader.apply(this, fieldName);
+        return (T) fieldOperations(type).readFieldInSerializedForm(this, fieldName);
     }
 
 }

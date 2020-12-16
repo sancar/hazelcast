@@ -54,7 +54,7 @@ public class SerializingGenericRecordCloner implements GenericRecord.Builder {
                     continue;
                 }
                 FieldType fieldType = field.getType();
-                fieldOperations(fieldType).getRecordToWriter().consume(compactWriter, genericRecord, fieldName);
+                fieldOperations(fieldType).writeRecordFieldToWriter(compactWriter, genericRecord, fieldName);
             }
             compactWriter.end();
             byte[] bytes = compactWriter.toByteArray();

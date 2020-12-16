@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.impl.FieldOperations;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
@@ -45,6 +46,7 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COLLECTION;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
@@ -331,7 +333,7 @@ public class DefaultCompactWriter implements CompactWriter {
         writeObjectArrayField(fieldName, UTF_ARRAY, values, ObjectDataOutput::writeUTF);
     }
 
-    interface Writer<T> {
+    public interface Writer<T> {
         void write(BufferObjectDataOutput out, T value) throws IOException;
     }
 
@@ -436,34 +438,82 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     public void writeGenericRecordArray(String fieldName, GenericRecord[] values) {
-        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeGenericRecord);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, (out, value) -> serializer.writeObject(out, value));
     }
 
     @Override
     public <T> void writeObjectCollection(String fieldName, Collection<T> values) {
         try {
             if (values == null) {
-                setPositionAsNull(fieldName, COMPOSED_ARRAY);
+                setPositionAsNull(fieldName, COLLECTION);
                 return;
             }
-            setPosition(fieldName, COMPOSED_ARRAY);
+            if (values.isEmpty()) {
+                out.writeInt(0);
+            }
+            setPosition(fieldName, COLLECTION);
+
             int len = values.size();
             out.writeInt(len);
-            int offset = out.position();
-            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-            int i = 0;
-            for (T value : values) {
-                if (value != null) {
-                    int position = out.position();
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                    serializer.writeObject(out, value);
-                } else {
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+            FieldType componentType = TypeUtil.getFieldType(values.iterator().next().getClass());
+            out.writeByte(componentType.getId());
+
+            FieldOperations fieldOperations = FieldOperations.fieldOperations(componentType);
+            if (componentType.hasDefiniteSize()) {
+                for (T value : values) {
+                    fieldOperations.writeToObjectDataOutput(serializer, out, value);
                 }
-                i++;
+            } else {
+                int offset = out.position();
+                out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
+                int i = 0;
+                for (T value : values) {
+                    if (value != null) {
+                        int position = out.position();
+                        out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                        fieldOperations.writeToObjectDataOutput(serializer, out, value);
+                    } else {
+                        out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+                    }
+                    i++;
+                }
             }
         } catch (IOException e) {
             throw illegalStateException(e);
+        }
+    }
+
+    public static void writeBigIntegerArray0(BufferObjectDataOutput out, BigInteger[] values) throws IOException {
+        int len = values.length;
+        out.writeInt(len);
+
+        int offset = out.position();
+        out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
+        for (int i = 0; i < len; i++) {
+            if (values[i] != null) {
+                int position = out.position();
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                IOUtil.writeBigInteger(out, values[i]);
+            } else {
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+            }
+        }
+    }
+
+    public static void writeBigDecimalArray0(BufferObjectDataOutput out, BigDecimal[] values) throws IOException {
+        int len = values.length;
+        out.writeInt(len);
+
+        int offset = out.position();
+        out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
+        for (int i = 0; i < len; i++) {
+            if (values[i] != null) {
+                int position = out.position();
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                IOUtil.writeBigDecimal(out, values[i]);
+            } else {
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+            }
         }
     }
 

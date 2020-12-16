@@ -49,6 +49,7 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COLLECTION;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
@@ -278,11 +279,11 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                     readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OFFSET_DATE_TIME_ARRAY, () -> field.set(o, reader.readOffsetDateTimeArray(name)));
                     writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeOffsetDateTimeArray(name, (OffsetDateTime[]) field.get(o));
                 } else {
-                    readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED_ARRAY, () -> field.set(o, reader.readObjectArray(name, componentType)));
+                    readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COLLECTION, () -> field.set(o, reader.readObjectArray(name, componentType) ));
                     writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
                 }
             } else if (Collection.class.isAssignableFrom(type)) {
-                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED_ARRAY, () -> field.set(o, reader.readObjectCollection(name, ArrayList::new) ));
+                readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COLLECTION, () -> field.set(o, reader.readObjectCollection(name, ArrayList::new) ));
                 writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectCollection(name, (Collection<Object>) field.get(o));
             } else {
                 readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED, () -> field.set(o, reader.readObject(name)));
