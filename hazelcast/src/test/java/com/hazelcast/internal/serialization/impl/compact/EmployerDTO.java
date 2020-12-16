@@ -85,6 +85,17 @@ public class EmployerDTO {
     }
 
     @Override
+    public String toString() {
+        return "EmployerDTO{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", ids=" + Arrays.toString(ids) +
+                ", singleEmployee=" + singleEmployee +
+                ", otherEmployees=" + Arrays.toString(otherEmployees) +
+                '}';
+    }
+
+    @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + age;

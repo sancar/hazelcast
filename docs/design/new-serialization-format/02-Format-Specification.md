@@ -190,6 +190,5 @@ An array cannot have `null` item.
 Offsets are calculated from the end of `Number of items` 
 
 ### Maps
-//TODO sancar  not implemented yet
 Maps can be represented as two equal size arrays where the same index key and value belongs to the same entry.
 This way if key and/or values are fixed-length, the map will have much more compact representation  without needing the offsets.  

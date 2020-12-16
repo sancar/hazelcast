@@ -345,22 +345,27 @@ public class DefaultCompactWriter implements CompactWriter {
         }
         try {
             setPosition(fieldName, fieldType);
-            int len = values.length;
-            out.writeInt(len);
-
-            int offset = out.position();
-            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-            for (int i = 0; i < len; i++) {
-                if (values[i] != null) {
-                    int position = out.position();
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                    writer.write(out, values[i]);
-                } else {
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
-                }
-            }
+            writeRawArray(out, values, writer);
         } catch (IOException e) {
             throw illegalStateException(e);
+        }
+    }
+
+    public static void writeRawArray(BufferObjectDataOutput out, Object v, Writer writer) throws IOException {
+        Object[] values = (Object[]) v;
+        int len = values.length;
+        out.writeInt(len);
+
+        int offset = out.position();
+        out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
+        for (int i = 0; i < len; i++) {
+            if (values[i] != null) {
+                int position = out.position();
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                writer.write(out, values[i]);
+            } else {
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+            }
         }
     }
 
@@ -438,7 +443,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     public void writeGenericRecordArray(String fieldName, GenericRecord[] values) {
-        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, (out, value) -> serializer.writeObject(out, value));
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, (out, value) -> serializer.write(out, value));
     }
 
     @Override
@@ -448,71 +453,42 @@ public class DefaultCompactWriter implements CompactWriter {
                 setPositionAsNull(fieldName, COLLECTION);
                 return;
             }
-            if (values.isEmpty()) {
-                out.writeInt(0);
-            }
             setPosition(fieldName, COLLECTION);
-
-            int len = values.size();
-            out.writeInt(len);
-            FieldType componentType = TypeUtil.getFieldType(values.iterator().next().getClass());
-            out.writeByte(componentType.getId());
-
-            FieldOperations fieldOperations = FieldOperations.fieldOperations(componentType);
-            if (componentType.hasDefiniteSize()) {
-                for (T value : values) {
-                    fieldOperations.writeToObjectDataOutput(serializer, out, value);
-                }
-            } else {
-                int offset = out.position();
-                out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-                int i = 0;
-                for (T value : values) {
-                    if (value != null) {
-                        int position = out.position();
-                        out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                        fieldOperations.writeToObjectDataOutput(serializer, out, value);
-                    } else {
-                        out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
-                    }
-                    i++;
-                }
-            }
+            writeCollection(serializer, out, values);
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
-    public static void writeBigIntegerArray0(BufferObjectDataOutput out, BigInteger[] values) throws IOException {
-        int len = values.length;
+    public static void writeCollection(Compact serializer, BufferObjectDataOutput out,
+                                       Collection values) throws IOException {
+        int len = values.size();
         out.writeInt(len);
-
-        int offset = out.position();
-        out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-        for (int i = 0; i < len; i++) {
-            if (values[i] != null) {
-                int position = out.position();
-                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                IOUtil.writeBigInteger(out, values[i]);
-            } else {
-                out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
-            }
+        if(len == 0) {
+            return;
         }
-    }
+        Class<?> aClass = values.iterator().next().getClass();
+        FieldType componentType = TypeUtil.getFieldType(aClass);
+        out.writeByte(componentType.getId());
 
-    public static void writeBigDecimalArray0(BufferObjectDataOutput out, BigDecimal[] values) throws IOException {
-        int len = values.length;
-        out.writeInt(len);
-
-        int offset = out.position();
-        out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-        for (int i = 0; i < len; i++) {
-            if (values[i] != null) {
-                int position = out.position();
-                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                IOUtil.writeBigDecimal(out, values[i]);
-            } else {
-                out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+        FieldOperations fieldOperations = FieldOperations.fieldOperations(componentType);
+        if (componentType.hasDefiniteSize()) {
+            for (Object value : values) {
+                fieldOperations.writeToObjectDataOutput(serializer, out, value);
+            }
+        } else {
+            int offset = out.position();
+            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
+            int i = 0;
+            for (Object value : values) {
+                if (value != null) {
+                    int position = out.position();
+                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                    fieldOperations.writeToObjectDataOutput(serializer, out, value);
+                } else {
+                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
+                }
+                i++;
             }
         }
     }

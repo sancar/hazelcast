@@ -173,8 +173,8 @@ public interface CompactReader {
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
-    <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor);
+    <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection> constructor);
 
-    <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor, Collection<T> defaultValue);
+    <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection> constructor, Collection<T> defaultValue);
 
 }

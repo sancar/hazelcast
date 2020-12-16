@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.Compact;
+import com.hazelcast.internal.serialization.impl.compact.DefaultCompactReader;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
 import com.hazelcast.internal.util.function.TriConsumer;
 import com.hazelcast.nio.serialization.FieldType;
@@ -32,7 +34,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.BiFunction;
 import java.util.function.ToIntBiFunction;
 
@@ -50,7 +54,9 @@ public enum FieldOperations {
     PORTABLE((genericRecord, fieldName) -> {
         return ((InternalGenericRecord) genericRecord).readObject(fieldName);
     }, (serializer, out, value) -> {
-        ///??? TODO sancar not used
+        throw new UnsupportedOperationException();
+    }, (serializer, in) -> {
+        throw new UnsupportedOperationException();
     }, (genericRecord, fieldName) -> {
         return genericRecord.readGenericRecord(fieldName);
     }, (writer, record, fieldName) -> {
@@ -60,69 +66,89 @@ public enum FieldOperations {
         return genericRecord.readByte(fieldName);
     }, (serializer, out, value) -> {
         out.writeByte((Byte) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readByte();
+    }, null, (writer, record, fieldName) -> {
         writer.writeByte(fieldName, record.readByte(fieldName));
     }),
     BOOLEAN((genericRecord, fieldName) -> {
         return genericRecord.readBoolean(fieldName);
     }, (serializer, out, value) -> {
         out.writeBoolean((Boolean) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readBoolean();
+    }, null, (writer, record, fieldName) -> {
         writer.writeBoolean(fieldName, record.readBoolean(fieldName));
     }),
     CHAR((genericRecord, fieldName) -> {
         return genericRecord.readChar(fieldName);
     }, (serializer, out, value) -> {
         out.writeChar((Character) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readChar();
+    }, null, (writer, record, fieldName) -> {
         writer.writeChar(fieldName, record.readChar(fieldName));
     }),
     SHORT((genericRecord, fieldName) -> {
         return genericRecord.readShort(fieldName);
     }, (serializer, out, value) -> {
         out.writeShort((Short) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readShort();
+    }, null, (writer, record, fieldName) -> {
         writer.writeShort(fieldName, record.readShort(fieldName));
     }),
     INT((genericRecord, fieldName) -> {
         return genericRecord.readInt(fieldName);
     }, (serializer, out, value) -> {
         out.writeInt((Integer) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readInt();
+    }, null, (writer, record, fieldName) -> {
         writer.writeInt(fieldName, record.readInt(fieldName));
     }),
     LONG((genericRecord, fieldName) -> {
         return genericRecord.readLong(fieldName);
     }, (serializer, out, value) -> {
         out.writeLong((Long) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readLong();
+    }, null, (writer, record, fieldName) -> {
         writer.writeLong(fieldName, record.readLong(fieldName));
     }),
     FLOAT((genericRecord, fieldName) -> {
         return genericRecord.readFloat(fieldName);
     }, (serializer, out, value) -> {
         out.writeFloat((Float) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readFloat();
+    }, null, (writer, record, fieldName) -> {
         writer.writeFloat(fieldName, record.readFloat(fieldName));
     }),
     DOUBLE((genericRecord, fieldName) -> {
         return genericRecord.readDouble(fieldName);
     }, (serializer, out, value) -> {
         out.writeDouble((Double) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readDouble();
+    }, null, (writer, record, fieldName) -> {
         writer.writeDouble(fieldName, record.readDouble(fieldName));
     }),
     UTF((genericRecord, fieldName) -> {
         return genericRecord.readUTF(fieldName);
     }, (serializer, out, value) -> {
         out.writeUTF((String) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return in.readUTF();
+    }, null, (writer, record, fieldName) -> {
         writer.writeUTF(fieldName, record.readUTF(fieldName));
     }),
     PORTABLE_ARRAY((genericRecord, fieldName) -> {
         return ((InternalGenericRecord) genericRecord).readObjectArray(fieldName, Portable.class);
     }, (serializer, out, value) -> {
         //?? TODO sancar not supported
+    }, (serializer, in) -> {
+        return null; //. ?
     }, (genericRecord, fieldName) -> {
         return genericRecord.readGenericRecordArray(fieldName);
     }, (record, fieldName, index) -> {
@@ -136,7 +162,9 @@ public enum FieldOperations {
         return genericRecord.readByteArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeByteArray((byte[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readByteArray();
+    }, null, (record, fieldName, index) -> {
         return record.readByteFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readByteArray(fieldName));
@@ -147,7 +175,9 @@ public enum FieldOperations {
         return genericRecord.readBooleanArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeBooleanArray((boolean[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readBooleanArray();
+    }, null, (record, fieldName, index) -> {
         return record.readBooleanFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readBooleanArray(fieldName));
@@ -158,7 +188,9 @@ public enum FieldOperations {
         return genericRecord.readCharArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeCharArray((char[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readCharArray();
+    }, null, (record, fieldName, index) -> {
         return record.readCharFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readCharArray(fieldName));
@@ -169,7 +201,9 @@ public enum FieldOperations {
         return genericRecord.readShortArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeShortArray((short[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readShortArray();
+    }, null, (record, fieldName, index) -> {
         return record.readShortFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readShortArray(fieldName));
@@ -180,7 +214,9 @@ public enum FieldOperations {
         return genericRecord.readIntArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeIntArray((int[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readIntArray();
+    }, null, (record, fieldName, index) -> {
         return record.readIntFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readIntArray(fieldName));
@@ -191,7 +227,9 @@ public enum FieldOperations {
         return genericRecord.readLongArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeLongArray((long[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readLongArray();
+    }, null, (record, fieldName, index) -> {
         return record.readLongFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readLongArray(fieldName));
@@ -202,7 +240,9 @@ public enum FieldOperations {
         return genericRecord.readFloatArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeFloatArray((float[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readFloatArray();
+    }, null, (record, fieldName, index) -> {
         return record.readFloatFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readFloatArray(fieldName));
@@ -213,7 +253,9 @@ public enum FieldOperations {
         return genericRecord.readDoubleArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeDoubleArray((double[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readDoubleArray();
+    }, null, (record, fieldName, index) -> {
         return record.readDoubleFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readDoubleArray(fieldName));
@@ -224,7 +266,9 @@ public enum FieldOperations {
         return genericRecord.readUTFArray(fieldName);
     }, (serializer, out, value) -> {
         out.writeUTFArray((String[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return in.readUTFArray();
+    }, null, (record, fieldName, index) -> {
         return record.readUTFFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readUTFArray(fieldName));
@@ -235,14 +279,18 @@ public enum FieldOperations {
         return genericRecord.readBigInteger(fieldName);
     }, (serializer, out, value) -> {
         IOUtil.writeBigInteger(out, (BigInteger) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return IOUtil.readBigInteger(in);
+    }, null, (writer, record, fieldName) -> {
         writer.writeBigInteger(fieldName, record.readBigInteger(fieldName));
     }),
     BIG_INTEGER_ARRAY((genericRecord, fieldName) -> {
         return genericRecord.readBigIntegerArray(fieldName);
     }, (serializer, out, value) -> {
-        DefaultCompactWriter.writeBigIntegerArray0(out, (BigInteger[]) value);
-    }, (record, fieldName, index) -> {
+        DefaultCompactWriter.writeRawArray(out, value, (out1, value1) -> IOUtil.writeBigInteger(out1, (BigInteger) value1));
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readBigIntegerArray0(in);
+    }, null, (record, fieldName, index) -> {
         return record.readBigIntegerFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readBigIntegerArray(fieldName));
@@ -253,14 +301,18 @@ public enum FieldOperations {
         return genericRecord.readBigDecimal(fieldName);
     }, (serializer, out, value) -> {
         IOUtil.writeBigDecimal(out, (BigDecimal) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return IOUtil.readBigDecimal(in);
+    }, null, (writer, record, fieldName) -> {
         writer.writeBigDecimal(fieldName, record.readBigDecimal(fieldName));
     }),
     BIG_DECIMAL_ARRAY((genericRecord, fieldName) -> {
         return genericRecord.readBigDecimalArray(fieldName);
     }, (serializer, out, value) -> {
-        DefaultCompactWriter.writeBigDecimalArray0(out, (BigDecimal[]) value);
-    }, (record, fieldName, index) -> {
+        DefaultCompactWriter.writeRawArray(out, value, (out1, value1) -> IOUtil.writeBigDecimal(out1, (BigDecimal) value1));
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readBigDecimalArray0(in);
+    }, null, (record, fieldName, index) -> {
         return record.readBigDecimalFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readBigDecimalArray(fieldName));
@@ -271,14 +323,18 @@ public enum FieldOperations {
         return genericRecord.readLocalTime(fieldName);
     }, (serializer, out, value) -> {
         IOUtil.writeLocalTime(out, (LocalTime) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return IOUtil.readLocalTime(in);
+    }, null, (writer, record, fieldName) -> {
         writer.writeLocalTime(fieldName, record.readLocalTime(fieldName));
     }),
     LOCAL_TIME_ARRAY((genericRecord, fieldName) -> {
         return genericRecord.readLocalTimeArray(fieldName);
     }, (serializer, out, value) -> {
         DefaultCompactWriter.writeLocalTimeArray0(out, (LocalTime[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readLocalTimeArray(in);
+    }, null, (record, fieldName, index) -> {
         return record.readLocalTimeFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readLocalTimeArray(fieldName));
@@ -289,14 +345,18 @@ public enum FieldOperations {
         return genericRecord.readLocalDate(fieldName);
     }, (serializer, out, value) -> {
         IOUtil.writeLocalDate(out, (LocalDate) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return IOUtil.readLocalDate(in);
+    }, null, (writer, record, fieldName) -> {
         writer.writeLocalDate(fieldName, record.readLocalDate(fieldName));
     }),
     LOCAL_DATE_ARRAY((genericRecord, fieldName) -> {
         return genericRecord.readLocalDateArray(fieldName);
     }, (serializer, out, value) -> {
         DefaultCompactWriter.writeLocalDateArray0(out, (LocalDate[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readLocalDateArray(in);
+    }, null, (record, fieldName, index) -> {
         return record.readLocalDateFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readLocalDateArray(fieldName));
@@ -307,14 +367,18 @@ public enum FieldOperations {
         return genericRecord.readLocalDateTime(fieldName);
     }, (serializer, out, value) -> {
         IOUtil.writeLocalDateTime(out, (LocalDateTime) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return IOUtil.readLocalTime(in);
+    }, null, (writer, record, fieldName) -> {
         writer.writeLocalDateTime(fieldName, record.readLocalDateTime(fieldName));
     }),
     LOCAL_DATE_TIME_ARRAY((genericRecord, fieldName) -> {
         return genericRecord.readLocalDateTimeArray(fieldName);
     }, (serializer, out, value) -> {
         DefaultCompactWriter.writeLocalDateTimeArray0(out, (LocalDateTime[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readLocalDateTimeArray(in);
+    }, null, (record, fieldName, index) -> {
         return record.readLocalDateTimeFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readLocalDateTimeArray(fieldName));
@@ -325,14 +389,18 @@ public enum FieldOperations {
         return genericRecord.readOffsetDateTime(fieldName);
     }, (serializer, out, value) -> {
         IOUtil.writeOffsetDateTime(out, (OffsetDateTime) value);
-    }, (writer, record, fieldName) -> {
+    }, (serializer, in) -> {
+        return IOUtil.readOffsetDateTime(in);
+    }, null, (writer, record, fieldName) -> {
         writer.writeOffsetDateTime(fieldName, record.readOffsetDateTime(fieldName));
     }),
     OFFSET_DATE_TIME_ARRAY((genericRecord, fieldName) -> {
         return genericRecord.readOffsetDateTimeArray(fieldName);
     }, (serializer, out, value) -> {
         DefaultCompactWriter.writeOffsetDateTimeArray0(out, (OffsetDateTime[]) value);
-    }, (record, fieldName, index) -> {
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readOffsetDateTimeArray(in);
+    }, null, (record, fieldName, index) -> {
         return record.readOffsetDateTimeFromArray(fieldName, index);
     }, (record, fieldName) -> {
         return Arrays.hashCode(record.readOffsetDateTimeArray(fieldName));
@@ -343,6 +411,8 @@ public enum FieldOperations {
         return ((InternalGenericRecord) genericRecord).readObject(fieldName);
     }, (serializer, out, value) -> {
         serializer.writeObject(out, value);
+    }, (serializer, in) -> {
+        return serializer.readObject(in);
     }, (genericRecord, fieldName) -> {
         return genericRecord.readGenericRecord(fieldName);
     }, (writer, record, fieldName) -> {
@@ -351,7 +421,9 @@ public enum FieldOperations {
     COMPOSED_ARRAY((genericRecord, fieldName) -> {
         return ((InternalGenericRecord) genericRecord).readObjectArray(fieldName, Object.class);
     }, (serializer, out, value) -> {
-        //Could not write because we can not cast T[] to Object[]
+        DefaultCompactWriter.writeRawArray(out, value, (DefaultCompactWriter.Writer<Object>) (out1, o) -> serializer.write(out1, o));
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readRawArray(in, in1 -> serializer.readObject(in1));
     }, (genericRecord, fieldName) -> {
         return genericRecord.readGenericRecordArray(fieldName);
     }, (record, fieldName, index) -> {
@@ -360,12 +432,25 @@ public enum FieldOperations {
         return Arrays.hashCode(record.readGenericRecordArray(fieldName));
     }, (writer, record, fieldName) -> {
         writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
+    }),
+    ANY(null, null, null, null, null),
+    COLLECTION((genericRecord, fieldName) -> {
+        return null;//TODO sancar
+    }, (serializer, out, value) -> {
+        DefaultCompactWriter.writeCollection(serializer, out, (Collection) value);
+    }, (serializer, in) -> {
+        return DefaultCompactReader.readCollection(serializer, in, ArrayList::new);
+    }, (genericRecord, fieldName) -> {
+        return null;//TODO sancar
+    }, (writer, record, fieldName) -> {
+        //TODO sancar
     });
 
     private static final FieldOperations[] ALL = FieldOperations.values();
 
     private final BiFunction<GenericRecord, String, Object> objectReader;
     private final BufferObjectDataOutputWriter objectDataOutputWriter;
+    private final BufferObjectDataInputReader objectDataInputReader;
     private final ToIntBiFunction<GenericRecord, String> arrayHashCoder;
     private final BiFunction<GenericRecord, String, Object> serializedFormReader;
     private final IndexedReader indexedReader;
@@ -373,10 +458,13 @@ public enum FieldOperations {
 
     FieldOperations(BiFunction<GenericRecord, String, Object> objectReader,
                     BufferObjectDataOutputWriter objectDataOutputWriter,
+                    BufferObjectDataInputReader objectDataInputReader,
+                    BiFunction<GenericRecord, String, Object> serializedFormReader,
                     TriConsumer<DefaultCompactWriter, GenericRecord, String> recordToWriter) {
+        this.objectDataInputReader = objectDataInputReader;
         this.recordToWriter = recordToWriter;
         this.objectReader = objectReader;
-        this.serializedFormReader = objectReader;
+        this.serializedFormReader = serializedFormReader == null ? objectReader : serializedFormReader;
         this.objectDataOutputWriter = objectDataOutputWriter;
         this.indexedReader = null;
         this.arrayHashCoder = null;
@@ -384,45 +472,26 @@ public enum FieldOperations {
 
     FieldOperations(BiFunction<GenericRecord, String, Object> objectReader,
                     BufferObjectDataOutputWriter objectDataOutputWriter,
-                    BiFunction<GenericRecord, String, Object> serializedFormReader,
-                    TriConsumer<DefaultCompactWriter, GenericRecord, String> recordToWriter) {
-        this.recordToWriter = recordToWriter;
-        this.objectReader = objectReader;
-        this.serializedFormReader = serializedFormReader;
-        this.objectDataOutputWriter = objectDataOutputWriter;
-        this.indexedReader = null;
-        this.arrayHashCoder = null;
-    }
-
-    FieldOperations(BiFunction<GenericRecord, String, Object> objectReader,
-                    BufferObjectDataOutputWriter objectDataOutputWriter,
-                    IndexedReader indexedReader,
-                    ToIntBiFunction<GenericRecord, String> arrayHashCoder,
-                    TriConsumer<DefaultCompactWriter, GenericRecord, String> recordToWriter) {
-        this.objectDataOutputWriter = objectDataOutputWriter;
-        this.recordToWriter = recordToWriter;
-        this.objectReader = objectReader;
-        this.serializedFormReader = objectReader;
-        this.indexedReader = indexedReader;
-        this.arrayHashCoder = arrayHashCoder;
-    }
-
-    FieldOperations(BiFunction<GenericRecord, String, Object> objectReader,
-                    BufferObjectDataOutputWriter objectDataOutputWriter,
+                    BufferObjectDataInputReader objectDataInputReader,
                     BiFunction<GenericRecord, String, Object> serializedFormReader,
                     IndexedReader indexedReader,
                     ToIntBiFunction<GenericRecord, String> arrayHashCoder,
                     TriConsumer<DefaultCompactWriter, GenericRecord, String> recordToWriter) {
         this.objectDataOutputWriter = objectDataOutputWriter;
+        this.objectDataInputReader = objectDataInputReader;
         this.recordToWriter = recordToWriter;
         this.objectReader = objectReader;
-        this.serializedFormReader = serializedFormReader;
+        this.serializedFormReader = serializedFormReader == null ? objectReader : serializedFormReader;
         this.indexedReader = indexedReader;
         this.arrayHashCoder = arrayHashCoder;
     }
 
     public void writeToObjectDataOutput(Compact serializer, BufferObjectDataOutput out, Object value) throws IOException {
         objectDataOutputWriter.write(serializer, out, value);
+    }
+
+    public <T> T readFromObjectDataInput(Compact serializer, BufferObjectDataInput in) throws IOException {
+        return (T) objectDataInputReader.read(serializer, in);
     }
 
     public Object readFieldAsObject(InternalGenericRecord record, String fieldName) {
@@ -451,6 +520,10 @@ public enum FieldOperations {
 
     interface BufferObjectDataOutputWriter {
         void write(Compact serializer, BufferObjectDataOutput out, Object value) throws IOException;
+    }
+
+    interface BufferObjectDataInputReader {
+        Object read(Compact serializer, BufferObjectDataInput out) throws IOException;
     }
 
     public interface IndexedReader {

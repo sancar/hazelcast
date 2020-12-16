@@ -279,7 +279,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                     readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, OFFSET_DATE_TIME_ARRAY, () -> field.set(o, reader.readOffsetDateTimeArray(name)));
                     writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeOffsetDateTimeArray(name, (OffsetDateTime[]) field.get(o));
                 } else {
-                    readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COLLECTION, () -> field.set(o, reader.readObjectArray(name, componentType) ));
+                    readers[index] = (BiConsumerEx<CompactReader, Object>) (reader, o) -> readIfExists(reader, name, COMPOSED_ARRAY, () -> field.set(o, reader.readObjectArray(name, componentType) ));
                     writers[index] = (BiConsumerEx<CompactWriter, Object>) (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
                 }
             } else if (Collection.class.isAssignableFrom(type)) {

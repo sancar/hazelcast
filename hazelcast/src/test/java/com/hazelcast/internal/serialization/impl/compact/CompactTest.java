@@ -65,22 +65,7 @@ public class CompactTest {
         }
     };
 
-    @Test
-    public void testDefaultsReflection_hasCollection() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        ArrayList<EmployeeDTO> arrayList = new ArrayList<>();
-        arrayList.add(employeeDTO);
-        arrayList.add(employeeDTO);
-
-        EmployeeGroup expected = new EmployeeGroup(arrayList, 5);
-
-        Data data = serializationService.toData(expected);
-        EmployeeGroup actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
 
     @Test
     public void testDefaultsReflection_insideCollection() {
@@ -184,7 +169,7 @@ public class CompactTest {
                         out.writeObject("s", object.getSingleEmployee());
                         out.writeObjectArray("ss", object.getOtherEmployees());
                     }
-                });;
+                });
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
 

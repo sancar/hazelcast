@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.impl.FieldOperations;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
@@ -53,6 +54,7 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.COLLECTION;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
@@ -570,25 +572,15 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
     }
 
     @Override
-    public <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor) {
+    public <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection> constructor) {
         int currentPos = in.position();
         try {
-            int position = readPosition(fieldName, COMPOSED_ARRAY);
+            int position = readPosition(fieldName, COLLECTION);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
             in.position(position);
-            int len = in.readInt();
-            Collection<T> objects = constructor.apply(len);
-            int offset = in.position();
-            for (int i = 0; i < len; i++) {
-                int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                if (pos != NULL_ARRAY_LENGTH) {
-                    in.position(pos);
-                    objects.add(serializer.readObject(in));
-                }
-            }
-            return objects;
+            return readCollection(serializer, in, constructor);
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -596,12 +588,40 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         }
     }
 
+    public static <T> Collection readCollection(Compact serializer, BufferObjectDataInput in,
+                                                Function<Integer, Collection> constructor) throws IOException {
+        int len = in.readInt();
+        if (len == 0) {
+            return constructor.apply(0);
+        }
+        int type = in.readByte();
+        FieldType componentType = FieldType.get((byte) type);
+        FieldOperations fieldOperations = FieldOperations.fieldOperations(componentType);
+
+        Collection<T> objects = constructor.apply(len);
+        int offset = in.position();
+        if (componentType.hasDefiniteSize()) {
+            for (int i = 0; i < len; i++) {
+                objects.add(fieldOperations.readFromObjectDataInput(serializer, in));
+            }
+        } else {
+            for (int i = 0; i < len; i++) {
+                int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+                if (pos != NULL_ARRAY_LENGTH) {
+                    in.position(pos);
+                    objects.add(fieldOperations.readFromObjectDataInput(serializer, in));
+                }
+            }
+        }
+        return objects;
+    }
+
     @Override
-    public <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor, Collection<T> defaultValue) {
+    public <T> Collection<T> readObjectCollection(String fieldName, Function<Integer, Collection> constructor, Collection<T> defaultValue) {
         return isFieldExists(fieldName, COMPOSED_ARRAY) ? readObjectCollection(fieldName, constructor) : defaultValue;
     }
 
-    protected interface Reader<R> {
+    public interface Reader<R> {
         R read(BufferObjectDataInput t) throws IOException;
     }
 
@@ -631,6 +651,20 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         } finally {
             in.position(currentPos);
         }
+    }
+
+    public static Object readRawArray(BufferObjectDataInput in, Reader reader) throws IOException {
+        int len = in.readInt();
+        Object[] values = new Object[len];
+        int offset = in.position();
+        for (int i = 0; i < len; i++) {
+            int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+            if (pos != NULL_ARRAY_LENGTH) {
+                in.position(pos);
+                values[i] = reader.read(in);
+            }
+        }
+        return values;
     }
 
     private int readPrimitivePosition(@Nonnull String fieldName, FieldType fieldType) {
@@ -869,13 +903,31 @@ public class DefaultCompactReader extends AbstractGenericRecord implements Inter
         return new OffsetDateTime[0];
     }
 
+    public static BigInteger[] readBigIntegerArray0(BufferObjectDataInput in) throws IOException {
+        int len = in.readInt();
+        BigInteger[] values = new BigInteger[len];
+        int offset = in.position();
+        for (int i = 0; i < len; i++) {
+            int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+            if (pos != NULL_ARRAY_LENGTH) {
+                in.position(pos);
+                values[i] = IOUtil.readBigInteger(in);
+            }
+        }
+        return values;
+    }
 
-    @Override
-    public String toString() {
-        return "CompactGenericRecord{" +
-                "schema=" + schema +
-                ", finalPosition=" + finalPosition +
-                ", offset=" + offset +
-                '}';
+    public static BigDecimal[] readBigDecimalArray0(BufferObjectDataInput in) throws IOException {
+        int len = in.readInt();
+        BigDecimal[] values = new BigDecimal[len];
+        int offset = in.position();
+        for (int i = 0; i < len; i++) {
+            int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+            if (pos != NULL_ARRAY_LENGTH) {
+                in.position(pos);
+                values[i] = IOUtil.readBigDecimal(in);
+            }
+        }
+        return values;
     }
 }
