@@ -270,13 +270,6 @@ public class PortableGenericRecord extends AbstractGenericRecord {
     }
 
     @Override
-    public String toString() {
-        return "PortableGenericRecord{classDefinition=" + classDefinition
-                + ", objects=" + Arrays.toString(objects)
-                + '}';
-    }
-
-    @Override
     protected Object getClassIdentifier() {
         return combineToLong(classDefinition.getClassId(), classDefinition.getFactoryId());
     }

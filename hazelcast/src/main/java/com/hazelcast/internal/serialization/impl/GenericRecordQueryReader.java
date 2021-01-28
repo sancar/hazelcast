@@ -243,8 +243,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldType type = record.getFieldType(path);
-        IndexedReader indexedReader = fieldOperations(type).getIndexedObjectReader();
-        return indexedReader.readIndexed(record, path, index);
+        return fieldOperations(type).readFieldFromArrayIndex(record, path, index);
     }
 
     private Object readLeaf(InternalGenericRecord record, String path) {
@@ -252,7 +251,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldType type = record.getFieldType(path);
-        return fieldOperations(type).getObjectReader().apply(record, path);
+        return fieldOperations(type).readFieldAsObject(record, path);
     }
 
 }

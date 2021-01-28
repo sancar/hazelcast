@@ -139,7 +139,7 @@ public class Compact implements StreamSerializer<Object>, AdvancedSerializer {
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getName();
             FieldType fieldType = fieldDescriptor.getType();
-            fieldOperations(fieldType).getRecordToWriter().consume(writer, record, fieldName);
+            fieldOperations(fieldType).writeRecordFieldToWriter(writer, record, fieldName);
         }
         writer.end();
     }

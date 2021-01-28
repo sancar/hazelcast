@@ -192,7 +192,7 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public <T> void writeObjectCollection(String fieldName, Collection<T> arrayList) {
-        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.COMPOSED_ARRAY));
+        builder.addField(new FieldDescriptorImpl(fieldName, FieldType.COLLECTION));
     }
 
     @Override
