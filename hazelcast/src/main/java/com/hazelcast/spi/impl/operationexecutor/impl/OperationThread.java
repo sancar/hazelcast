@@ -215,6 +215,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     private void process(TaskBatch batch) {
         Object task = batch.next();
+        assert !(task instanceof MetaPartitionOperationThread);
         if (task == null) {
             completedOperationBatchCount.inc();
             return;

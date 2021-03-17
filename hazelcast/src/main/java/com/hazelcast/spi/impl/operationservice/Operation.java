@@ -70,6 +70,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
     static final int BITMASK_CLIENT_CALL_ID_SET = 1 << 7;
+    static final int BITMASK_META_OPERATION = 1 << 8;
 
     private static final AtomicLongFieldUpdater<Operation> CALL_ID =
             AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
@@ -98,6 +99,14 @@ public abstract class Operation implements DataSerializable, Tenantable {
     protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
+    }
+
+    public boolean isMetaOperation() {
+        return isFlagSet(BITMASK_META_OPERATION);
+    }
+
+    public void setMetaOp() {
+        setFlag(true, BITMASK_META_OPERATION);
     }
 
     public void setClientCallId(long clientCallId) {

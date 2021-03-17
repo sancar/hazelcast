@@ -67,6 +67,9 @@ public class OutboundOperationHandler {
         if (op.isUrgent()) {
             packet.raiseFlags(FLAG_URGENT);
         }
+        if (op.isMetaOperation()) {
+            packet.setPacketType(Packet.Type.META_PARTITION_OPERATION);
+        }
         return packet;
     }
 }

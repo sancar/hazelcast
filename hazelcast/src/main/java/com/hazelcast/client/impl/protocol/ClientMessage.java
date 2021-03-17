@@ -120,6 +120,7 @@ public final class ClientMessage implements OutboundFrame {
     public static final int IS_EVENT_FLAG = 1 << 9;
     public static final int BACKUP_AWARE_FLAG = 1 << 8;
     public static final int BACKUP_EVENT_FLAG = 1 << 7;
+    public static final int META_OPERATION = 1 << 6;
 
     //frame length + flags
     public static final int SIZE_OF_FRAME_LENGTH_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
@@ -365,6 +366,10 @@ public final class ClientMessage implements OutboundFrame {
         result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
         result = 31 * result + (connection != null ? connection.hashCode() : 0);
         return result;
+    }
+
+    public void raiseFlags(int flag) {
+        startFrame.flags |= flag;
     }
 
     public static final class ForwardFrameIterator {

@@ -234,6 +234,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return MapContainsKeyCodec.decodeResponse(result);
     }
 
+    protected ClientMessage invoke(ClientMessage message, Object key) {
+        if (name.startsWith("##meta##")) {
+            message.raiseFlags(ClientMessage.META_OPERATION);
+        }
+        return super.invoke(message, key);
+    }
+
+    protected ClientMessage invoke(ClientMessage message) {
+        if (name.startsWith("##meta##")) {
+            message.raiseFlags(ClientMessage.META_OPERATION);
+        }
+        return super.invoke(message);
+    }
+
     @Override
     public boolean containsValue(@Nonnull Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
@@ -359,6 +373,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private ClientInvocationFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
+        if (name.startsWith("##meta##")) {
+            request.raiseFlags(ClientMessage.IS_EVENT_FLAG);
+        }
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
         ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
         return clientInvocation.invoke();
@@ -710,7 +727,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private <T> T invoke(ClientMessage clientMessage, Object key, long invocationTimeoutSeconds) {
         final int partitionId = getContext().getPartitionService().getPartitionId(key);
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+            if (name.startsWith("##meta##")) {
+                clientMessage.raiseFlags(ClientMessage.IS_EVENT_FLAG);
+            }
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, name, partitionId);
             clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
             final Future future = clientInvocation.invoke();
             return (T) future.get();
@@ -1280,6 +1300,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
+        if (name.startsWith("##meta##")) {
+            request.raiseFlags(ClientMessage.IS_EVENT_FLAG);
+        }
         ClientMessage response;
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;

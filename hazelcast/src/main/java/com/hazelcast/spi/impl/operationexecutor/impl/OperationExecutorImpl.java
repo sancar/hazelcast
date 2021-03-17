@@ -57,8 +57,9 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
+import static com.hazelcast.internal.nio.Packet.Type.META_PARTITION_OPERATION;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
@@ -99,6 +100,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
     private final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
+    private final MetaPartitionOperationThread[] metaPartitionThreads;
+    private final OperationRunner[] metaPartitionOperationRunners;
 
     private final OperationQueue genericQueue
             = new OperationQueueImpl(new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
@@ -124,7 +127,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
+        this.metaPartitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
+        this.metaPartitionThreads = initMetaPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
 
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
@@ -183,6 +188,41 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         return threads;
+    }
+
+    private MetaPartitionOperationThread[] initMetaPartitionThreads(HazelcastProperties properties, String hzName,
+                                                                    NodeExtension nodeExtension, ClassLoader configClassLoader) {
+
+        int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
+        if (threadAffinity.isEnabled()) {
+            threadCount = threadAffinity.getThreadCount();
+        }
+
+        IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
+        MetaPartitionOperationThread[] metaThreads = new MetaPartitionOperationThread[threadCount];
+        for (int threadId = 0; threadId < metaThreads.length; threadId++) {
+            String threadName = createThreadPoolName(hzName, "meta-partition-operation") + threadId;
+            // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
+            MPSCQueue<Object> normalQueue = new MPSCQueue<>(idleStrategy);
+
+            OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
+
+            MetaPartitionOperationThread partitionThread = new MetaPartitionOperationThread(threadName, threadId, operationQueue, logger,
+                    nodeExtension, metaPartitionOperationRunners, configClassLoader);
+            partitionThread.setThreadAffinity(threadAffinity);
+            metaThreads[threadId] = partitionThread;
+            normalQueue.setConsumerThread(partitionThread);
+        }
+
+        // we need to assign the PartitionOperationThreads to all OperationRunners they own
+        for (int partitionId = 0; partitionId < metaPartitionOperationRunners.length; partitionId++) {
+            int threadId = getPartitionThreadId(partitionId, threadCount);
+            Thread thread = metaThreads[threadId];
+            OperationRunner runner = metaPartitionOperationRunners[partitionId];
+            runner.setCurrentThread(thread);
+        }
+
+        return metaThreads;
     }
 
     static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
@@ -352,15 +392,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void execute(Operation op) {
         checkNotNull(op, "op can't be null");
-
-        execute(op, op.getPartitionId(), op.isUrgent());
+        execute(op, op.getPartitionId(), op.isUrgent(), op.isMetaOperation());
     }
 
     @Override
     public void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions) {
         checkNotNull(taskFactory, "taskFactory can't be null");
         checkNotNull(partitions, "partitions can't be null");
-
+        //TODO sancar feels like we don't need to handle this part for meta threads but we will double check
         for (PartitionOperationThread partitionThread : partitionThreads) {
             TaskBatch batch = new TaskBatch(taskFactory, partitions, partitionThread.threadId, partitionThreads.length);
             partitionThread.queue.add(batch, false);
@@ -369,27 +408,31 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void execute(PartitionSpecificRunnable task) {
-        checkNotNull(task, "task can't be null");
-
-        execute(task, task.getPartitionId(), task instanceof UrgentSystemOperation);
+        execute(task, task.getPartitionId(), task instanceof UrgentSystemOperation, task.isMetaOperation());
     }
 
     @Override
     public void accept(Packet packet) {
-        execute(packet, packet.getPartitionId(), packet.isUrgent());
+        Packet.Type packetType = packet.getPacketType();
+        execute(packet, packet.getPartitionId(), packet.isUrgent(), META_PARTITION_OPERATION.equals(packetType));
     }
 
-    private void execute(Object task, int partitionId, boolean priority) {
+    private void execute(Object task, int partitionId, boolean priority, boolean isMeta) {
         if (partitionId < 0) {
             genericQueue.add(task, priority);
+        } else if (isMeta) {
+            MetaPartitionOperationThread partitionThread = metaPartitionThreads[toPartitionThreadIndex(partitionId)];
+            partitionThread.queue.add(task, priority);
         } else {
             OperationThread partitionThread = partitionThreads[toPartitionThreadIndex(partitionId)];
             partitionThread.queue.add(task, priority);
+
         }
     }
 
     @Override
     public void executeOnPartitionThreads(Runnable task) {
+        assert !(task instanceof MetaPartitionOperationThread);
         checkNotNull(task, "task can't be null");
         boolean priority = task instanceof UrgentSystemOperation;
 
@@ -416,7 +459,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
         if (operation.getPartitionId() >= 0) {
             // retrieving an OperationRunner for a partition specific operation is easy; we can just use the partition ID.
-            return partitionOperationRunners[operation.getPartitionId()];
+            if (operation.isMetaOperation()) {
+                return metaPartitionOperationRunners[operation.getPartitionId()];
+            } else {
+                return partitionOperationRunners[operation.getPartitionId()];
+            }
         }
 
         Thread currentThread = Thread.currentThread();
@@ -459,15 +506,24 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // we are only allowed to execute partition aware actions on an OperationThread
-        if (currentThread.getClass() != PartitionOperationThread.class) {
-            return false;
+        if (currentThread.getClass() == PartitionOperationThread.class) {
+            PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
+
+            // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
+            // to execute operations for this particular partitionId
+            return toPartitionThreadIndex(partitionId) == partitionThread.threadId;
         }
 
-        PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
+        // we are only allowed to execute partition aware actions on an OperationThread
+        if (currentThread.getClass() == MetaPartitionOperationThread.class) {
+            MetaPartitionOperationThread partitionThread = (MetaPartitionOperationThread) currentThread;
 
-        // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
-        // to execute operations for this particular partitionId
-        return toPartitionThreadIndex(partitionId) == partitionThread.threadId;
+            // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
+            // to execute operations for this particular partitionId
+            return toPartitionThreadIndex(partitionId) == partitionThread.threadId;
+        }
+
+        return false;
     }
 
     @Override
@@ -518,6 +574,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             logger.fine("Starting " + partitionThreads.length + " partition threads and "
                   + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
+        startAll(metaPartitionThreads);
         startAll(partitionThreads);
         startAll(genericThreads);
     }
@@ -531,8 +588,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void shutdown() {
         shutdownAll(partitionThreads);
+        shutdownAll(metaPartitionThreads);
         shutdownAll(genericThreads);
         awaitTermination(partitionThreads);
+        awaitTermination(metaPartitionThreads);
         awaitTermination(genericThreads);
     }
 

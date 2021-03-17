@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -71,6 +71,9 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     } else {
                         operationExecutor.accept(packet);
                     }
+                    break;
+                case META_PARTITION_OPERATION:
+                    operationExecutor.accept(packet);
                     break;
                 case EVENT:
                     eventService.accept(packet);

@@ -332,7 +332,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 6}
          */
-        UNDEFINED6,
+        META_PARTITION_OPERATION,
         /**
          * Unused packet type. Available for future use.
          * <p>

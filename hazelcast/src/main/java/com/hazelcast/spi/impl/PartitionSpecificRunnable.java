@@ -28,4 +28,8 @@ public interface PartitionSpecificRunnable extends Runnable {
      * @return the partition ID
      */
     int getPartitionId();
+
+    default boolean isMetaOperation() {
+        return false;
+    }
 }

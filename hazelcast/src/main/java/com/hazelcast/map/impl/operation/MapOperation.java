@@ -36,6 +36,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.memory.NativeOutOfMemoryError;
+import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
@@ -43,6 +44,7 @@ import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -75,6 +77,17 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapOperation(String name) {
         this.name = name;
+        //I have tried meta factory by reintroducing delegate methods but methods with OperationFactory created problem
+        if (name.startsWith("##meta##")) {
+            setMetaOp();
+        }
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        if (name.startsWith("##meta##")) {
+            setMetaOp();
+        }
     }
 
     @Override

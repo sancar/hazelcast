@@ -41,6 +41,11 @@ public abstract class AbstractPartitionMessageTask<P>
     }
 
     @Override
+    public boolean isMetaOperation() {
+        return ClientMessage.isFlagSet(clientMessage.getHeaderFlags(), ClientMessage.META_OPERATION);
+    }
+
+    @Override
     protected CompletableFuture<Object> processInternal() {
         Operation op = prepareOperation();
         if (ClientMessage.isFlagSet(clientMessage.getHeaderFlags(), ClientMessage.BACKUP_AWARE_FLAG)) {
