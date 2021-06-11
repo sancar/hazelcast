@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -156,7 +157,27 @@ public final class FieldsUtil {
         for (String name : clazz.getFieldNames()) {
             FieldType portableType = clazz.getFieldType(name);
 
-            QueryDataType type = resolvePortableType(portableType);
+            QueryDataType type = resolveType(portableType);
+
+            fields.putIfAbsent(name, type);
+        }
+
+        return fields;
+    }
+
+    /**
+     * Resolve the list of fields from a schema {@link com.hazelcast.internal.serialization.impl.compact.Schema},
+     * along with their {@link QueryDataType}.
+     */
+    @Nonnull
+    public static SortedMap<String, QueryDataType> resolveCompact(@Nonnull Schema schema) {
+        SortedMap<String, QueryDataType> fields = new TreeMap<>();
+
+        // Add regular fields.
+        for (String name : schema.getFieldNames()) {
+            FieldType compactType = schema.getField(name).getType();
+
+            QueryDataType type = resolveType(compactType);
 
             fields.putIfAbsent(name, type);
         }
@@ -166,8 +187,8 @@ public final class FieldsUtil {
 
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolvePortableType(@Nonnull FieldType portableType) {
-        switch (portableType) {
+    private static QueryDataType resolveType(@Nonnull FieldType type) {
+        switch (type) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;
 

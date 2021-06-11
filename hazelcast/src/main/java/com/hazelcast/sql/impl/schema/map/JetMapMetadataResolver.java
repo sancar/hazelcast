@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -38,9 +39,15 @@ public interface JetMapMetadataResolver {
         public Object resolvePortable(ClassDefinition clazz, boolean key) {
             return null;
         }
+
+        public Object resolveCompact(Schema clazz, boolean key) {
+            return null;
+        }
     };
 
     Object resolveClass(Class<?> clazz, boolean key);
 
     Object resolvePortable(ClassDefinition clazz, boolean key);
+
+    Object resolveCompact(Schema clazz, boolean key);
 }

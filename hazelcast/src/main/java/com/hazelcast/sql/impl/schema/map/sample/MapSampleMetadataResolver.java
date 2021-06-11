@@ -18,6 +18,9 @@ package com.hazelcast.sql.impl.schema.map.sample;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.FieldsUtil;
@@ -35,6 +38,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
+
 /**
  * Helper class that resolves a map-backed table from a key/value sample.
  */
@@ -47,24 +53,19 @@ public final class MapSampleMetadataResolver {
     /**
      * Resolves the metadata associated with the given key-value sample.
      *
-     * @param ss Serialization service.
+     * @param ss     Serialization service.
      * @param target Target to be analyzed.
-     * @param key Whether passed target is key or value.
+     * @param key    Whether passed target is key or value.
      * @return Sample metadata.
      * @throws QueryException If metadata cannot be resolved.
      */
     public static MapSampleMetadata resolve(
-        InternalSerializationService ss,
-        JetMapMetadataResolver jetMapMetadataResolver,
-        Object target,
-        boolean key
+            InternalSerializationService ss,
+            JetMapMetadataResolver jetMapMetadataResolver,
+            Object target,
+            boolean key
     ) {
         try {
-            // Convert Portable object to Data to have consistent object fields irrespectively of map's InMemoryFormat.
-            if (target instanceof Portable) {
-                target = ss.toData(target);
-            }
-
             if (target instanceof Data) {
                 Data data = (Data) target;
 
@@ -72,9 +73,20 @@ public final class MapSampleMetadataResolver {
                     return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, jetMapMetadataResolver);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
+                } else if (data.getType() == TYPE_COMPACT || data.getType() == TYPE_COMPACT_WITH_SCHEMA) {
+                    CompactInternalGenericRecord internalGenericRecord = (CompactInternalGenericRecord) ss.readAsInternalGenericRecord(data);
+                    return resolveCompact(internalGenericRecord.getSchema(), key, jetMapMetadataResolver);
                 } else {
                     return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }
+            } else if (target instanceof Portable) {
+                // Convert Portable object to Data to have consistent object fields irrespectively of map's InMemoryFormat.
+                Data data = ss.toData(target);
+                return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, jetMapMetadataResolver);
+            } else if (target instanceof CompactInternalGenericRecord) {
+                return resolveCompact(((CompactInternalGenericRecord) target).getSchema(), key, jetMapMetadataResolver);
+            } else if (target instanceof PortableGenericRecord) {
+                return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key, jetMapMetadataResolver);
             } else {
                 return resolveClass(target.getClass(), key, jetMapMetadataResolver);
             }
@@ -87,13 +99,13 @@ public final class MapSampleMetadataResolver {
      * Resolve metadata from a portable object.
      *
      * @param classDef Portable class definition.
-     * @param isKey Whether this is a key.
+     * @param isKey    Whether this is a key.
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(
-        @Nonnull ClassDefinition classDef,
-        boolean isKey,
-        JetMapMetadataResolver jetMapMetadataResolver
+            @Nonnull ClassDefinition classDef,
+            boolean isKey,
+            JetMapMetadataResolver jetMapMetadataResolver
     ) {
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
@@ -114,16 +126,53 @@ public final class MapSampleMetadataResolver {
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
-            GenericQueryTargetDescriptor.DEFAULT,
-            jetMapMetadataResolver.resolvePortable(classDef, isKey),
-            new LinkedHashMap<>(fields)
+                GenericQueryTargetDescriptor.DEFAULT,
+                jetMapMetadataResolver.resolvePortable(classDef, isKey),
+                new LinkedHashMap<>(fields)
+        );
+    }
+
+    /**
+     * Resolve metadata from a portable object.
+     *
+     * @param schema Compact schema (a.k.a class definition)
+     * @param isKey  Whether this is a key.
+     * @return Metadata.
+     */
+    private static MapSampleMetadata resolveCompact(
+            @Nonnull Schema schema,
+            boolean isKey,
+            JetMapMetadataResolver jetMapMetadataResolver
+    ) {
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+
+        Map<String, QueryDataType> simpleFields = FieldsUtil.resolveCompact(schema);
+
+        for (Entry<String, QueryDataType> fieldEntry : simpleFields.entrySet()) {
+            String name = fieldEntry.getKey();
+            TableField oldValue = fields.put(name,
+                    new MapTableField(name, fieldEntry.getValue(), false, new QueryPath(name, isKey)));
+            assert oldValue == null;
+        }
+
+        // Add top-level object.
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
+        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        // explicitly remove to have the newly-inserted topName at the end
+        fields.remove(topName);
+        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
+
+        return new MapSampleMetadata(
+                GenericQueryTargetDescriptor.DEFAULT,
+                jetMapMetadataResolver.resolveCompact(schema, isKey),
+                new LinkedHashMap<>(fields)
         );
     }
 
     private static MapSampleMetadata resolveClass(
-        Class<?> clazz,
-        boolean isKey,
-        JetMapMetadataResolver jetMapMetadataResolver
+            Class<?> clazz,
+            boolean isKey,
+            JetMapMetadataResolver jetMapMetadataResolver
     ) {
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
@@ -150,9 +199,9 @@ public final class MapSampleMetadataResolver {
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
-            GenericQueryTargetDescriptor.DEFAULT,
-            jetMapMetadataResolver.resolveClass(clazz, isKey),
-            fields
+                GenericQueryTargetDescriptor.DEFAULT,
+                jetMapMetadataResolver.resolveClass(clazz, isKey),
+                fields
         );
     }
 }

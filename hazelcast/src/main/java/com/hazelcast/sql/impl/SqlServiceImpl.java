@@ -230,6 +230,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         } catch (AccessControlException e) {
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }
     }
