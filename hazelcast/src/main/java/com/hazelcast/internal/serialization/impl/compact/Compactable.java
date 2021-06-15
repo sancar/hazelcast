@@ -19,7 +19,9 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 
 /**
- * Interface to customize how an object is written in Compact Format.
+ * Marker interface to denote that this class is generated via code generator tool.
+ * All the classes with this interface have a static COMPACT_SERIALIZER field.
+ *
  * One can either implement `CompactSerializer` and register
  * it via {@link com.hazelcast.config.CompactSerializationConfig#register(Class, CompactSerializer)}
  * the serialized object can implement this interface so that serialization system get the related compact serializer.
@@ -29,5 +31,4 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
  */
 public interface Compactable<T> {
 
-    CompactSerializer<T> getCompactSerializer();
 }

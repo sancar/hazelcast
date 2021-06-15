@@ -68,7 +68,7 @@ import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 import static java.util.stream.Collectors.toList;
 
-public class ReflectiveCompactSerializer implements InternalCompactSerializer<Object, DefaultCompactReader> {
+public class ReflectiveCompactSerializer {
 
     private final Map<Class, Writer[]> writersCache = new ConcurrentHashMap<>();
     private final Map<Class, Reader[]> readersCache = new ConcurrentHashMap<>();
@@ -76,9 +76,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
     public ReflectiveCompactSerializer() {
     }
 
-    @Override
-    public void write(CompactWriter writer, Object object) throws IOException {
-        Class<?> clazz = object.getClass();
+    public void write(CompactWriter writer, Object object, Class clazz) throws IOException {
         if (writeFast(clazz, writer, object)) {
             return;
         }
@@ -417,7 +415,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                             field.set(o, reader.readObjectArray(name, componentType));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o), componentType);
                 }
             } else {
                 readers[index] = (reader, schema, o) -> {
@@ -425,7 +423,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                         field.set(o, reader.readObject(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeObject(name, field.get(o));
+                writers[index] = (w, o) -> w.writeObject(name, field.get(o), type);
             }
             index++;
         }

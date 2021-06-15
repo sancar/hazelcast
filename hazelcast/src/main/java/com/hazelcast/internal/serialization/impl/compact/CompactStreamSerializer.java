@@ -31,9 +31,11 @@ import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,10 +70,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registries.entrySet()) {
             String typeName = entry.getKey();
             CompactSerializer serializer = entry.getValue().element3;
-            InternalCompactSerializer compactSerializer = serializer == null ? reflectiveSerializer : serializer;
             Class clazz = entry.getValue().element1;
-            classToRegistryMap.put(clazz, new ConfigurationRegistry(clazz, typeName, compactSerializer));
-            classNameToRegistryMap.put(typeName, new ConfigurationRegistry(clazz, typeName, compactSerializer));
+            classToRegistryMap.put(clazz, new ConfigurationRegistry(clazz, typeName, serializer));
+            classNameToRegistryMap.put(typeName, new ConfigurationRegistry(clazz, typeName, serializer));
         }
     }
 
@@ -132,30 +133,70 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
-    private long calculateSchemaId(Schema schema) throws IOException {
+    private long calculateSchemaId(Schema schema) {
         BufferObjectDataOutput out = bufferObjectDataOutputSupplier.get();
-        schema.writeData(out);
+        try {
+            schema.writeData(out);
+        } catch (IOException e) {
+            throw new HazelcastSerializationException(e);
+        }
         return RabinFingerPrint.fingerprint64(out.toByteArray());
     }
 
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
-        ConfigurationRegistry registry = getOrCreateRegistry(o);
+        ConfigurationRegistry registry = getOrCreateRegistry(o.getClass());
         Class<?> aClass = o.getClass();
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
-            SchemaWriter writer = new SchemaWriter(registry.getTypeName());
-            registry.getSerializer().write(writer, o);
-            schema = writer.build();
-            long schemaId = calculateSchemaId(schema);
-            schema.setSchemaId(schemaId);
-            schemaService.put(schema);
-            classToSchemaMap.put(aClass, schema);
+            schema = createSchema(aClass);
         }
         writeSchema(out, includeSchemaOnBinary, schema);
         DefaultCompactWriter writer = new DefaultCompactWriter(this, out, schema, includeSchemaOnBinary);
-        registry.getSerializer().write(writer, o);
+        write(registry, writer, o, o.getClass());
         writer.end();
+    }
+
+    private void write(ConfigurationRegistry registry, CompactWriter writer, Object o, Class clazz) throws IOException {
+        CompactSerializer serializer = registry.getSerializer();
+        if (serializer != null) {
+            serializer.write(writer, o);
+        }
+        reflectiveSerializer.write(writer, o, clazz);
+    }
+
+    private Object read(ConfigurationRegistry registry, DefaultCompactReader reader) throws IOException {
+        CompactSerializer serializer = registry.getSerializer();
+        if (serializer != null) {
+            return serializer.read(reader);
+        }
+        return reflectiveSerializer.read(reader);
+    }
+
+    public Schema createSchema(Class clazz) {
+        ConfigurationRegistry registry = getOrCreateRegistry(clazz);
+
+        SchemaWriter writer = new SchemaWriter(registry.getTypeName(), c -> {
+            Schema schema = classToSchemaMap.get(c);
+            if (schema == null) {
+                //TODO sancar present for cases like NodeDTO we should check for recursion on each subfield.
+                //TODO if there is a usage of any parent class on the subfields, it is not a fixed-size field.
+                schema = createSchema(c);
+            }
+            return schema.getNumberOfVariableLengthFields() == 0;
+        });
+        try {
+            //we are sure that SchemaWriter does not make use of object. So it is ok to pass null.
+            write(registry, writer, null, clazz);
+        } catch (IOException e) {
+            throw new HazelcastSerializationException(e);
+        }
+        Schema schema = writer.build();
+        long schemaId = calculateSchemaId(schema);
+        schema.setSchemaId(schemaId);
+        schemaService.put(schema);
+        classToSchemaMap.put(clazz, schema);
+        return schema;
     }
 
     private void writeSchema(BufferObjectDataOutput out, boolean includeSchemaOnBinary, Schema schema) throws IOException {
@@ -188,9 +229,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
         }
 
-        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
+        DefaultCompactReader reader = new DefaultCompactReader(this, input, schema,
                 registry.getClazz(), schemaIncludedInBinary);
-        Object object = registry.getSerializer().read(genericRecord);
+        Object object = read(registry, reader);
         return managedContext != null ? managedContext.initialize(object) : object;
 
     }
@@ -234,18 +275,27 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
         DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
                 registry.getClazz(), schemaIncludedInBinary);
-        Object object = registry.getSerializer().read(genericRecord);
+        Object object = read(registry, genericRecord);
         return managedContext != null ? (T) managedContext.initialize(object) : (T) object;
     }
 
-    private ConfigurationRegistry getOrCreateRegistry(Object object) {
-        return classToRegistryMap.computeIfAbsent(object.getClass(), aClass -> {
-            if (object instanceof Compactable) {
-                CompactSerializer<?> serializer = ((Compactable<?>) object).getCompactSerializer();
+    private ConfigurationRegistry getOrCreateRegistry(Class clazz) {
+        return classToRegistryMap.computeIfAbsent(clazz, aClass -> {
+            if (clazz.isAssignableFrom(Compactable.class)) {
+                CompactSerializer<?> serializer = getStaticSerializerField(aClass);
                 return new ConfigurationRegistry(aClass, aClass.getName(), serializer);
             }
-            return new ConfigurationRegistry(aClass, aClass.getName(), reflectiveSerializer);
+            return new ConfigurationRegistry(aClass, aClass.getName(), null);
         });
+    }
+
+    private static CompactSerializer<?> getStaticSerializerField(Class aClass) {
+        try {
+            Field serializerField = aClass.getDeclaredField("COMPACT_SERIALIZER");
+            return (CompactSerializer<?>) serializerField.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new HazelcastSerializationException(e);
+        }
     }
 
     private ConfigurationRegistry getOrCreateRegistry(String className) {
@@ -253,14 +303,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             Class<?> clazz;
             try {
                 clazz = ClassLoaderUtil.loadClass(classLoader, className);
+                return getOrCreateRegistry(clazz);
             } catch (Exception e) {
                 return null;
-            }
-            try {
-                Object object = ClassLoaderUtil.newInstance(clazz.getClassLoader(), clazz);
-                return getOrCreateRegistry(object);
-            } catch (Exception e) {
-                throw new HazelcastSerializationException("Class " + clazz + " must have an empty constructor", e);
             }
         });
     }

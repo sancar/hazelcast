@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerializerDTO> {
 
-    private static final CompactSerializer<EmployeeWithSerializerDTO> SERIALIZER =
+    public static final CompactSerializer<EmployeeWithSerializerDTO> COMPACT_SERIALIZER =
             new CompactSerializer<EmployeeWithSerializerDTO>() {
                 @Override
                 public EmployeeWithSerializerDTO read(CompactReader in) throws IOException {
@@ -101,8 +101,4 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
     }
 
 
-    @Override
-    public CompactSerializer<EmployeeWithSerializerDTO> getCompactSerializer() {
-        return SERIALIZER;
-    }
 }

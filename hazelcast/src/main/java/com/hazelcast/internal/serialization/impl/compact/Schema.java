@@ -71,11 +71,11 @@ public class Schema implements IdentifiedDataSerializable {
             offset++;
         }
 
-        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
+        List<FieldDescriptor> fixedSizeList = fieldDefinitionMap.values().stream()
+                .filter(FieldDescriptor::isFixedSize)
                 .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
                 .sorted(Comparator.comparingInt(o -> o.getType().getTypeSize())).collect(Collectors.toList());
-        for (FieldDescriptor fieldDefinition : definiteSizedList) {
+        for (FieldDescriptor fieldDefinition : fixedSizeList) {
             fieldDefinition.setOffset(offset);
             offset += fieldDefinition.getType().getTypeSize();
         }
@@ -84,7 +84,7 @@ public class Schema implements IdentifiedDataSerializable {
 
         int index = 0;
         List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().hasDefiniteSize())
+                .filter(fieldDescriptor -> !fieldDescriptor.isFixedSize())
                 .collect(Collectors.toList());
 
         for (FieldDescriptor fieldDefinition : varSizeList) {
@@ -163,7 +163,8 @@ public class Schema implements IdentifiedDataSerializable {
         Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
-            out.writeByte(descriptor.getType().getId());
+            out.writeInt(descriptor.getInternalFieldTypeId());
+            out.writeBoolean(descriptor.isFixedSize());
         }
     }
 
@@ -174,9 +175,9 @@ public class Schema implements IdentifiedDataSerializable {
         fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
         for (int i = 0; i < fieldDefinitionsSize; i++) {
             String fieldName = in.readString();
-            byte type = in.readByte();
-            FieldType fieldType = FieldType.get(type);
-            FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldType);
+            int type = in.readInt();
+            boolean isFixedSize = in.readBoolean();
+            FieldDescriptor descriptor = new FieldDescriptor(fieldName, type, isFixedSize);
             fieldDefinitionMap.put(fieldName, descriptor);
         }
         init();

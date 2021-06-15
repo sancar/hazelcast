@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.function.Predicate;
 
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
@@ -201,8 +202,8 @@ public class CompactStreamSerializerTest {
                         out.writeString("n", object.getName());
                         out.writeInt("a", object.getZcode());
                         out.writeLongArray("ids", object.getIds());
-                        out.writeObject("s", object.getSingleEmployee());
-                        out.writeObjectArray("ss", object.getOtherEmployees());
+                        out.writeObject("s", object.getSingleEmployee(), EmployeeDTO.class);
+                        out.writeObjectArray("ss", object.getOtherEmployees(), EmployeeDTO.class);
                     }
                 });
 
@@ -381,11 +382,18 @@ public class CompactStreamSerializerTest {
             employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
         }
 
-        SchemaWriter writer = new SchemaWriter("className");
+
+        SchemaWriter writer = new SchemaWriter("className", new Predicate<Class>() {
+            @Override
+            public boolean test(Class aClass) {
+                //TODO sancar change the predicate with the correct one.
+                return false;
+            }
+        });
 
         ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
         EmployerDTO employerDTO = new EmployerDTO("nbss", 40, ids, employeeDTO, employeeDTOS);
-        reflectiveCompactSerializer.write(writer, employerDTO);
+        reflectiveCompactSerializer.write(writer, employerDTO, employerDTO.getClass());
 
         Schema schema = writer.build();
 

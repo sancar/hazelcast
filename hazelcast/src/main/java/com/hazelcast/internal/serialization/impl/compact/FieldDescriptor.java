@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.InternalFieldTypeIDS;
 
 import javax.annotation.Nonnull;
 
@@ -24,13 +25,25 @@ public class FieldDescriptor {
 
     private final String fieldName;
     private final FieldType type;
+    private final boolean isFixedSize;
+    /**
+     * {@link InternalFieldTypeIDS}
+     */
+    private final int internalFieldTypeId;
     private int index = -1;
     private int offset = -1;
     private byte bitOffset = -1;
+    private long schemaId;
 
-    public FieldDescriptor(@Nonnull String fieldName, @Nonnull FieldType type) {
+    public FieldDescriptor(@Nonnull String fieldName, int internalFieldTypeId, boolean isFixedSize) {
         this.fieldName = fieldName;
-        this.type = type;
+        this.internalFieldTypeId = internalFieldTypeId;
+        this.type = InternalFieldTypeIDS.fieldType[internalFieldTypeId];
+        this.isFixedSize = isFixedSize;
+    }
+
+    public boolean isFixedSize() {
+        return isFixedSize;
     }
 
     public void setIndex(int index) {
@@ -74,6 +87,18 @@ public class FieldDescriptor {
      */
     public byte getBitOffset() {
         return bitOffset;
+    }
+
+    /**
+     * This field is set only when the FieldType is FIXED_SIZE
+     * @return schemaId
+     */
+    public long getSchemaId() {
+        return schemaId;
+    }
+
+    public int getInternalFieldTypeId() {
+        return internalFieldTypeId;
     }
 
     @Override

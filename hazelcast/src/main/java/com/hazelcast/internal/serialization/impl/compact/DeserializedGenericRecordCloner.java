@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -43,8 +42,8 @@ public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilde
     }
 
 
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
-        checkTypeWithSchema(schema, fieldName, fieldType);
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, int internalFieldTypeId, boolean isFixedSize) {
+        checkTypeWithSchema(schema, fieldName, internalFieldTypeId);
         if (!overwrittenFields.add(fieldName)) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

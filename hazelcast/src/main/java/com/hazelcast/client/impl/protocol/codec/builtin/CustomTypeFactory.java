@@ -221,9 +221,14 @@ public final class CustomTypeFactory {
         return new SqlColumnMetadata(name, sqlColumnType, true);
     }
 
+    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int internalFieldTypeId,
+                                                        boolean isFixedSize) {
+        return new FieldDescriptor(fieldName, internalFieldTypeId, isFixedSize);
+    }
+
+    //TODO sancar delete this one after changing the protocol accordingly
     public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type) {
-        FieldType fieldType = FieldType.get((byte) type);
-        return new FieldDescriptor(fieldName, fieldType);
+        return new FieldDescriptor(fieldName, type, false);
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {

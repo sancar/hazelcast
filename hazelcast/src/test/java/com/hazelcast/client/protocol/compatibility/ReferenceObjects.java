@@ -654,7 +654,7 @@ public class ReferenceObjects {
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
     public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
-    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
+    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt, aBoolean);
     public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
     public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
     public static List<Map.Entry<Long, Schema>> aMapOfLongToSchema

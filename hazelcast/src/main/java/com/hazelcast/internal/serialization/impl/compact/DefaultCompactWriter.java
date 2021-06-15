@@ -221,7 +221,8 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeObject(@Nonnull String fieldName, Object value) {
+    public void writeObject(@Nonnull String fieldName, Object value, Class clazz) {
+        //TODO sancar present fix this for the clazz is fixed size
         writeVariableLength(fieldName, COMPOSED, value,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
@@ -420,7 +421,8 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeObjectArray(@Nonnull String fieldName, T[] values) {
+    public <T> void writeObjectArray(@Nonnull String fieldName, T[] values, Class componentType) {
+        //TODO sancar present fix this for the componentType is fixed size
         writeObjectArrayField(fieldName, COMPOSED_ARRAY, values,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }

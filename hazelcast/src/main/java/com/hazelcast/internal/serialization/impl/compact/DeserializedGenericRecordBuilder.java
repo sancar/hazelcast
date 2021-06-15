@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
+import java.util.Comparator;
 import java.util.TreeMap;
 
 /**
@@ -33,10 +33,11 @@ import java.util.TreeMap;
 public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
     private final TreeMap<String, Object> objects = new TreeMap<>();
-    private final SchemaWriter schemaWriter;
+    private final TreeMap<String, FieldDescriptor> fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
+    private final String className;
 
     public DeserializedGenericRecordBuilder(String className) {
-        schemaWriter = new SchemaWriter(className);
+        this.className = className;
     }
 
     /**
@@ -48,17 +49,17 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
     @Nonnull
     @Override
     public GenericRecord build() {
-        return new DeserializedGenericRecord(schemaWriter.build(), objects);
+        Schema schema = new Schema(className, fieldDefinitionMap);
+        return new DeserializedGenericRecord(schema, objects);
     }
 
 
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, int internalFieldTypeId,
+                                         boolean isFixedSize) {
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
-        schemaWriter.addField(new FieldDescriptor(fieldName, fieldType));
+        fieldDefinitionMap.put(fieldName, new FieldDescriptor(fieldName, internalFieldTypeId, isFixedSize));
         return this;
     }
-
-
 }

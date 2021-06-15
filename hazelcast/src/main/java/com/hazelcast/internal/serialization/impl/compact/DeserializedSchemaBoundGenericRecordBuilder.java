@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.InternalFieldTypeIDS;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
@@ -47,8 +47,9 @@ class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordB
     }
 
     @Override
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
-        checkTypeWithSchema(schema, fieldName, fieldType);
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, int internalFieldTypeId, boolean isFixedSize) {
+        //TODO sancar do we want the internalTypeIds to match
+        checkTypeWithSchema(schema, fieldName, internalFieldTypeId);
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

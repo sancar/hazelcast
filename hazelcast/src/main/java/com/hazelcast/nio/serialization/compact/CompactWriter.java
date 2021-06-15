@@ -81,8 +81,8 @@ public interface CompactWriter {
 
     void writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] values);
 
-    <T> void writeObject(@Nonnull String fieldName, T value);
+    <T> void writeObject(@Nonnull String fieldName, T value, Class clazz);
 
-    <T> void writeObjectArray(@Nonnull String fieldName, T[] value);
+    <T> void writeObjectArray(@Nonnull String fieldName, T[] value, Class componentType);
 
 }

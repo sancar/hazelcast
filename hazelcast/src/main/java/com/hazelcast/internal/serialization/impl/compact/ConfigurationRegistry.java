@@ -16,29 +16,35 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class ConfigurationRegistry {
 
     private final Class clazz;
-    private final InternalCompactSerializer compactSerializer;
+    private final CompactSerializer compactSerializer;
     private final String typeName;
 
     public ConfigurationRegistry(@Nonnull Class clazz, @Nonnull String typeName,
-                                 @Nonnull InternalCompactSerializer compactSerializer) {
+                                 @Nullable CompactSerializer compactSerializer) {
         this.clazz = clazz;
         this.typeName = typeName;
         this.compactSerializer = compactSerializer;
     }
 
+    @Nonnull
     public Class getClazz() {
         return clazz;
     }
 
-    public InternalCompactSerializer getSerializer() {
+    @Nullable
+    public CompactSerializer getSerializer() {
         return compactSerializer;
     }
 
+    @Nonnull
     public String getTypeName() {
         return typeName;
     }
