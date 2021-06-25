@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.DataInput;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
@@ -67,6 +68,17 @@ import static com.hazelcast.nio.serialization.FieldType.INT;
 import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.NULLABLE_TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME;
@@ -283,6 +295,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableLength(fieldName, DECIMAL, IOUtil::readBigDecimal);
     }
 
+    @Nonnull
     @Override
     public LocalTime getTime(@Nonnull String fieldName) {
         int currentPos = in.position();
@@ -296,6 +309,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
+    @Nonnull
     @Override
     public LocalDate getDate(@Nonnull String fieldName) {
         int currentPos = in.position();
@@ -310,6 +324,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
@@ -323,6 +338,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
@@ -420,6 +436,150 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, COMPOSED_ARRAY, GenericRecord[]::new,
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
+    }
+
+    @Nullable
+    @Override
+    public LocalTime getNullableTime(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public LocalTime[] getNullableTimeArray(@Nonnull String fieldName) {
+        return new LocalTime[0];
+    }
+
+    @Nullable
+    @Override
+    public LocalDate getNullableDate(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public LocalDate[] getNullableDateArray(@Nonnull String fieldName) {
+        return new LocalDate[0];
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime getNullableTimestamp(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime[] getNullableTimestampArray(@Nonnull String fieldName) {
+        return new LocalDateTime[0];
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime getNullableTimestampWithTimezone(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime[] getNullableTimestampWithTimezoneArray(@Nonnull String fieldName) {
+        return new OffsetDateTime[0];
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBoolean(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByte(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Character getNullableChar(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDouble(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLong(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShort(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Boolean[] getNullableBooleanArray(@Nonnull String fieldName) {
+        return new Boolean[0];
+    }
+
+    @Nullable
+    @Override
+    public Byte[] getNullableByteArray(@Nonnull String fieldName) {
+        return new Byte[0];
+    }
+
+    @Nullable
+    @Override
+    public Character[] getNullableCharArray(@Nonnull String fieldName) {
+        return new Character[0];
+    }
+
+    @Nullable
+    @Override
+    public Double[] getNullableDoubleArray(@Nonnull String fieldName) {
+        return new Double[0];
+    }
+
+    @Nullable
+    @Override
+    public Float[] getNullableFloatArray(@Nonnull String fieldName) {
+        return new Float[0];
+    }
+
+    @Nullable
+    @Override
+    public Integer[] getNullableIntArray(@Nonnull String fieldName) {
+        return new Integer[0];
+    }
+
+    @Nullable
+    @Override
+    public Long[] getNullableLongArray(@Nonnull String fieldName) {
+        return new Long[0];
+    }
+
+    @Nullable
+    @Override
+    public Short[] getNullableShortArray(@Nonnull String fieldName) {
+        return new Short[0];
     }
 
     @Override
@@ -625,6 +785,78 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
+    }
+
+    @Nullable
+    @Override
+    public LocalTime getNullableTimeFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_TIME_ARRAY, IOUtil::readLocalTime, index);
+    }
+
+    @Nullable
+    @Override
+    public LocalDate getNullableDateFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_DATE_ARRAY, IOUtil::readLocalDate, index);
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime getNullableTimestampFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_TIMESTAMP_ARRAY, IOUtil::readLocalDateTime, index);
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime getNullableTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_BYTE_ARRAY, DataInput::readByte, index);
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_BOOLEAN_ARRAY, DataInput::readBoolean, index);
+    }
+
+    @Nullable
+    @Override
+    public Character getNullableCharFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_CHAR_ARRAY, DataInput::readChar, index);
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_SHORT_ARRAY, DataInput::readShort, index);
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_INT_ARRAY, DataInput::readInt, index);
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_LONG_ARRAY, DataInput::readLong, index);
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_FLOAT_ARRAY, DataInput::readFloat, index);
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_DATE_ARRAY, DataInput::readDouble, index);
     }
 
     @Override

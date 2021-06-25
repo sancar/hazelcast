@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization.compact;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,64 +26,112 @@ import java.time.OffsetDateTime;
 
 public interface CompactWriter {
 
+    void writeByte(@Nonnull String fieldName, byte value);
+
+    void writeBoolean(@Nonnull String fieldName, boolean value);
+
+    void writeChar(@Nonnull String fieldName, char value);
+
+    void writeShort(@Nonnull String fieldName, short value);
+
     void writeInt(@Nonnull String fieldName, int value);
 
     void writeLong(@Nonnull String fieldName, long value);
 
-    void writeString(@Nonnull String fieldName, String value);
-
-    void writeBoolean(@Nonnull String fieldName, boolean value);
-
-    void writeByte(@Nonnull String fieldName, byte value);
-
-    void writeChar(@Nonnull String fieldName, char value);
+    void writeFloat(@Nonnull String fieldName, float value);
 
     void writeDouble(@Nonnull String fieldName, double value);
 
-    void writeFloat(@Nonnull String fieldName, float value);
+    void writeString(@Nonnull String fieldName, @Nullable String value);
 
-    void writeShort(@Nonnull String fieldName, short value);
+    <T> void writeObject(@Nonnull String fieldName, @Nullable T value);
 
-    void writeDecimal(@Nonnull String fieldName, BigDecimal value);
+    void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
 
-    void writeTime(@Nonnull String fieldName, LocalTime value);
+    void writeTime(@Nonnull String fieldName, @Nonnull LocalTime value);
 
-    void writeDate(@Nonnull String fieldName, LocalDate value);
+    void writeDate(@Nonnull String fieldName, @Nonnull LocalDate value);
 
-    void writeTimestamp(@Nonnull String fieldName, LocalDateTime value);
+    void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value);
 
-    void writeTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value);
+    void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value);
 
-    void writeByteArray(@Nonnull String fieldName, byte[] value);
+    void writeByteArray(@Nonnull String fieldName, @Nullable byte[] value);
 
-    void writeBooleanArray(@Nonnull String fieldName, boolean[] booleans);
+    void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] value);
 
-    void writeCharArray(@Nonnull String fieldName, char[] value);
+    void writeCharArray(@Nonnull String fieldName, @Nullable char[] value);
 
-    void writeIntArray(@Nonnull String fieldName, int[] value);
+    void writeIntArray(@Nonnull String fieldName, @Nullable int[] value);
 
-    void writeLongArray(@Nonnull String fieldName, long[] value);
+    void writeLongArray(@Nonnull String fieldName, @Nullable long[] value);
 
-    void writeDoubleArray(@Nonnull String fieldName, double[] value);
+    void writeDoubleArray(@Nonnull String fieldName, @Nullable double[] value);
 
-    void writeFloatArray(@Nonnull String fieldName, float[] value);
+    void writeFloatArray(@Nonnull String fieldName, @Nullable float[] value);
 
-    void writeShortArray(@Nonnull String fieldName, short[] value);
+    void writeShortArray(@Nonnull String fieldName, @Nullable short[] value);
 
-    void writeStringArray(@Nonnull String fieldName, String[] value);
+    void writeStringArray(@Nonnull String fieldName, @Nullable String[] value);
 
-    void writeDecimalArray(@Nonnull String fieldName, BigDecimal[] values);
+    void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] value);
 
-    void writeTimeArray(@Nonnull String fieldName, LocalTime[] values);
+    void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] value);
 
-    void writeDateArray(@Nonnull String fieldName, LocalDate[] values);
+    void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] value);
 
-    void writeTimestampArray(@Nonnull String fieldName, LocalDateTime[] values);
+    void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
 
-    void writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] values);
+    void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
 
-    <T> void writeObject(@Nonnull String fieldName, T value);
+    <T> void writeObjectArray(@Nonnull String fieldName, @Nullable T[] value);
 
-    <T> void writeObjectArray(@Nonnull String fieldName, T[] value);
+    void writeNullableTime(@Nonnull String fieldName, @Nullable LocalTime value);
 
+    void writeNullableDate(@Nonnull String fieldName, @Nullable LocalDate value);
+
+    void writeNullableTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
+
+    void writeNullableTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
+
+    void writeNullableTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] value);
+
+    void writeNullableDateArray(@Nonnull String fieldName, @Nullable LocalDate[] value);
+
+    void writeNullableTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
+
+    void writeNullableTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
+
+    void writeNullableByte(@Nonnull String fieldName, @Nullable Byte value);
+
+    void writeNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value);
+
+    void writeNullableChar(@Nonnull String fieldName, @Nullable Character value);
+
+    void writeNullableShort(@Nonnull String fieldName, @Nullable Short value);
+
+    void writeNullableInt(@Nonnull String fieldName, @Nullable Integer value);
+
+    void writeNullableLong(@Nonnull String fieldName, @Nullable Long value);
+
+    void writeNullableFloat(@Nonnull String fieldName, @Nullable Float value);
+
+    void writeNullableDouble(@Nonnull String fieldName, @Nullable Double value);
+
+    void writeNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] value);
+
+    void writeNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] value);
+
+    void writeNullableCharArray(@Nonnull String fieldName, @Nullable Character[] value);
+
+    void writeNullableShortArray(@Nonnull String fieldName, @Nullable Short[] value);
+
+    void writeNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] value);
+
+    void writeNullableLongArray(@Nonnull String fieldName, @Nullable Long[] value);
+
+    void writeNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] value);
+
+    void writeNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] value);
 }
+

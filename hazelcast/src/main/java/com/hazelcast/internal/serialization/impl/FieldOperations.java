@@ -132,7 +132,7 @@ public enum FieldOperations {
             writer.writeDouble(fieldName, genericRecord.getDouble(fieldName));
         }
     }),
-    UTF(new FieldTypeBasedOperations() {
+    STRING(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getString(fieldName);
@@ -338,7 +338,7 @@ public enum FieldOperations {
             writer.writeDoubleArray(fieldName, record.getDoubleArray(fieldName));
         }
     }),
-    UTF_ARRAY(new FieldTypeBasedOperations() {
+    STRING_ARRAY(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getStringArray(fieldName);
@@ -391,7 +391,7 @@ public enum FieldOperations {
             writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));
         }
     }),
-    LOCAL_TIME(new FieldTypeBasedOperations() {
+    TIME(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTime(fieldName);
@@ -402,7 +402,7 @@ public enum FieldOperations {
             writer.writeTime(fieldName, genericRecord.getTime(fieldName));
         }
     }),
-    LOCAL_TIME_ARRAY(new FieldTypeBasedOperations() {
+    TIME_ARRAY(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimeArray(fieldName);
@@ -423,7 +423,39 @@ public enum FieldOperations {
             writer.writeTimeArray(fieldName, record.getTimeArray(fieldName));
         }
     }),
-    LOCAL_DATE(new FieldTypeBasedOperations() {
+    NULLABLE_TIME(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableTime(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableTime(fieldName, genericRecord.getNullableTime(fieldName));
+        }
+    }),
+    NULLABLE_TIME_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableTimeArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableTimeFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableTimeArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableTimeArray(fieldName, record.getNullableTimeArray(fieldName));
+        }
+    }),
+    DATE(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getDate(fieldName);
@@ -434,7 +466,7 @@ public enum FieldOperations {
             writer.writeDate(fieldName, genericRecord.getDate(fieldName));
         }
     }),
-    LOCAL_DATE_ARRAY(new FieldTypeBasedOperations() {
+    DATE_ARRAY(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getDateArray(fieldName);
@@ -455,7 +487,39 @@ public enum FieldOperations {
             writer.writeDateArray(fieldName, record.getDateArray(fieldName));
         }
     }),
-    LOCAL_DATE_TIME(new FieldTypeBasedOperations() {
+    NULLABLE_DATE(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableDate(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableDate(fieldName, genericRecord.getNullableDate(fieldName));
+        }
+    }),
+    NULLABLE_DATE_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableDateArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableDateFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableDateArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableDateArray(fieldName, record.getNullableDateArray(fieldName));
+        }
+    }),
+    TIMESTAMP(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimestamp(fieldName);
@@ -466,7 +530,7 @@ public enum FieldOperations {
             writer.writeTimestamp(fieldName, genericRecord.getTimestamp(fieldName));
         }
     }),
-    LOCAL_DATE_TIME_ARRAY(new FieldTypeBasedOperations() {
+    TIMESTAMP_ARRAY(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimestampArray(fieldName);
@@ -487,7 +551,39 @@ public enum FieldOperations {
             writer.writeTimestampArray(fieldName, record.getTimestampArray(fieldName));
         }
     }),
-    OFFSET_DATE_TIME(new FieldTypeBasedOperations() {
+    NULLABLE_TIMESTAMP(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableTimestamp(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableTimestamp(fieldName, genericRecord.getTimestamp(fieldName));
+        }
+    }),
+    NULLABLE_TIMESTAMP_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableTimestampArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableTimestampFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableTimestampArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableTimestampArray(fieldName, record.getNullableTimestampArray(fieldName));
+        }
+    }),
+    TIMESTAMP_WITH_TIMEZONE(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimestampWithTimezone(fieldName);
@@ -498,7 +594,7 @@ public enum FieldOperations {
             writer.writeTimestampWithTimezone(fieldName, genericRecord.getTimestampWithTimezone(fieldName));
         }
     }),
-    OFFSET_DATE_TIME_ARRAY(new FieldTypeBasedOperations() {
+    TIMESTAMP_WITH_TIMEZONE_ARRAY(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimestampWithTimezoneArray(fieldName);
@@ -517,6 +613,38 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
             writer.writeTimestampWithTimezoneArray(fieldName, record.getTimestampWithTimezoneArray(fieldName));
+        }
+    }),
+    NULLABLE_TIMESTAMP_WITH_TIMEZONE(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableTimestampWithTimezone(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableTimestampWithTimezone(fieldName, genericRecord.getTimestampWithTimezone(fieldName));
+        }
+    }),
+    NULLABLE_TIMESTAMP_WITH_TIMEZONE_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableTimestampWithTimezoneArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableTimestampWithTimezoneFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableTimestampWithTimezoneArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableTimestampWithTimezoneArray(fieldName, record.getTimestampWithTimezoneArray(fieldName));
         }
     }),
     COMPOSED(new FieldTypeBasedOperations() {
@@ -559,6 +687,262 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
             writer.writeGenericRecordArray(fieldName, record.getGenericRecordArray(fieldName));
+        }
+    }),
+    NULLABLE_BYTE(new FieldTypeBasedOperations() {
+        @Override
+        public Byte readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableByte(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableByte(fieldName, genericRecord.getNullableByte(fieldName));
+        }
+    }),
+    NULLABLE_BYTE_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableByteArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableByteFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableByteArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableByteArray(fieldName, record.getNullableByteArray(fieldName));
+        }
+    }),
+    NULLABLE_BOOLEAN(new FieldTypeBasedOperations() {
+        @Override
+        public Boolean readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableBoolean(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableBoolean(fieldName, genericRecord.getNullableBoolean(fieldName));
+        }
+    }),
+    NULLABLE_BOOLEAN_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableBooleanArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableBooleanFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableBooleanArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableBooleanArray(fieldName, record.getNullableBooleanArray(fieldName));
+        }
+    }),
+    NULLABLE_CHAR(new FieldTypeBasedOperations() {
+        @Override
+        public Character readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableChar(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableChar(fieldName, genericRecord.getNullableChar(fieldName));
+        }
+    }),
+    NULLABLE_CHAR_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableCharArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableCharFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableCharArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableCharArray(fieldName, record.getNullableCharArray(fieldName));
+        }
+    }),
+    NULLABLE_SHORT(new FieldTypeBasedOperations() {
+        @Override
+        public Short readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableShort(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableShort(fieldName, genericRecord.getNullableShort(fieldName));
+        }
+    }),
+    NULLABLE_SHORT_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableShortArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableShortFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableShortArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableShortArray(fieldName, record.getNullableShortArray(fieldName));
+        }
+    }),
+    NULLABLE_INT(new FieldTypeBasedOperations() {
+        @Override
+        public Integer readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableInt(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableInt(fieldName, genericRecord.getNullableInt(fieldName));
+        }
+    }),
+    NULLABLE_INT_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableIntArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableIntFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableIntArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableIntArray(fieldName, record.getNullableIntArray(fieldName));
+        }
+    }),
+    NULLABLE_LONG(new FieldTypeBasedOperations() {
+        @Override
+        public Long readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableLong(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableLong(fieldName, genericRecord.getNullableLong(fieldName));
+        }
+    }),
+    NULLABLE_LONG_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableLongArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableLongFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableLongArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableLongArray(fieldName, record.getNullableLongArray(fieldName));
+        }
+    }),
+    NULLABLE_FLOAT(new FieldTypeBasedOperations() {
+        @Override
+        public Float readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableFloat(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableFloat(fieldName, genericRecord.getNullableFloat(fieldName));
+        }
+    }),
+    NULLABLE_FLOAT_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableFloatArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableFloatFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableFloatArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableFloatArray(fieldName, record.getNullableFloatArray(fieldName));
+        }
+    }),
+    NULLABLE_DOUBLE(new FieldTypeBasedOperations() {
+        @Override
+        public Double readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableDouble(fieldName);
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeNullableDouble(fieldName, genericRecord.getNullableDouble(fieldName));
+        }
+    }),
+    NULLABLE_DOUBLE_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getNullableDoubleArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getNullableDoubleFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getNullableDoubleArray(fieldName));
+        }
+
+        @Override
+        public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeNullableDoubleArray(fieldName, record.getNullableDoubleArray(fieldName));
         }
     });
 

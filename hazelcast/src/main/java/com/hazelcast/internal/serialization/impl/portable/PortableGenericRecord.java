@@ -74,6 +74,150 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
         return get(fieldName, FieldType.PORTABLE_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public LocalTime getNullableTime(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalTime[] getNullableTimeArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalDate getNullableDate(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalDate[] getNullableDateArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime getNullableTimestamp(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime[] getNullableTimestampArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime getNullableTimestampWithTimezone(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime[] getNullableTimestampWithTimezoneArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBoolean(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByte(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Character getNullableChar(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDouble(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLong(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShort(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Boolean[] getNullableBooleanArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Byte[] getNullableByteArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Character[] getNullableCharArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double[] getNullableDoubleArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float[] getNullableFloatArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer[] getNullableIntArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long[] getNullableLongArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short[] getNullableShortArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
         return get(fieldName, FieldType.PORTABLE);
@@ -142,26 +286,26 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
         return get(fieldName, FieldType.DECIMAL);
     }
 
+    @Nonnull
     @Override
-    @Nullable
     public LocalTime getTime(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIME);
     }
 
+    @Nonnull
     @Override
-    @Nullable
     public LocalDate getDate(@Nonnull String fieldName) {
         return get(fieldName, FieldType.DATE);
     }
 
+    @Nonnull
     @Override
-    @Nullable
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIMESTAMP);
     }
 
+    @Nonnull
     @Override
-    @Nullable
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
@@ -398,6 +542,78 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return getFromArray(getTimestampWithTimezoneArray(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public LocalTime getNullableTimeFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalDate getNullableDateFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime getNullableTimestampFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime getNullableTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Character getNullableCharFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
     }
 
     private <T> T get(@Nonnull String fieldName, FieldType fieldType) {
