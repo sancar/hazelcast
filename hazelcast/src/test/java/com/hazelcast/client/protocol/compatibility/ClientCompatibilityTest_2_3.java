@@ -943,7 +943,7 @@ public class ClientCompatibilityTest_2_3 {
 =======
     public void test_ClientSendSchemaCodec_encodeRequest() {
         int fileClientMessageIndex = 43;
-        ClientMessage encoded = ClientSendSchemaCodec.encodeRequest(aSchema, aLong);
+        ClientMessage encoded = ClientSendSchemaCodec.encodeRequest(aSchema);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -971,7 +971,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_ClientSendAllSchemasCodec_encodeRequest() {
         int fileClientMessageIndex = 47;
-        ClientMessage encoded = ClientSendAllSchemasCodec.encodeRequest(aMapOfLongToSchema);
+        ClientMessage encoded = ClientSendAllSchemasCodec.encodeRequest(aListOfSchemas);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

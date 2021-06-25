@@ -901,9 +901,7 @@ public class MemberCompatibilityTest_2_3 {
     public void test_ClientSendSchemaCodec_decodeRequest() {
         int fileClientMessageIndex = 43;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientSendSchemaCodec.RequestParameters parameters = ClientSendSchemaCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aSchema, parameters.schema));
-        assertTrue(isEqual(aLong, parameters.schemaId));
+        assertTrue(isEqual(aSchema, ClientSendSchemaCodec.decodeRequest(fromFile)));
     }
 
     @Test
@@ -933,7 +931,7 @@ public class MemberCompatibilityTest_2_3 {
     public void test_ClientSendAllSchemasCodec_decodeRequest() {
         int fileClientMessageIndex = 47;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aMapOfLongToSchema, ClientSendAllSchemasCodec.decodeRequest(fromFile)));
+        assertTrue(isEqual(aListOfSchemas, ClientSendAllSchemasCodec.decodeRequest(fromFile)));
     }
 
     @Test
