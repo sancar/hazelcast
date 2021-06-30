@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -91,6 +92,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         in.position(finalPosition);
     }
 
+    @Override
     public ClassDefinition getClassDefinition() {
         return cd;
     }
@@ -857,8 +859,8 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), true);
+    public <T> T[] getObjectArray(@Nonnull String fieldName) {
+        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(Portable.class, length), true);
     }
 
     @Override
@@ -866,8 +868,4 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         return readNested(fieldName, true);
     }
 
-    @Override
-    protected Object getClassIdentifier() {
-        return cd;
-    }
 }

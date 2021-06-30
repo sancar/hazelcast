@@ -47,6 +47,7 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
         this.objects = objects;
     }
 
+    @Override
     public ClassDefinition getClassDefinition() {
         return classDefinition;
     }
@@ -251,13 +252,8 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
     }
 
     @Override
-    protected Object getClassIdentifier() {
-        return classDefinition;
-    }
-
-    @Override
     public String toString() {
-        return "PortableGenericRecord:" + super.toString();
+        return "PortableRecord:" + super.toString();
     }
 
     @Nullable
@@ -360,7 +356,7 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
 
     @Nullable
     @Override
-    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
+    public <T> T[] getObjectArray(@Nonnull String fieldName) {
         return (T[]) getGenericRecordArray(fieldName);
     }
 
