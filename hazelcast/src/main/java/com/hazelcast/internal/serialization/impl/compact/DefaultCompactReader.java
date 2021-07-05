@@ -169,43 +169,52 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public LocalTime readTime(@Nonnull String fieldName) {
         return getTime(fieldName);
     }
 
     @Override
-    public LocalTime readTime(@Nonnull String fieldName, LocalTime defaultValue) {
-        return isFieldExists(fieldName, TIME) ? this.getTime(fieldName) : defaultValue;
+    @Nonnull
+    public LocalTime readTime(@Nonnull String fieldName, @Nonnull LocalTime defaultValue) {
+        return isFieldExists(fieldName, TIME) ? getTime(fieldName) : defaultValue;
     }
 
     @Override
+    @Nonnull
     public LocalDate readDate(@Nonnull String fieldName) {
         return getDate(fieldName);
     }
 
     @Override
-    public LocalDate readDate(@Nonnull String fieldName, LocalDate defaultValue) {
-        return isFieldExists(fieldName, DATE) ? this.getDate(fieldName) : defaultValue;
+    @Nonnull
+    public LocalDate readDate(@Nonnull String fieldName, @Nonnull LocalDate defaultValue) {
+        return isFieldExists(fieldName, DATE) ? getDate(fieldName) : defaultValue;
     }
 
     @Override
+    @Nonnull
     public LocalDateTime readTimestamp(@Nonnull String fieldName) {
         return getTimestamp(fieldName);
     }
 
     @Override
-    public LocalDateTime readTimestamp(@Nonnull String fieldName, LocalDateTime defaultValue) {
-        return isFieldExists(fieldName, TIMESTAMP) ? this.getTimestamp(fieldName) : defaultValue;
+    @Nonnull
+    public LocalDateTime readTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime defaultValue) {
+        return isFieldExists(fieldName, TIMESTAMP) ? getTimestamp(fieldName) : defaultValue;
     }
 
     @Override
+    @Nonnull
+
     public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) {
         return getTimestampWithTimezone(fieldName);
     }
 
     @Override
-    public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime defaultValue) {
-        return isFieldExists(fieldName, TIMESTAMP_WITH_TIMEZONE) ? this.getTimestampWithTimezone(fieldName) : defaultValue;
+    @Nonnull
+    public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime defaultValue) {
+        return isFieldExists(fieldName, TIMESTAMP_WITH_TIMEZONE) ? getTimestampWithTimezone(fieldName) : defaultValue;
     }
 
     @Override

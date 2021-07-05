@@ -16,13 +16,20 @@
 
 package com.hazelcast.nio.serialization.compact;
 
+import com.hazelcast.spi.annotation.Beta;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+/**
+ * @since Hazelcast 5.0 as BETA
+ */
+@Beta
 public interface CompactWriter {
 
     void writeInt(@Nonnull String fieldName, int value);
@@ -43,46 +50,46 @@ public interface CompactWriter {
 
     void writeShort(@Nonnull String fieldName, short value);
 
-    void writeDecimal(@Nonnull String fieldName, BigDecimal value);
+    void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
 
-    void writeTime(@Nonnull String fieldName, LocalTime value);
+    void writeTime(@Nonnull String fieldName, @Nonnull LocalTime value);
 
-    void writeDate(@Nonnull String fieldName, LocalDate value);
+    void writeDate(@Nonnull String fieldName, @Nonnull LocalDate value);
 
-    void writeTimestamp(@Nonnull String fieldName, LocalDateTime value);
+    void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value);
 
-    void writeTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value);
+    void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value);
 
-    void writeByteArray(@Nonnull String fieldName, byte[] value);
+    void writeByteArray(@Nonnull String fieldName, @Nullable byte[] value);
 
-    void writeBooleanArray(@Nonnull String fieldName, boolean[] booleans);
+    void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] booleans);
 
-    void writeCharArray(@Nonnull String fieldName, char[] value);
+    void writeCharArray(@Nonnull String fieldName, @Nullable char[] value);
 
-    void writeIntArray(@Nonnull String fieldName, int[] value);
+    void writeIntArray(@Nonnull String fieldName, @Nullable int[] value);
 
-    void writeLongArray(@Nonnull String fieldName, long[] value);
+    void writeLongArray(@Nonnull String fieldName, @Nullable long[] value);
 
-    void writeDoubleArray(@Nonnull String fieldName, double[] value);
+    void writeDoubleArray(@Nonnull String fieldName, @Nullable double[] value);
 
-    void writeFloatArray(@Nonnull String fieldName, float[] value);
+    void writeFloatArray(@Nonnull String fieldName, @Nullable float[] value);
 
-    void writeShortArray(@Nonnull String fieldName, short[] value);
+    void writeShortArray(@Nonnull String fieldName, @Nullable short[] value);
 
-    void writeStringArray(@Nonnull String fieldName, String[] value);
+    void writeStringArray(@Nonnull String fieldName, @Nullable String[] value);
 
-    void writeDecimalArray(@Nonnull String fieldName, BigDecimal[] values);
+    void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] values);
 
-    void writeTimeArray(@Nonnull String fieldName, LocalTime[] values);
+    void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] values);
 
-    void writeDateArray(@Nonnull String fieldName, LocalDate[] values);
+    void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] values);
 
-    void writeTimestampArray(@Nonnull String fieldName, LocalDateTime[] values);
+    void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] values);
 
-    void writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] values);
+    void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values);
 
-    <T> void writeObject(@Nonnull String fieldName, T value);
+    <T> void writeObject(@Nonnull String fieldName, @Nullable T value);
 
-    <T> void writeObjectArray(@Nonnull String fieldName, T[] value);
+    <T> void writeObjectArray(@Nonnull String fieldName, @Nullable T[] value);
 
 }

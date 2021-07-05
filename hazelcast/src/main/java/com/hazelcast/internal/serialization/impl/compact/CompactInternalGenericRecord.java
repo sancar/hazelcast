@@ -284,6 +284,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public LocalTime getTime(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
@@ -297,6 +298,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public LocalDate getDate(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
@@ -310,6 +312,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
@@ -323,6 +326,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nonnull
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {

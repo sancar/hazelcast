@@ -130,9 +130,9 @@ import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaD
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.DateSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.HazelcastJsonValueSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.JavaSerializer;
-import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalTimeSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalDateSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalDateTimeSerializer;
+import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalTimeSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OffsetDateTimeSerializer;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 

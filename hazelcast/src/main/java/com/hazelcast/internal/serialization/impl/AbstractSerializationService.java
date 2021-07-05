@@ -553,7 +553,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         final Class type = object.getClass();
 
-        //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
+        //2-Default serializers, Dataserializable, Compact, Portable, primitives, arrays, String and
+        // some helper Java types(BigInteger etc)
         SerializerAdapter serializer = lookupDefaultSerializer(type, includeSchema);
 
         //3-Custom registered types by user
@@ -602,6 +603,13 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
+        if (compactStreamSerializer.isRegisteredAsCompact(type)) {
+            if (includeSchema) {
+                return compactWithSchemaSerializerAdapter;
+            } else {
+                return compactSerializerAdapter;
+            }
+        }
         if (DataSerializable.class.isAssignableFrom(type)) {
             return dataSerializerAdapter;
         }

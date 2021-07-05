@@ -75,6 +75,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         }
     }
 
+    public boolean isRegisteredAsCompact(Class clazz) {
+        return classToRegistryMap.containsKey(clazz);
+    }
+
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
             throws IOException {
         return (InternalGenericRecord) readGenericRecord(input, schemaIncludedInBinary);

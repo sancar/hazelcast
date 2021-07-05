@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -248,12 +249,12 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeDecimal(@Nonnull String fieldName, BigDecimal value) {
+    public void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
         writeVariableSizeField(fieldName, DECIMAL, value, IOUtil::writeBigDecimal);
     }
 
     @Override
-    public void writeTime(@Nonnull String fieldName, LocalTime value) {
+    public void writeTime(@Nonnull String fieldName, @Nonnull LocalTime value) {
         int lastPos = out.position();
         try {
             out.position(getFixedSizeFieldPosition(fieldName, TIME));
@@ -266,7 +267,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeDate(@Nonnull String fieldName, LocalDate value) {
+    public void writeDate(@Nonnull String fieldName, @Nonnull LocalDate value) {
         int lastPos = out.position();
         try {
             out.position(getFixedSizeFieldPosition(fieldName, DATE));
@@ -279,7 +280,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeTimestamp(@Nonnull String fieldName, LocalDateTime value) {
+    public void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value) {
         int lastPos = out.position();
         try {
             out.position(getFixedSizeFieldPosition(fieldName, TIMESTAMP));
@@ -292,7 +293,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value) {
+    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value) {
         int lastPos = out.position();
         try {
             out.position(getFixedSizeFieldPosition(fieldName, TIMESTAMP_WITH_TIMEZONE));
@@ -305,47 +306,47 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeByteArray(@Nonnull String fieldName, byte[] values) {
+    public void writeByteArray(@Nonnull String fieldName, @Nullable byte[] values) {
         writeVariableSizeField(fieldName, BYTE_ARRAY, values, ObjectDataOutput::writeByteArray);
     }
 
     @Override
-    public void writeBooleanArray(@Nonnull String fieldName, boolean[] values) {
+    public void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] values) {
         writeVariableSizeField(fieldName, BOOLEAN_ARRAY, values, DefaultCompactWriter::writeBooleanBits);
     }
 
     @Override
-    public void writeCharArray(@Nonnull String fieldName, char[] values) {
+    public void writeCharArray(@Nonnull String fieldName, @Nullable char[] values) {
         writeVariableSizeField(fieldName, CHAR_ARRAY, values, ObjectDataOutput::writeCharArray);
     }
 
     @Override
-    public void writeIntArray(@Nonnull String fieldName, int[] values) {
+    public void writeIntArray(@Nonnull String fieldName, @Nullable int[] values) {
         writeVariableSizeField(fieldName, INT_ARRAY, values, ObjectDataOutput::writeIntArray);
     }
 
     @Override
-    public void writeLongArray(@Nonnull String fieldName, long[] values) {
+    public void writeLongArray(@Nonnull String fieldName, @Nullable long[] values) {
         writeVariableSizeField(fieldName, LONG_ARRAY, values, ObjectDataOutput::writeLongArray);
     }
 
     @Override
-    public void writeDoubleArray(@Nonnull String fieldName, double[] values) {
+    public void writeDoubleArray(@Nonnull String fieldName, @Nullable double[] values) {
         writeVariableSizeField(fieldName, DOUBLE_ARRAY, values, ObjectDataOutput::writeDoubleArray);
     }
 
     @Override
-    public void writeFloatArray(@Nonnull String fieldName, float[] values) {
+    public void writeFloatArray(@Nonnull String fieldName, @Nullable float[] values) {
         writeVariableSizeField(fieldName, FLOAT_ARRAY, values, ObjectDataOutput::writeFloatArray);
     }
 
     @Override
-    public void writeShortArray(@Nonnull String fieldName, short[] values) {
+    public void writeShortArray(@Nonnull String fieldName, @Nullable short[] values) {
         writeVariableSizeField(fieldName, SHORT_ARRAY, values, ObjectDataOutput::writeShortArray);
     }
 
     @Override
-    public void writeStringArray(@Nonnull String fieldName, String[] values) {
+    public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) {
         writeVariableSizeArray(fieldName, UTF_ARRAY, values, ObjectDataOutput::writeString);
     }
 
@@ -384,27 +385,27 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeDecimalArray(@Nonnull String fieldName, BigDecimal[] values) {
+    public void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] values) {
         writeVariableSizeArray(fieldName, DECIMAL_ARRAY, values, IOUtil::writeBigDecimal);
     }
 
     @Override
-    public void writeTimeArray(@Nonnull String fieldName, LocalTime[] values) {
+    public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] values) {
         writeVariableSizeField(fieldName, TIME_ARRAY, values, DefaultCompactWriter::writeLocalTimeArray0);
     }
 
     @Override
-    public void writeDateArray(@Nonnull String fieldName, LocalDate[] values) {
+    public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] values) {
         writeVariableSizeField(fieldName, DATE_ARRAY, values, DefaultCompactWriter::writeLocalDateArray0);
     }
 
     @Override
-    public void writeTimestampArray(@Nonnull String fieldName, LocalDateTime[] values) {
+    public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] values) {
         writeVariableSizeField(fieldName, TIMESTAMP_ARRAY, values, DefaultCompactWriter::writeLocalDateTimeArray0);
     }
 
     @Override
-    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] values) {
+    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) {
         writeVariableSizeField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, values, DefaultCompactWriter::writeOffsetDateTimeArray0);
     }
 

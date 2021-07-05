@@ -17,21 +17,29 @@
 package com.hazelcast.nio.serialization.compact;
 
 import com.hazelcast.internal.serialization.impl.compact.InternalCompactSerializer;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
+/**
+ * @param <T> Type of the serialized/deserialized class
+ * @since Hazelcast 5.0 as BETA
+ */
+@Beta
 public interface CompactSerializer<T> extends InternalCompactSerializer<T, CompactReader> {
     /**
      * @param in reader to read fields of an object
      * @return the object created as a result of read method
-     * @throws IOException
+     * @throws IOException in case of failure to read
      */
-    T read(CompactReader in) throws IOException;
+    @Nonnull
+    T read(@Nonnull CompactReader in) throws IOException;
 
     /**
      * @param out    CompactWriter to serialize the fields onto
-     * @param object to be serialized
-     * @throws IOException
+     * @param object to be serialized.
+     * @throws IOException in case of failure to write
      */
-    void write(CompactWriter out, T object) throws IOException;
+    void write(@Nonnull CompactWriter out, @Nonnull T object) throws IOException;
 }

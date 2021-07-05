@@ -17,7 +17,10 @@
 package com.hazelcast.nio.serialization.compact;
 
 
+import com.hazelcast.spi.annotation.Beta;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,9 +30,12 @@ import java.time.OffsetDateTime;
 /**
  * All read(String fieldName) methods throw HazelcastSerializationException when the related field is not found or
  * there is a type mismatch.
- * To avoid exception when the field is not found, the user can make use of `read(String fieldName, T defaultValue)`.
+ * To avoid exception when the field is not found, the user can make use of `read*(String fieldName, T defaultValue)`.
  * Especially useful, when class is evolved  (a new field is added to/removed from the class).
+ *
+ * @since Hazelcast 5.0 as BETA
  */
+@Beta
 public interface CompactReader {
 
     byte readByte(@Nonnull String fieldName);
@@ -64,96 +70,166 @@ public interface CompactReader {
 
     char readChar(@Nonnull String fieldName, char defaultValue);
 
+    @Nullable
     String readString(@Nonnull String fieldName);
 
-    String readString(@Nonnull String fieldName, String defaultValue);
+    @Nullable
+    String readString(@Nonnull String fieldName, @Nullable String defaultValue);
 
+    @Nullable
     BigDecimal readDecimal(@Nonnull String fieldName);
 
+    @Nullable
     BigDecimal readDecimal(@Nonnull String fieldName, BigDecimal defaultValue);
 
+    @Nonnull
     LocalTime readTime(@Nonnull String fieldName);
 
-    LocalTime readTime(@Nonnull String fieldName, LocalTime defaultValue);
+    @Nonnull
+    LocalTime readTime(@Nonnull String fieldName, @Nonnull LocalTime defaultValue);
 
+    @Nonnull
     LocalDate readDate(@Nonnull String fieldName);
 
-    LocalDate readDate(@Nonnull String fieldName, LocalDate defaultValue);
+    @Nonnull
+    LocalDate readDate(@Nonnull String fieldName, @Nonnull LocalDate defaultValue);
 
+    @Nonnull
     LocalDateTime readTimestamp(@Nonnull String fieldName);
 
-    LocalDateTime readTimestamp(@Nonnull String fieldName, LocalDateTime defaultValue);
+    @Nonnull
+    LocalDateTime readTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime defaultValue);
 
+    @Nonnull
     OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
 
-    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime defaultValue);
+    @Nonnull
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime defaultValue);
 
     /**
-     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
-     *                                               found in the classpath
+     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created
      */
+    @Nullable
     <T> T readObject(@Nonnull String fieldName);
 
-    <T> T readObject(@Nonnull String fieldName, T defaultValue);
+    /**
+     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created
+     */
+    @Nullable
+    <T> T readObject(@Nonnull String fieldName, @Nullable T defaultValue);
 
+    @Nullable
     byte[] readByteArray(@Nonnull String fieldName);
 
-    byte[] readByteArray(@Nonnull String fieldName, byte[] defaultValue);
+    @Nullable
+    byte[] readByteArray(@Nonnull String fieldName, @Nullable byte[] defaultValue);
 
+    @Nullable
     boolean[] readBooleanArray(@Nonnull String fieldName);
 
-    boolean[] readBooleanArray(@Nonnull String fieldName, boolean[] defaultValue);
+    @Nullable
+    boolean[] readBooleanArray(@Nonnull String fieldName, @Nullable boolean[] defaultValue);
 
+    @Nullable
     char[] readCharArray(@Nonnull String fieldName);
 
-    char[] readCharArray(@Nonnull String fieldName, char[] defaultValue);
+    @Nullable
+    char[] readCharArray(@Nonnull String fieldName, @Nullable char[] defaultValue);
 
+    @Nullable
     int[] readIntArray(@Nonnull String fieldName);
 
-    int[] readIntArray(@Nonnull String fieldName, int[] defaultValue);
+    @Nullable
+    int[] readIntArray(@Nonnull String fieldName, @Nullable int[] defaultValue);
 
+    @Nullable
     long[] readLongArray(@Nonnull String fieldName);
 
-    long[] readLongArray(@Nonnull String fieldName, long[] defaultValue);
+    @Nullable
+    long[] readLongArray(@Nonnull String fieldName, @Nullable long[] defaultValue);
 
+    @Nullable
     double[] readDoubleArray(@Nonnull String fieldName);
 
-    double[] readDoubleArray(@Nonnull String fieldName, double[] defaultValue);
+    @Nullable
+    double[] readDoubleArray(@Nonnull String fieldName, @Nullable double[] defaultValue);
 
+    @Nullable
     float[] readFloatArray(@Nonnull String fieldName);
 
-    float[] readFloatArray(@Nonnull String fieldName, float[] defaultValue);
+    @Nullable
+    float[] readFloatArray(@Nonnull String fieldName, @Nullable float[] defaultValue);
 
+    @Nullable
     short[] readShortArray(@Nonnull String fieldName);
 
-    short[] readShortArray(@Nonnull String fieldName, short[] defaultValue);
+    @Nullable
+    short[] readShortArray(@Nonnull String fieldName, @Nullable short[] defaultValue);
 
+    @Nullable
     String[] readStringArray(@Nonnull String fieldName);
 
-    String[] readStringArray(@Nonnull String fieldName, String[] defaultValue);
+    @Nullable
+    String[] readStringArray(@Nonnull String fieldName, @Nullable String[] defaultValue);
 
+    @Nullable
     BigDecimal[] readDecimalArray(@Nonnull String fieldName);
 
-    BigDecimal[] readDecimalArray(@Nonnull String fieldName, BigDecimal[] defaultValue);
+    @Nullable
+    BigDecimal[] readDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] defaultValue);
 
+    /**
+     * Array items can not be null
+     */
+    @Nullable
     LocalTime[] readTimeArray(@Nonnull String fieldName);
 
-    LocalTime[] readTimeArray(@Nonnull String fieldName, LocalTime[] defaultValue);
+    /**
+     * Array items can not be null
+     */
+    @Nullable
+    LocalTime[] readTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] defaultValue);
 
+    /**
+     * Array items can not be null
+     */
+    @Nullable
     LocalDate[] readDateArray(@Nonnull String fieldName);
 
-    LocalDate[] readDateArray(@Nonnull String fieldName, LocalDate[] defaultValue);
+    /**
+     * Array items can not be null
+     */
+    @Nullable
+    LocalDate[] readDateArray(@Nonnull String fieldName, @Nullable LocalDate[] defaultValue);
 
+    /**
+     * Array items can not be null
+     */
+    @Nullable
     LocalDateTime[] readTimestampArray(@Nonnull String fieldName);
 
-    LocalDateTime[] readTimestampArray(@Nonnull String fieldName, LocalDateTime[] defaultValue);
+    /**
+     * Array items can not be null
+     */
+    @Nullable
+    LocalDateTime[] readTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue);
 
+    /**
+     * Array items can not be null
+     */
+    @Nullable
     OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName);
 
-    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] defaultValue);
+    /**
+     * Array items can not be null
+     */
+    @Nullable
+    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
 
-    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType);
+    @Nullable
+    <T> T[] readObjectArray(@Nonnull String fieldName, @Nullable Class<T> componentType);
 
-    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType, T[] defaultValue);
+    @Nullable
+    <T> T[] readObjectArray(@Nonnull String fieldName, @Nullable Class<T> componentType, T[] defaultValue);
 
 }

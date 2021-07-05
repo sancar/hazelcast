@@ -57,7 +57,9 @@ interface GenericRecordBuilder {
 
     /**
      * @return a new constructed GenericRecord
+     * @since Hazelcast 5.0 as BETA
      */
+    @Beta
     @Nonnull
     static GenericRecordBuilder compact(String className) {
         return new DeserializedGenericRecordBuilder(className);
