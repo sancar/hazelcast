@@ -576,7 +576,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         //6-A good candidate to be serialized via compact serializer
-        if (serializer == null) {
+        if (compactStreamSerializer.isEnabled() && serializer == null) {
             serializer = lookupCompactSerializer(type, includeSchema);
         }
 
@@ -603,7 +603,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
-        if (compactStreamSerializer.isRegisteredAsCompact(type)) {
+        if (compactStreamSerializer.isEnabled() && compactStreamSerializer.isRegisteredAsCompact(type)) {
             if (includeSchema) {
                 return compactWithSchemaSerializerAdapter;
             } else {

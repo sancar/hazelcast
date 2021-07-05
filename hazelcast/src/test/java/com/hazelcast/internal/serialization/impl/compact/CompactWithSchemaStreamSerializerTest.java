@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -42,10 +43,7 @@ public class CompactWithSchemaStreamSerializerTest {
 
     @Test
     public void testReadAsGenericRecord() throws IOException {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .build();
+        SerializationService serializationService = createSerializationService();
 
         GenericRecord expected = compact("fooBarClassName")
                 .setInt("foo", 1)
@@ -58,21 +56,25 @@ public class CompactWithSchemaStreamSerializerTest {
 
         // Create a second schema service so that schemas are not shared accross these two
         // This is to make sure that toObject call will use the schema in the data
-        SchemaService schemaService2 = CompactTestUtil.createInMemorySchemaService();
-        InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService2)
-                .build();
+        InternalSerializationService serializationService2 = createSerializationService();
 
         GenericRecord actual = serializationService2.readAsInternalGenericRecord(data);
         assertEquals(expected, actual);
     }
 
+    private InternalSerializationService createSerializationService() {
+        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.setEnabled(true);
+        return new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+    }
+
     @Test
     public void testFromGenericRecord() {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .build();
+        SerializationService serializationService = createSerializationService();
 
         GenericRecord expected = compact("fooBarClassName")
                 .setInt("foo", 1)
@@ -85,10 +87,7 @@ public class CompactWithSchemaStreamSerializerTest {
 
         // Create a second schema service so that schemas are not shared across these two
         // This is to make sure that toObject call will use the schema in the data
-        SchemaService schemaService2 = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService2)
-                .build();
+        SerializationService serializationService2 = createSerializationService();
 
         GenericRecord actual = serializationService2.toObject(data);
         assertEquals(expected, actual);
@@ -96,29 +95,21 @@ public class CompactWithSchemaStreamSerializerTest {
 
     @Test
     public void testFromObject() {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        SerializationConfig serializationConfig = new SerializationConfig();
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService).setConfig(serializationConfig).build();
+        SerializationService serializationService = createSerializationService();
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         Data data = serializationService.toDataWithSchema(employeeDTO);
 
         // Create a second schema service so that schemas are not shared accross these two
         // This is to make sure that toObject call will use the schema in the data
-        SchemaService schemaService2 = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService2).build();
+        SerializationService serializationService2 = createSerializationService();
         EmployeeDTO actual = serializationService2.toObject(data);
         assertEquals(employeeDTO, actual);
     }
 
     @Test
     public void testFromData() {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        SerializationConfig serializationConfig = new SerializationConfig();
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService).setConfig(serializationConfig).build();
+        SerializationService serializationService = createSerializationService();
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         Data employeeData = serializationService.toDataWithSchema(employeeDTO);
@@ -127,18 +118,14 @@ public class CompactWithSchemaStreamSerializerTest {
 
         // Create a second schema service so that schemas are not shared accross these two
         // This is to make sure that toObject call will use the schema in the data
-        SchemaService schemaService2 = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService2).build();
+        SerializationService serializationService2 = createSerializationService();
         EmployeeDTO actual = serializationService2.toObject(data);
         assertEquals(employeeDTO, actual);
     }
 
     @Test
     public void testRecursive() {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService).build();
+        SerializationService serializationService = createSerializationService();
 
         NodeDTO expected = new NodeDTO(new NodeDTO(new NodeDTO(2), 1), 0);
 
@@ -146,9 +133,7 @@ public class CompactWithSchemaStreamSerializerTest {
 
         // Create a second schema service so that schemas are not shared accross these two
         // This is to make sure that toObject call will use the schema in the data
-        SchemaService schemaService2 = CompactTestUtil.createInMemorySchemaService();
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService2).build();
+        SerializationService serializationService2 = createSerializationService();
         NodeDTO actual = serializationService2.toObject(data);
         assertEquals(expected, actual);
     }

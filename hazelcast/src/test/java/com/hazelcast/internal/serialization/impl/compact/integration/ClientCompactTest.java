@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact.integration;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,8 +38,11 @@ public class ClientCompactTest extends CompactFormatIntegrationTest {
     public void setup() {
         member1 = factory.newHazelcastInstance(getConfig());
         member2 = factory.newHazelcastInstance(getConfig());
-        instance1 = factory.newHazelcastClient();
-        instance2 = factory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        clientConfig.getSerializationConfig().setCompactSerializationConfig(compactSerializationConfig.setEnabled(true));
+        instance1 = factory.newHazelcastClient(clientConfig);
+        instance2 = factory.newHazelcastClient(clientConfig);
     }
 
     @Override

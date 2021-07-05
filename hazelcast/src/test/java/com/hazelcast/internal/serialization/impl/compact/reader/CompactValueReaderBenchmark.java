@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact.reader;
 
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -53,7 +55,11 @@ public class CompactValueReaderBenchmark extends HazelcastTestSupport {
     @Setup
     public void setup() throws Exception {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        ss = new DefaultSerializationServiceBuilder().setSchemaService(schemaService).build();
+        SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
+                .setConfig(serializationConfig)
+                .setSchemaService(schemaService).build();
 
         CompactValueReaderTestStructure.PrimitiveObject primitive = new CompactValueReaderTestStructure.PrimitiveObject();
 

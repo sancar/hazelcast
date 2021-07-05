@@ -53,6 +53,11 @@ public enum FieldOperations {
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeByte(fieldName, genericRecord.getByte(fieldName));
         }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Byte.BYTES;
+        }
     }),
     BOOLEAN(new FieldTypeBasedOperations() {
         @Override
@@ -63,6 +68,12 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeBoolean(fieldName, genericRecord.getBoolean(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            //Boolean is actually 1 bit. To make it look like smaller than Byte we use 0.
+            return 0;
         }
     }),
     CHAR(new FieldTypeBasedOperations() {
@@ -75,6 +86,11 @@ public enum FieldOperations {
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeChar(fieldName, genericRecord.getChar(fieldName));
         }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Character.BYTES;
+        }
     }),
     SHORT(new FieldTypeBasedOperations() {
         @Override
@@ -85,6 +101,11 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeShort(fieldName, genericRecord.getShort(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Short.BYTES;
         }
     }),
     INT(new FieldTypeBasedOperations() {
@@ -97,6 +118,11 @@ public enum FieldOperations {
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeInt(fieldName, genericRecord.getInt(fieldName));
         }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Integer.BYTES;
+        }
     }),
     LONG(new FieldTypeBasedOperations() {
         @Override
@@ -107,6 +133,11 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeLong(fieldName, genericRecord.getLong(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Long.BYTES;
         }
     }),
     FLOAT(new FieldTypeBasedOperations() {
@@ -119,6 +150,11 @@ public enum FieldOperations {
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeFloat(fieldName, genericRecord.getFloat(fieldName));
         }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Float.BYTES;
+        }
     }),
     DOUBLE(new FieldTypeBasedOperations() {
         @Override
@@ -129,6 +165,11 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeDouble(fieldName, genericRecord.getDouble(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Double.BYTES;
         }
     }),
     UTF(new FieldTypeBasedOperations() {
@@ -400,6 +441,11 @@ public enum FieldOperations {
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeTime(fieldName, genericRecord.getTime(fieldName));
         }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Byte.BYTES * 3 + Integer.BYTES;
+        }
     }),
     LOCAL_TIME_ARRAY(new FieldTypeBasedOperations() {
         @Override
@@ -431,6 +477,11 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeDate(fieldName, genericRecord.getDate(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Integer.BYTES + Byte.BYTES * 2;
         }
     }),
     LOCAL_DATE_ARRAY(new FieldTypeBasedOperations() {
@@ -464,6 +515,11 @@ public enum FieldOperations {
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeTimestamp(fieldName, genericRecord.getTimestamp(fieldName));
         }
+
+        @Override
+        public int typeSizeInBytes() {
+            return LOCAL_DATE.operations.typeSizeInBytes() + LOCAL_TIME.operations.typeSizeInBytes();
+        }
     }),
     LOCAL_DATE_TIME_ARRAY(new FieldTypeBasedOperations() {
         @Override
@@ -495,6 +551,11 @@ public enum FieldOperations {
         @Override
         public void readFromGenericRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
             writer.writeTimestampWithTimezone(fieldName, genericRecord.getTimestampWithTimezone(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return LOCAL_DATE_TIME.operations.typeSizeInBytes() + Integer.BYTES;
         }
     }),
     OFFSET_DATE_TIME_ARRAY(new FieldTypeBasedOperations() {

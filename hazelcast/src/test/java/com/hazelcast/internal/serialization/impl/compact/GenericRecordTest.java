@@ -41,9 +41,7 @@ public class GenericRecordTest {
 
     @Test
     public void testCloneObjectConvertedFromData() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .build();
+        SerializationService serializationService = createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
@@ -68,6 +66,12 @@ public class GenericRecordTest {
         assertEquals(1231L, clone.getLong("bar"));
     }
 
+    private SerializationService createSerializationService() {
+        return new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .build();
+    }
+
     @Test
     public void testCloneObjectCreatedViaAPI() {
         GenericRecordBuilder builder = compact("fooBarClassName");
@@ -90,9 +94,7 @@ public class GenericRecordTest {
 
     @Test
     public void testBuildFromObjectConvertedFromData() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .build();
+        SerializationService serializationService = createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
@@ -158,6 +160,4 @@ public class GenericRecordTest {
         }
         return null;
     }
-
-
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.extractor;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -95,6 +96,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     public void doWithConfig(Config config) {
+        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
     }
 
     @Test(expected = IllegalArgumentException.class)

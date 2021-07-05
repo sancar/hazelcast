@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact.extractor;
 
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -73,6 +75,11 @@ public class ExtractionInCompactStreamSerializerSpecTest extends AbstractExtract
 
     public ExtractionInCompactStreamSerializerSpecTest(Index index) {
         super(index);
+    }
+
+    @Override
+    public void doWithConfig(Config config) {
+        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
     }
 
     @Test

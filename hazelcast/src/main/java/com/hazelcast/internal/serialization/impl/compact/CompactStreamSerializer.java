@@ -53,6 +53,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final ClassLoader classLoader;
     private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
     private final Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier;
+    //Should be deleted with removing Beta tags
+    private final boolean isEnabled;
 
     public CompactStreamSerializer(CompactSerializationConfig compactSerializationConfig,
                                    ManagedContext managedContext, SchemaService schemaService,
@@ -64,6 +66,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         this.bufferObjectDataInputFunc = bufferObjectDataInputFunc;
         this.bufferObjectDataOutputSupplier = bufferObjectDataOutputSupplier;
         this.classLoader = classLoader;
+        this.isEnabled = compactSerializationConfig.isEnabled();
         Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
         for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registries.entrySet()) {
             String typeName = entry.getKey();
@@ -250,5 +253,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
+    }
+
+    //Should be deleted with removing Beta tags
+    public boolean isEnabled() {
+        return isEnabled;
     }
 }

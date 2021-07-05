@@ -31,6 +31,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
+import static com.hazelcast.internal.serialization.impl.FieldTypeBasedOperations.VARIABLE_SIZE;
+import static java.util.Comparator.comparingInt;
+
 /**
  * Represents the schema of a class.
  * Consists of field definitions and the class name.
@@ -57,13 +61,13 @@ public class Schema implements IdentifiedDataSerializable {
         int bitOffset = 0;
 
         List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
-                .sorted(Comparator.comparingInt(o -> ((FieldDescriptor) o).getType().getTypeSize()).reversed())
+                .filter(descriptor -> fieldOperations(descriptor.getType()).typeSizeInBytes() != VARIABLE_SIZE)
+                .filter(descriptor -> !descriptor.getType().equals(FieldType.BOOLEAN))
+                .sorted(comparingInt(o -> fieldOperations(((FieldDescriptor) o).getType()).typeSizeInBytes()).reversed())
                 .collect(Collectors.toList());
         for (FieldDescriptor fieldDefinition : definiteSizedList) {
             fieldDefinition.setOffset(offset);
-            offset += fieldDefinition.getType().getTypeSize();
+            offset += fieldOperations(fieldDefinition.getType()).typeSizeInBytes();
         }
 
         List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
@@ -85,7 +89,7 @@ public class Schema implements IdentifiedDataSerializable {
 
         int index = 0;
         List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().hasDefiniteSize())
+                .filter(descriptor -> fieldOperations(descriptor.getType()).typeSizeInBytes() == VARIABLE_SIZE)
                 .collect(Collectors.toList());
 
         for (FieldDescriptor fieldDefinition : varSizeList) {

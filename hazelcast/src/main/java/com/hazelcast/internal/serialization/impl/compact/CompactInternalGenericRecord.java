@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.impl.FieldOperations;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.FieldType;
@@ -575,7 +576,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldType fieldType,
-                                             Reader<T> geter, int index) {
+                                             Reader<T> reader, int index) {
         int position = readVariableSizeFieldPosition(fieldName, fieldType);
         if (position == NULL_OFFSET) {
             return null;
@@ -586,8 +587,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         int currentPos = in.position();
         try {
-            in.position(INT_SIZE_IN_BYTES + position + (index * fieldType.getSingleType().getTypeSize()));
-            return geter.read(in);
+            FieldType singleType = fieldType.getSingleType();
+            int typeSize = FieldOperations.fieldOperations(singleType).typeSizeInBytes();
+            in.position(INT_SIZE_IN_BYTES + position + index * typeSize);
+            return reader.read(in);
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {

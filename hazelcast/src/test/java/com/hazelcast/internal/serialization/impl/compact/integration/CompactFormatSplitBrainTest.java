@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact.integration;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -57,6 +58,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         config.getMapConfig("map3")
                 .getMergePolicyConfig()
                 .setPolicy(PutIfAbsentMergePolicy.class.getName());
+        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "1");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "1");
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);

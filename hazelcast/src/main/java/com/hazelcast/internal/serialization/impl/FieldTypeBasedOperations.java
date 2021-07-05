@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 
 import java.util.Objects;
@@ -25,6 +26,8 @@ import java.util.Objects;
  * The purpose is to create on place to add new type to the serialization
  */
 public interface FieldTypeBasedOperations {
+
+    int VARIABLE_SIZE = -1;
 
     Object readObject(GenericRecord genericRecord, String fieldName);
 
@@ -46,4 +49,11 @@ public interface FieldTypeBasedOperations {
     }
 
     void readFromGenericRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
+
+    /**
+     * @return type size on bytes for compact format which is sometimes different than {@link FieldType#getTypeSize()}
+     */
+    default int typeSizeInBytes() {
+        return VARIABLE_SIZE;
+    }
 }
