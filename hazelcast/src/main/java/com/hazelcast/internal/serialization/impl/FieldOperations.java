@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.Portable;
 
 import java.util.Arrays;
 
@@ -147,7 +146,7 @@ public enum FieldOperations {
     PORTABLE_ARRAY(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
-            return ((InternalGenericRecord) genericRecord).getObjectArray(fieldName, Portable.class);
+            return ((InternalGenericRecord) genericRecord).getObjectArray(fieldName, Object.class);
         }
 
         @Override

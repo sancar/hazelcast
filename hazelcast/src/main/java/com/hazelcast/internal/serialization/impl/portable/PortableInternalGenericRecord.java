@@ -860,7 +860,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), true);
+        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), false);
     }
 
     @Override
