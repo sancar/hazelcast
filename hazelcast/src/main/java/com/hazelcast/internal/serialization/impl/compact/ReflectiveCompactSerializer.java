@@ -20,8 +20,10 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -68,6 +70,17 @@ import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Reflective serializer works for Compact format in zero-config case.
+ * Specifically when explicit serializer is not given via
+ * {@link com.hazelcast.config.CompactSerializationConfig#register(Class, String, CompactSerializer)}
+ * {@link com.hazelcast.config.CompactSerializationConfig#register(Class, CompactSerializer)}
+ * <p>
+ * ReflectiveCompactSerializer can de/serialize classes having an accessible empty constructor only.
+ * Only types in {@link CompactWriter}/{@link CompactReader} interface are supported as fields.
+ * For any other class as the field type, it will work recursively and try to de/serialize a sub-class.
+ * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with IOException.
+ */
 public class ReflectiveCompactSerializer implements InternalCompactSerializer<Object, DefaultCompactReader> {
 
     private final Map<Class, Writer[]> writersCache = new ConcurrentHashMap<>();
@@ -120,11 +133,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
     public Object read(DefaultCompactReader reader) throws IOException {
         Class associatedClass = reader.getAssociatedClass();
         Object object;
-        try {
-            object = ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
-        } catch (Exception e) {
-            throw new IOException("Class " + associatedClass + " must have an empty constructor", e);
-        }
+        object = createObject(associatedClass);
         try {
             if (readFast(associatedClass, reader, object)) {
                 return object;
@@ -134,6 +143,15 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
             return object;
         } catch (Exception e) {
             throw new IOException(e);
+        }
+    }
+
+    @Nonnull
+    private Object createObject(Class associatedClass) throws IOException {
+        try {
+            return ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
+        } catch (Exception e) {
+            throw new IOException("Could not construct the class " + associatedClass, e);
         }
     }
 
@@ -153,7 +171,10 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
         return fieldDescriptor != null && fieldDescriptor.getType().equals(fieldType);
     }
 
-    private void createFastReadWriteCaches(Class clazz) {
+    private void createFastReadWriteCaches(Class clazz) throws IOException {
+        //Create object to test if it is empty constructable to fail-fast on the write path
+        createObject(clazz);
+
         //get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
         Writer[] writers = new Writer[allFields.size()];

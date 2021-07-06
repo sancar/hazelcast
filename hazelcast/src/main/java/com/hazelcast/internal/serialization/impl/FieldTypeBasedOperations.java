@@ -48,7 +48,7 @@ public interface FieldTypeBasedOperations {
         return Objects.hashCode(readInSerializedForm(record, fieldName));
     }
 
-    void readFromGenericRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
+    void writeFieldFromRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
 
     /**
      * @return type size on bytes for compact format which is sometimes different than {@link FieldType#getTypeSize()}

@@ -241,7 +241,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
-        ClassLocator.onStartDeserialization();
+
         final int typeId = data.getType();
         final SerializerAdapter serializer = serializerFor(typeId);
         if (serializer == null) {
@@ -252,6 +252,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         Object obj = null;
         try {
+            ClassLocator.onStartDeserialization();
             obj = serializer.read(in);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
@@ -540,12 +541,13 @@ public abstract class AbstractSerializationService implements InternalSerializat
         // Serializers will be  searched in this order;
         //
         // 1-NULL serializer
-        // 2-Default serializers, like primitives, arrays, String and some Java types
+        // 2-Default serializers, Dataserializable, Compact, Portable, primitives, arrays, String and
+        // some helper Java types(BigInteger etc)
         //   (overridden in step 3 if allowOverrideDefaultSerializers=true and custom serializer is registered)
         // 3-Custom registered types by user
         // 4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
         // 5-Global serializer if registered by user
-        // 6-A good candidate to be serialized via compact serializer
+        // 6-Compact serializer
 
         //1-NULL serializer
         if (object == null) {
@@ -575,9 +577,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
             serializer = lookupGlobalSerializer(type);
         }
 
-        //6-A good candidate to be serialized via compact serializer
-        if (compactStreamSerializer.isEnabled() && serializer == null) {
-            serializer = lookupCompactSerializer(type, includeSchema);
+        //6-Compact serializer
+        if (serializer == null && compactStreamSerializer.isEnabled()) {
+            serializer = createCompactSerializer(includeSchema);
         }
 
         if (serializer == null) {
@@ -587,15 +589,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return serializer;
     }
 
-    private SerializerAdapter lookupCompactSerializer(Class type, boolean includeSchema) {
-        if (type.getName().startsWith("java.")) {
-            return null;
-        }
-        if (includeSchema) {
-            return compactWithSchemaSerializerAdapter;
-        } else {
-            return compactSerializerAdapter;
-        }
+    private SerializerAdapter createCompactSerializer(boolean includeSchema) {
+        return includeSchema ? compactWithSchemaSerializerAdapter : compactSerializerAdapter;
     }
 
     public boolean isCompactSerializable(Object object) {
@@ -604,11 +599,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
         if (compactStreamSerializer.isEnabled() && compactStreamSerializer.isRegisteredAsCompact(type)) {
-            if (includeSchema) {
-                return compactWithSchemaSerializerAdapter;
-            } else {
-                return compactSerializerAdapter;
-            }
+            return createCompactSerializer(includeSchema);
         }
         if (DataSerializable.class.isAssignableFrom(type)) {
             return dataSerializerAdapter;

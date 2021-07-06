@@ -82,11 +82,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return classToRegistryMap.containsKey(clazz);
     }
 
-    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
-            throws IOException {
-        return (InternalGenericRecord) readGenericRecord(input, schemaIncludedInBinary);
-    }
-
     @Override
     public int getTypeId() {
         return TYPE_COMPACT;
@@ -105,6 +100,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     //========================== WRITE =============================//
+
     @Override
     public void write(ObjectDataOutput out, Object o) throws IOException {
         assert out instanceof BufferObjectDataOutput;
@@ -130,7 +126,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getFieldName();
             FieldType fieldType = fieldDescriptor.getType();
-            fieldOperations(fieldType).readFromGenericRecordToWriter(writer, record, fieldName);
+            fieldOperations(fieldType).writeFieldFromRecordToWriter(writer, record, fieldName);
         }
         writer.end();
     }
@@ -173,9 +169,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
 
     //========================== READ =============================//
-
     @Override
     public Object read(@Nonnull ObjectDataInput in) throws IOException {
+        enabledCheck();
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return read(input, false);
     }
@@ -216,7 +212,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId
                         + ", actual " + incomingSchemaId + " for schema " + schema);
             }
-            schemaService.put(schema);
+            schemaService.putLocal(schema);
             return schema;
         }
         throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);
@@ -250,13 +246,27 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     public GenericRecord readGenericRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
+        enabledCheck();
         Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
     }
 
+    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
+            throws IOException {
+        enabledCheck();
+        return (InternalGenericRecord) readGenericRecord(input, schemaIncludedInBinary);
+    }
+
     //Should be deleted with removing Beta tags
     public boolean isEnabled() {
         return isEnabled;
+    }
+
+    //Should be deleted with removing Beta tags
+    private void enabledCheck() {
+        if (!isEnabled) {
+            throw new HazelcastSerializationException("CompactSerializer(BETA feature) is not enabled");
+        }
     }
 }

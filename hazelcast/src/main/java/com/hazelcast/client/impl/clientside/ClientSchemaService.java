@@ -26,15 +26,12 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientSchemaService implements SchemaService {
 
     private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
-    private final Set<Schema> seenSchemas = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
@@ -56,19 +53,13 @@ public class ClientSchemaService implements SchemaService {
         ClientMessage message = invocation.invoke().joinInternal();
         schema = ClientFetchSchemaCodec.decodeResponse(message);
         if (schema != null) {
-            return schema;
+            schemas.put(schemaId, schema);
         }
-        schemas.put(schemaId, schema);
         return schema;
-
     }
 
     @Override
     public void put(Schema schema) {
-        if (!seenSchemas.add(schema)) {
-            //this is to prevent converting every schema put to data and calculate fingerprint
-            return;
-        }
         if (putIfAbsent(schema)) {
             ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
             ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);

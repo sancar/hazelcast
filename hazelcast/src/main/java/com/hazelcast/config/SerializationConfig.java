@@ -528,6 +528,11 @@ public class SerializationConfig {
         return this;
     }
 
+    /**
+     * @return compact serialization config
+     * @since 5.0
+     */
+    @Beta
     public CompactSerializationConfig getCompactSerializationConfig() {
         return compactSerializationConfig;
     }

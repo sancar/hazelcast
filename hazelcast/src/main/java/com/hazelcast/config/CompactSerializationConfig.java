@@ -17,7 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.util.TriTuple;
+import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -32,14 +34,23 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * In 5.0, this feature is disabled by default and has to be enabled via configuration
  * <p>
  * Once enabled the classes which does not match to any other serialization methods will be serialized in
- * the new format. For this case, the class should not implement `Serializable`, `Externalizable` , `Portable` ,
+ * the new format automatically via help of reflection without needing any other configuration.
+ * For this case, the class should not implement `Serializable`, `Externalizable` , `Portable` ,
  * `IdentifiedDataSerializable`, `DataSerializable` or the class should not be registered as a custom serializer.
+ * <p>
+ * Automatic serialization via reflection can de/serialize classes having an accessible empty constructor only.
+ * Only types in {@link CompactWriter}/{@link CompactReader} interface are supported as fields.
+ * For any other class as the field type, it will work recursively and try to de/serialize a sub-class.
+ * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with IOException.
  * <p>
  * To explicitly configure a class to be serialized via Compact format following methods can be used.
  * {@link #register(Class)}
  * {@link #register(Class, String)}
  * {@link #register(Class, CompactSerializer)}
  * {@link #register(Class, String, CompactSerializer)} }
+ * <p>
+ * On the last two methods listed above reflection is not utilized instead given serializer is used to
+ * serialize/deserialize users objects.
  *
  * @since Hazelcast 5.0 as BETA
  */
