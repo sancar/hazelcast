@@ -291,8 +291,13 @@ public class CompactStreamSerializerTest {
         ClassLoader parentClassLoader = ClassLoader.getSystemClassLoader().getParent();
         try {
             Thread.currentThread().setContextClassLoader(parentClassLoader);
+            SerializationConfig serializationConfig = new SerializationConfig();
+            serializationConfig.setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
             SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                    .setSchemaService(schemaService).setClassLoader(parentClassLoader).build();
+                    .setSchemaService(schemaService)
+                    .setClassLoader(parentClassLoader)
+                    .setConfig(serializationConfig)
+                    .build();
             GenericRecord genericRecord = serializationService2.toObject(data);
             //testing the field names introduced by the Serializer in EmployeeWithSerializerDTO, not reflection
             assertEquals(30, genericRecord.getInt("a"));
@@ -363,8 +368,11 @@ public class CompactStreamSerializerTest {
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         Data data = serializationService.toData(employeeDTO);
 
+        SerializationConfig serializationConfig2 = new SerializationConfig();
+        serializationConfig2.getCompactSerializationConfig().setEnabled(true);
         SerializationService readerService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
+                .setConfig(serializationConfig2)
                 .build();
         GenericRecord genericRecord = readerService.toObject(data);
 
@@ -448,9 +456,7 @@ public class CompactStreamSerializerTest {
 
         Data data = serializationService.toData(expectedGenericRecord);
 
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .build();
+        SerializationService serializationService2 = createSerializationService();
 
         GenericRecordBuilder builder2 = compact("fooBarClassName");
         builder2.setInt("foo", 1);
@@ -488,14 +494,15 @@ public class CompactStreamSerializerTest {
 
         SerializationService serializationService = createSerializationService();
 
-
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
         Data data = serializationService.toData(expected);
 
+        SerializationConfig serializationConfig2 = new SerializationConfig();
+        serializationConfig2.getCompactSerializationConfig().setEnabled(true);
         SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
+                .setConfig(serializationConfig2)
                 .build();
-
 
         EmployeeDTO actual = serializationService2.toObject(data);
 
@@ -529,9 +536,7 @@ public class CompactStreamSerializerTest {
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
         Data data = serializationService.toData(expected);
 
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .build();
+        SerializationService serializationService2 = createSerializationService();
 
         EmployeeDTO actual = serializationService2.toObject(data);
 

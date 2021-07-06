@@ -239,9 +239,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return null;
         }
 
-        BufferPool pool = bufferPoolThreadLocal.get();
-        BufferObjectDataInput in = pool.takeInputBuffer(data);
-
         final int typeId = data.getType();
         final SerializerAdapter serializer = serializerFor(typeId);
         if (serializer == null) {
@@ -251,6 +248,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw notActiveExceptionSupplier.get();
         }
         Object obj = null;
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataInput in = pool.takeInputBuffer(data);
         try {
             ClassLocator.onStartDeserialization();
             obj = serializer.read(in);
@@ -314,11 +313,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (obj instanceof Data) {
             throw new HazelcastSerializationException("Cannot write a Data instance, use writeData() instead");
         }
-        // We don't expect obj being compact serializable is a common usage.
-        // (ObjectDataOutput.writeObject(somethingCompactSerializable) ).
-        // If obj is compact serializable, we include the schema always to be on the safe side.
-        // Otherwise, if this API is used and the data is stored on HotRestart or send via WAN, we couldn't reach the schema.
-        SerializerAdapter serializer = serializerFor(obj, true);
+        SerializerAdapter serializer = serializerFor(obj, false);
         try {
             out.writeInt(serializer.getTypeId());
             serializer.write(out, obj);
@@ -579,7 +574,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         //6-Compact serializer
         if (serializer == null && compactStreamSerializer.isEnabled()) {
-            serializer = createCompactSerializer(includeSchema);
+            serializer = getCompactSerializer(includeSchema);
         }
 
         if (serializer == null) {
@@ -589,7 +584,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return serializer;
     }
 
-    private SerializerAdapter createCompactSerializer(boolean includeSchema) {
+    private SerializerAdapter getCompactSerializer(boolean includeSchema) {
         return includeSchema ? compactWithSchemaSerializerAdapter : compactSerializerAdapter;
     }
 
@@ -598,8 +593,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
-        if (compactStreamSerializer.isEnabled() && compactStreamSerializer.isRegisteredAsCompact(type)) {
-            return createCompactSerializer(includeSchema);
+        if (compactStreamSerializer.isEnabled()
+                && (CompactGenericRecord.class.isAssignableFrom(type) || compactStreamSerializer.isRegisteredAsCompact(type))) {
+            return getCompactSerializer(includeSchema);
         }
         if (DataSerializable.class.isAssignableFrom(type)) {
             return dataSerializerAdapter;
@@ -609,13 +605,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         if (PortableGenericRecord.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
-        }
-        if (CompactGenericRecord.class.isAssignableFrom(type)) {
-            if (includeSchema) {
-                return compactWithSchemaSerializerAdapter;
-            } else {
-                return compactSerializerAdapter;
-            }
         }
         return constantTypesMap.get(type);
     }

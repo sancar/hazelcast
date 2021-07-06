@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -67,8 +69,11 @@ public class GenericRecordTest {
     }
 
     private SerializationService createSerializationService() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
                 .build();
     }
 
