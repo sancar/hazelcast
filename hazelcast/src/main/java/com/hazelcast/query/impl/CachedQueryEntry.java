@@ -184,7 +184,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             } else {
                 if (valueObject instanceof PortableGenericRecord
                         || valueObject instanceof CompactGenericRecord) {
-                    // These two classes should be able to be handled by respeective Getters
+                    // These two classes should be able to be handled by respective Getters
                     // see PortableGetter and CompactGetter
                     // We get into this branch when in memory format is Object and
                     // - the cluster does not have PortableFactory configuration for Portable
