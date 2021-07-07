@@ -160,7 +160,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> !Modifier.isTransient(f.getModifiers()))
                 .collect(toList()));
-        if (type.getSuperclass() != null) {
+        if (type.getSuperclass() != null && type.getSuperclass() != Object.class) {
             getAllFields(fields, type.getSuperclass());
         }
         return fields;
