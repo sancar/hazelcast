@@ -228,18 +228,21 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         future.joinInternal();
     }
 
+    private static class NonSerializableResponse {
+    }
+
     private static class NonSerializableResponseOperation extends Operation {
 
         @Override
         public Object getResponse() {
-            return new Object();
+            return new NonSerializableResponse();
         }
     }
 
     private static class NonSerializableResponseOperation_withNormalResponseWrapper extends Operation {
         @Override
         public Object getResponse() {
-            return new NormalResponse(new Object(), getCallId(), 0, false);
+            return new NormalResponse(new NonSerializableResponse(), getCallId(), 0, false);
         }
     }
 }

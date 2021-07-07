@@ -32,6 +32,7 @@ import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobSerializerTest extends SimpleTestInClusterSupport {
@@ -76,6 +78,13 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .addSerializerConfig(new SerializerConfig().setTypeClass(Value.class).setClass(ValueSerializer.class));
 
         initializeWithClient(1, config, clientConfig);
+    }
+
+    @Test
+    public void when_serializerIsNotRegistered_then_mapThrowsException() {
+        Map<Integer, Object> map = instance().getMap(SOURCE_MAP_NAME);
+
+        assertThatThrownBy(() -> map.put(1, new Object())).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
@@ -107,6 +116,13 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_serializerIsNotRegistered_then_cacheThrowsException() {
+        Cache<Integer, Object> cache = instance().getCacheManager().getCache(SOURCE_CACHE_NAME);
+
+        assertThatThrownBy(() -> cache.put(1, new Object())).isInstanceOf(HazelcastSerializationException.class);
+    }
+
+    @Test
     public void when_serializerIsRegistered_then_itIsAvailableForLocalCacheSource() {
         Cache<Integer, Value> map = client().getCacheManager().getCache(SOURCE_CACHE_NAME);
         map.putAll(ImmutableMap.of(1, new Value(1), 2, new Value(2)));
@@ -133,6 +149,13 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
         assertThat(cache.getAll(ImmutableSet.of(1, 2))).containsExactlyInAnyOrderEntriesOf(
                 ImmutableMap.of(1, new Value(1), 2, new Value(2))
         );
+    }
+
+    @Test
+    public void when_serializerIsNotRegistered_then_listThrowsException() {
+        List list = instance().getList(SOURCE_MAP_NAME);
+
+        assertThatThrownBy(() -> list.add(new Object())).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
