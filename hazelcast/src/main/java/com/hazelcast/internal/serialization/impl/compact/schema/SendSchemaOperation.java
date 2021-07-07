@@ -44,13 +44,12 @@ public class SendSchemaOperation extends Operation implements IdentifiedDataSeri
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        schema.writeData(out);
+        out.writeObject(schema);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        schema = new Schema();
-        schema.readData(in);
+        schema = in.readObject();
     }
 
     @Override

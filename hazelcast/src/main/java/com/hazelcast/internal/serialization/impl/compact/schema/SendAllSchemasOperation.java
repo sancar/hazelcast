@@ -51,8 +51,7 @@ public class SendAllSchemasOperation extends Operation implements IdentifiedData
         int size = schemas.size();
         out.writeInt(size);
         for (Schema schema : schemas) {
-            schema.writeData(out);
-
+            out.writeObject(schema);
         }
     }
 
@@ -61,8 +60,7 @@ public class SendAllSchemasOperation extends Operation implements IdentifiedData
         int size = in.readInt();
         schemas = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            Schema schema = new Schema();
-            schema.readData(in);
+            Schema schema = in.readObject();
             schemas.add(schema);
         }
     }

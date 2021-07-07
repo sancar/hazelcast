@@ -161,7 +161,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             int sizeOfSchemaPosition = out.position();
             out.writeInt(0);
             int schemaBeginPos = out.position();
-            schema.writeData(out);
+            out.writeObject(schema);
             int schemaEndPosition = out.position();
             out.writeInt(sizeOfSchemaPosition, schemaEndPosition - schemaBeginPos);
         }
