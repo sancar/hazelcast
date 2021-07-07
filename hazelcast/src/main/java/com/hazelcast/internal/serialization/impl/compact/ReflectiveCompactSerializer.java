@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -79,7 +80,8 @@ import static java.util.stream.Collectors.toList;
  * ReflectiveCompactSerializer can de/serialize classes having an accessible empty constructor only.
  * Only types in {@link CompactWriter}/{@link CompactReader} interface are supported as fields.
  * For any other class as the field type, it will work recursively and try to de/serialize a sub-class.
- * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with IOException.
+ * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with
+ * HazelcastSerializationException.
  */
 public class ReflectiveCompactSerializer implements InternalCompactSerializer<Object, DefaultCompactReader> {
 
@@ -147,11 +149,11 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
     }
 
     @Nonnull
-    private Object createObject(Class associatedClass) throws IOException {
+    private Object createObject(Class associatedClass) {
         try {
             return ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
         } catch (Exception e) {
-            throw new IOException("Could not construct the class " + associatedClass, e);
+            throw new HazelcastSerializationException("Could not construct the class " + associatedClass, e);
         }
     }
 

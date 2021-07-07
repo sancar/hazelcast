@@ -41,7 +41,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Automatic serialization via reflection can de/serialize classes having an accessible empty constructor only.
  * Only types in {@link CompactWriter}/{@link CompactReader} interface are supported as fields.
  * For any other class as the field type, it will work recursively and try to de/serialize a sub-class.
- * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with IOException.
+ * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with
+ * HazelcastSerializationException.
  * <p>
  * To explicitly configure a class to be serialized via Compact format following methods can be used.
  * {@link #register(Class)}
