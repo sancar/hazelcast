@@ -358,7 +358,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public boolean[] getBooleanArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, BOOLEAN_ARRAY, DefaultCompactReader::readBooleanBits);
+        return getVariableLength(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
     }
 
     @Override
