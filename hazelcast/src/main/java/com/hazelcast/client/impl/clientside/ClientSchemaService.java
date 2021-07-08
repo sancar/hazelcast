@@ -60,11 +60,17 @@ public class ClientSchemaService implements SchemaService {
 
     @Override
     public void put(Schema schema) {
-        if (putIfAbsent(schema)) {
-            ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
-            ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-            invocation.invoke().joinInternal();
+        long schemaId = schema.getSchemaId();
+        Schema existingSchema = schemas.get(schemaId);
+        if (existingSchema != null) {
+            return;
         }
+
+        ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
+        invocation.invoke().joinInternal();
+
+        putIfAbsent(schema);
     }
 
     @Override
@@ -86,7 +92,7 @@ public class ClientSchemaService implements SchemaService {
         return false;
     }
 
-    public void sendAllSchemas() {
+    public void clearAndSendAllSchemasAsync() {
         if (schemas.isEmpty()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("There is no schema to send to the cluster");
@@ -96,8 +102,10 @@ public class ClientSchemaService implements SchemaService {
         if (logger.isFinestEnabled()) {
             logger.finest("Sending schemas to the cluster " + schemas);
         }
-        ClientMessage clientMessage = ClientSendAllSchemasCodec.encodeRequest(new ArrayList<>(schemas.values()));
+
+        ClientMessage clientMessage = ClientSendAllSchemasCodec.encodeRequest(new ArrayList<>(this.schemas.values()));
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-        invocation.invoke().joinInternal();
+        invocation.invoke();
+        schemas.clear();
     }
 }

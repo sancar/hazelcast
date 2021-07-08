@@ -863,7 +863,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
         userCodeDeploymentService.deploy(this);
-        schemaService.sendAllSchemas();
+        schemaService.clearAndSendAllSchemasAsync();
         queryCacheContext.recreateAllCaches();
         proxyManager.createDistributedObjectsOnCluster();
     }
