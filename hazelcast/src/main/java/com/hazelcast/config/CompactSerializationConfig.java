@@ -53,7 +53,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * On the last two methods listed above reflection is not utilized instead given serializer is used to
  * serialize/deserialize users objects.
  *
- * @since Hazelcast 5.0 as BETA
+ * @since Hazelcast 5.0 as BETA. The final version will not be backward comppatible with the Beta.
+ * Do not use BETA version in production
  */
 @Beta
 public class CompactSerializationConfig {
@@ -191,6 +192,9 @@ public class CompactSerializationConfig {
      * Enables the Compact Format. The Compact Format will be disabled by default during the Beta period.
      * It will be enabled by default after the Beta.
      * Note that this method will be deleted after the Beta.
+     *
+     * The final version will not be backward compatible with the Beta.
+     * Do not use BETA version in production
      *
      * @param enabled Enables the Compact Format when set to true
      * @return configured {@link com.hazelcast.config.CompactSerializationConfig} for chaining

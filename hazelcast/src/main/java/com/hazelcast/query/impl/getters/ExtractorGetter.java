@@ -43,10 +43,8 @@ final class ExtractorGetter extends Getter {
         // This part will be improved in 3.7 to avoid extra allocation
         DefaultValueCollector collector = new DefaultValueCollector();
         if (target instanceof Data) {
-            InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord((Data) target);
-            if (internalGenericRecord != null) {
-                extractionTarget = new GenericRecordQueryReader(internalGenericRecord);
-            }
+            InternalGenericRecord record = serializationService.readAsInternalGenericRecord((Data) target);
+            extractionTarget = new GenericRecordQueryReader(record);
         }
         extractor.extract(extractionTarget, arguments, collector);
         return collector.getResult();

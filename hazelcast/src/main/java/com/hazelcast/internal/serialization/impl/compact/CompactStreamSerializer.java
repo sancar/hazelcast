@@ -252,10 +252,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
     }
 
-    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
-            throws IOException {
+    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input) throws IOException {
         enabledCheck();
-        return (InternalGenericRecord) readGenericRecord(input, schemaIncludedInBinary);
+        return (InternalGenericRecord) readGenericRecord(input, false);
     }
 
     //Should be deleted with removing Beta tags

@@ -30,9 +30,6 @@ import com.hazelcast.query.impl.getters.Extractors;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
-
 /**
  * Entry of the Query.
  *
@@ -172,8 +169,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable() || keyData.isJson() || keyData.getType() == TYPE_COMPACT
-                    || keyData.getType() == TYPE_COMPACT_WITH_SCHEMA) {
+            if (keyData.isPortable() || keyData.isJson() || keyData.isCompact()) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
@@ -210,8 +206,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             // Query Cache depends on this behaviour when its caching of
             // values is off.
             return null;
-        } else if (valueData.isPortable() || valueData.isJson() || valueData.getType() == TYPE_COMPACT
-                || valueData.getType() == TYPE_COMPACT_WITH_SCHEMA) {
+        } else if (valueData.isPortable() || valueData.isJson() || valueData.isCompact()) {
             return valueData;
         } else {
             return getValue();

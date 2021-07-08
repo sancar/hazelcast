@@ -193,10 +193,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             BufferObjectDataInput in = createObjectDataInput(data);
             return portableSerializer.readAsInternalGenericRecord(in);
         }
-        if (SerializationConstants.TYPE_COMPACT == data.getType()) {
-            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data), false);
-        } else if (SerializationConstants.TYPE_COMPACT_WITH_SCHEMA == data.getType()) {
-            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data), true);
+        if (data.isCompact()) {
+            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data));
         }
         throw new IllegalArgumentException("Given type does not support query over data, type id " + data.getType());
     }

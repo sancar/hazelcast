@@ -91,7 +91,8 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     /**
      * @param data
-     * @return InternalGenericRecord if data type supports it, otherwise returns null
+     * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
+     * IllegalArgumentException
      * @throws IOException
      */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
