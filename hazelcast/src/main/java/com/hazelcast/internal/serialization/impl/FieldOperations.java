@@ -34,7 +34,7 @@ public enum FieldOperations {
         }
 
         @Override
-        public GenericRecord readInSerializedForm(GenericRecord genericRecord, String fieldName) {
+        public GenericRecord readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getGenericRecord(fieldName);
         }
 
@@ -191,7 +191,7 @@ public enum FieldOperations {
         }
 
         @Override
-        public Object readInSerializedForm(GenericRecord genericRecord, String fieldName) {
+        public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getGenericRecordArray(fieldName);
         }
 
@@ -586,7 +586,7 @@ public enum FieldOperations {
         }
 
         @Override
-        public GenericRecord readInSerializedForm(GenericRecord genericRecord, String fieldName) {
+        public GenericRecord readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getGenericRecord(fieldName);
         }
 
@@ -602,7 +602,7 @@ public enum FieldOperations {
         }
 
         @Override
-        public Object readInSerializedForm(GenericRecord genericRecord, String fieldName) {
+        public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getGenericRecordArray(fieldName);
         }
 

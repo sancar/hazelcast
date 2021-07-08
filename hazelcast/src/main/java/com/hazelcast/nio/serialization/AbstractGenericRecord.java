@@ -76,6 +76,6 @@ public abstract class AbstractGenericRecord implements GenericRecord {
 
     public final <T> T readAny(@Nonnull String fieldName) {
         FieldType type = getFieldType(fieldName);
-        return (T) fieldOperations(type).readInSerializedForm(this, fieldName);
+        return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
     }
 }

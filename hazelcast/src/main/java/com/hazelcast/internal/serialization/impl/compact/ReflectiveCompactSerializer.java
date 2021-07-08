@@ -211,7 +211,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
             } else if (Long.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, LONG)) {
-                        field.set(o, reader.readLong(name));
+                        field.setLong(o, reader.readLong(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeLong(name, field.getLong(o));
@@ -250,55 +250,6 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                     }
                 };
                 writers[index] = (w, o) -> w.writeString(name, (String) field.get(o));
-            } else if (Byte.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, BYTE)) {
-                        field.set(o, reader.readByte(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeByte(name, (byte) field.get(o));
-            } else if (Short.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, SHORT)) {
-                        field.set(o, reader.readShort(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeShort(name, (short) field.get(o));
-            } else if (Integer.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, INT)) {
-                        field.set(o, reader.readInt(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeInt(name, (int) field.get(o));
-            } else if (Long.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, LONG)) {
-                        field.set(o, reader.readLong(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeLong(name, (long) field.get(o));
-            } else if (Double.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, FLOAT)) {
-                        field.set(o, reader.readDouble(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeDouble(name, (double) field.get(o));
-            } else if (Boolean.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, BOOLEAN)) {
-                        field.set(o, reader.readBoolean(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeBoolean(name, (boolean) field.get(o));
-            } else if (Character.class.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, CHAR)) {
-                        field.set(o, reader.readChar(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeChar(name, (char) field.get(o));
             } else if (BigDecimal.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, DECIMAL)) {

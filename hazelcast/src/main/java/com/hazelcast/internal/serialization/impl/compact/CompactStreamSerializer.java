@@ -119,7 +119,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     void writeGenericRecord(BufferObjectDataOutput output, CompactGenericRecord record,
                             boolean includeSchemaOnBinary) throws IOException {
         Schema schema = record.getSchema();
-        schemaService.put(schema);
+        putToSchemaService(includeSchemaOnBinary, schema);
         writeSchema(output, includeSchemaOnBinary, schema);
         DefaultCompactWriter writer = new DefaultCompactWriter(this, output, schema, includeSchemaOnBinary);
         Collection<FieldDescriptor> fields = schema.getFields();
@@ -131,6 +131,16 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
+    private void putToSchemaService(boolean includeSchemaOnBinary, Schema schema) {
+        if (includeSchemaOnBinary) {
+            //if we will include the schema on binary, the schema will be delivered anyway.
+            //No need to put it to cluster. Putting it local only in order not to ask from remote on read.
+            schemaService.putLocal(schema);
+        } else {
+            schemaService.put(schema);
+        }
+    }
+
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
         ConfigurationRegistry registry = getOrCreateRegistry(o);
         Class<?> aClass = o.getClass();
@@ -140,13 +150,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             SchemaWriter writer = new SchemaWriter(registry.getTypeName());
             registry.getSerializer().write(writer, o);
             schema = writer.build();
-            if (includeSchemaOnBinary) {
-                //if we will include the schema on binary, the schema will be delivered anyway.
-                //No need to put it to cluster. Putting it local only in order not to ask from remote on read.
-                schemaService.putLocal(schema);
-            } else {
-                schemaService.put(schema);
-            }
+            putToSchemaService(includeSchemaOnBinary, schema);
             classToSchemaMap.put(aClass, schema);
         }
         writeSchema(out, includeSchemaOnBinary, schema);
@@ -205,8 +209,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         if (schemaIncludedInBinary) {
             //sizeOfSchema
             input.readInt();
-            schema = new Schema();
-            schema.readData(input);
+            schema = input.readObject();
             long incomingSchemaId = schema.getSchemaId();
             if (schemaId != incomingSchemaId) {
                 throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId

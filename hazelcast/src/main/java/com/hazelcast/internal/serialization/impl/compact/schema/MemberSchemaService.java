@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
@@ -32,7 +31,6 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +46,6 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     public static final String SERVICE_NAME = "schema-service";
     private static final int MAX_RETRIES = 100;
     private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
-    private final Set<Schema> seenSchemas = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private ILogger logger;
     private NodeEngine nodeEngine;
 
@@ -128,17 +125,10 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
 
     @Override
     public void put(Schema schema) {
-        if (!seenSchemas.add(schema)) {
-            //this is to prevent converting every schema put to data and calculate fingerprint
-            return;
-        }
         long schemaId = schema.getSchemaId();
         if (putIfAbsent(schema)) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Sending schema id  " + schemaId + " locally, will search on the cluster" + schemaId);
-            }
-            if (nodeEngine.getClusterService().getClusterState().equals(ClusterState.PASSIVE)) {
-                return;
             }
             invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES)
                     .joinInternal();
@@ -147,9 +137,6 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
 
     public CompletableFuture<Void> putAsync(Schema schema) {
         if (putIfAbsent(schema)) {
-            if (nodeEngine.getClusterService().getClusterState().equals(ClusterState.PASSIVE)) {
-                return CompletableFuture.completedFuture(null);
-            }
             return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES);
         } else {
             return CompletableFuture.completedFuture(null);

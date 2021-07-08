@@ -32,10 +32,10 @@ public interface FieldTypeBasedOperations {
     Object readObject(GenericRecord genericRecord, String fieldName);
 
     /**
-     * For primitives serialized form is same as readObject.
+     * For primitives this will return boxed object.
      * This method will be overridden for Portable and Compact and will return GenericRecord representation of objects
      */
-    default Object readInSerializedForm(GenericRecord genericRecord, String fieldName) {
+    default Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
         return readObject(genericRecord, fieldName);
     }
 
@@ -45,7 +45,7 @@ public interface FieldTypeBasedOperations {
 
 
     default int hashCode(GenericRecord record, String fieldName) {
-        return Objects.hashCode(readInSerializedForm(record, fieldName));
+        return Objects.hashCode(readGenericRecordOrPrimitive(record, fieldName));
     }
 
     void writeFieldFromRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
