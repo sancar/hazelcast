@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.services.ManagedService;
@@ -81,6 +82,9 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Schema> getAsync(long schemaId) {
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_0)) {
+            throw new UnsupportedOperationException("The BETA compact format can only used with 5.0 cluster ");
+        }
         Schema schema = getLocal(schemaId);
         if (schema != null) {
             return CompletableFuture.completedFuture(schema);
@@ -125,18 +129,17 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
 
     @Override
     public void put(Schema schema) {
-        long schemaId = schema.getSchemaId();
-        if (putIfAbsent(schema)) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Sending schema id  " + schemaId + " locally, will search on the cluster" + schemaId);
-            }
-            invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES)
-                    .joinInternal();
-        }
+        putAsync(schema).join();
     }
 
     public CompletableFuture<Void> putAsync(Schema schema) {
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_0)) {
+            throw new UnsupportedOperationException("The BETA compact format can only used with 5.0 cluster ");
+        }
         if (putIfAbsent(schema)) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Schema  " + schema + " registered locally. Sending it to the cluster");
+            }
             return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES);
         } else {
             return CompletableFuture.completedFuture(null);
