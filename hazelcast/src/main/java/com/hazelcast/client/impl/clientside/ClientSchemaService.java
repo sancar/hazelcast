@@ -60,11 +60,17 @@ public class ClientSchemaService implements SchemaService {
 
     @Override
     public void put(Schema schema) {
-        if (putIfAbsent(schema)) {
-            ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
-            ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-            invocation.invoke().joinInternal();
+        long schemaId = schema.getSchemaId();
+        Schema existingSchema = schemas.get(schemaId);
+        if (existingSchema != null) {
+            return;
         }
+
+        ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
+        invocation.invoke().joinInternal();
+
+        putIfAbsent(schema);
     }
 
     @Override
