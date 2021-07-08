@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -422,7 +423,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
 
     static class Engine implements Comparable<Engine> {
 
-        Integer power;
+        int power;
         Chip chip;
 
         Engine() {
@@ -442,26 +443,24 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            Engine that = (Engine) o;
-            return power.equals(that.power);
-
+            Engine engine = (Engine) o;
+            return power == engine.power && Objects.equals(chip, engine.chip);
         }
 
         @Override
         public int hashCode() {
-            return power;
+            return Objects.hash(power, chip);
         }
 
         @Override
-        public int compareTo(Engine o) {
-            return this.power.compareTo(o.power);
+        public int compareTo(@Nonnull Engine o) {
+            return power - o.power;
         }
     }
 
     static class Chip implements Comparable<Chip> {
 
-
-        Integer power;
+        int power;
 
         Chip() {
             this.power = 15;
@@ -480,7 +479,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
                 return false;
             }
             Chip that = (Chip) o;
-            return power.equals(that.power);
+            return power == that.power;
 
         }
 
@@ -491,7 +490,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
 
         @Override
         public int compareTo(Chip o) {
-            return this.power.compareTo(o.power);
+            return power - o.power;
         }
     }
 
