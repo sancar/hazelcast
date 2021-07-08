@@ -79,7 +79,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     @Override
     public K getKey() {
         if (key == null) {
-            key = serializationService.toObject(getDataKey());
+            key = serializationService.toObject(dataKey);
         }
         return key;
     }
@@ -97,7 +97,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     @Override
     public V getValue() {
         if (value == null) {
-            value = serializationService.toObject(getDataValue());
+            value = serializationService.toObject(dataValue);
         }
         return value;
     }
