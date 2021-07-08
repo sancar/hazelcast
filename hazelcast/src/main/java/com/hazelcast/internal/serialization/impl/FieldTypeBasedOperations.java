@@ -40,7 +40,7 @@ public interface FieldTypeBasedOperations {
     }
 
     default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-        throw new UnsupportedOperationException("Not an array type. Does not support read with an index");
+        throw new UnsupportedOperationException(fieldName + " is not an array type. Does not support read with an index");
     }
 
 
