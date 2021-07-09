@@ -264,7 +264,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    BigDecimal readDecimal(@Nonnull String fieldName, BigDecimal defaultValue);
+    BigDecimal readDecimal(@Nonnull String fieldName, @Nullable BigDecimal defaultValue);
 
     /**
      * Reads a time consisting of hour, minute, second, and nano seconds.
@@ -281,6 +281,9 @@ public interface CompactReader {
     /**
      * Reads a time consisting of hour, minute, second, and nano seconds
      * or returns the default value.
+     * <p>
+     * This method may only return {@code null}, if the {@code defaultValue}
+     * is {@code null}.
      *
      * @param fieldName name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -288,8 +291,8 @@ public interface CompactReader {
      *                     not match with the one defined in the schema.
      * @return the value or the default value of the field.
      */
-    @Nonnull
-    LocalTime readTime(@Nonnull String fieldName, @Nonnull LocalTime defaultValue);
+    @Nullable
+    LocalTime readTime(@Nonnull String fieldName, @Nullable LocalTime defaultValue);
 
     /**
      * Reads a date consisting of year, month, and day.
@@ -305,6 +308,9 @@ public interface CompactReader {
 
     /**
      * Reads a date consisting of year, month, and day or returns the default value.
+     * <p>
+     * This method may only return {@code null}, if the {@code defaultValue}
+     * is {@code null}.
      *
      * @param fieldName name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -312,8 +318,8 @@ public interface CompactReader {
      *                     not match with the one defined in the schema.
      * @return the value or the default value of the field.
      */
-    @Nonnull
-    LocalDate readDate(@Nonnull String fieldName, @Nonnull LocalDate defaultValue);
+    @Nullable
+    LocalDate readDate(@Nonnull String fieldName, @Nullable LocalDate defaultValue);
 
     /**
      * Reads a timestamp consisting of date and time.
@@ -329,6 +335,9 @@ public interface CompactReader {
 
     /**
      * Reads a timestamp consisting of date and time or returns the default value.
+     * <p>
+     * This method may only return {@code null}, if the {@code defaultValue}
+     * is {@code null}.
      *
      * @param fieldName name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -336,8 +345,8 @@ public interface CompactReader {
      *                     not match with the one defined in the schema.
      * @return the value or the default value of the field.
      */
-    @Nonnull
-    LocalDateTime readTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime defaultValue);
+    @Nullable
+    LocalDateTime readTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime defaultValue);
 
     /**
      * Reads a timestamp with timezone consisting of date, time and timezone offset.
@@ -354,6 +363,9 @@ public interface CompactReader {
     /**
      * Reads a timestamp with timezone consisting of date, time and timezone offset
      * or returns the default value.
+     * <p>
+     * This method may only return {@code null}, if the {@code defaultValue}
+     * is {@code null}.
      *
      * @param fieldName name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -361,8 +373,8 @@ public interface CompactReader {
      *                     not match with the one defined in the schema.
      * @return the value or the default value of the field.
      */
-    @Nonnull
-    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime defaultValue);
+    @Nullable
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime defaultValue);
 
     /**
      * Reads an arbitrary object.

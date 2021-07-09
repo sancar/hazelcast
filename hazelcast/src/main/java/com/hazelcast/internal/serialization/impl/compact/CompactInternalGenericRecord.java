@@ -703,14 +703,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
-        if (len > 0) {
-            LocalTime[] values = new LocalTime[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = IOUtil.readLocalTime(in);
-            }
-            return values;
+        LocalTime[] values = new LocalTime[len];
+        for (int i = 0; i < len; i++) {
+            values[i] = IOUtil.readLocalTime(in);
         }
-        return new LocalTime[0];
+        return values;
     }
 
     private static LocalDateTime[] getTimestampArray(ObjectDataInput in) throws IOException {
@@ -718,14 +715,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
-        if (len > 0) {
-            LocalDateTime[] values = new LocalDateTime[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = IOUtil.readLocalDateTime(in);
-            }
-            return values;
+        LocalDateTime[] values = new LocalDateTime[len];
+        for (int i = 0; i < len; i++) {
+            values[i] = IOUtil.readLocalDateTime(in);
         }
-        return new LocalDateTime[0];
+        return values;
     }
 
     private static OffsetDateTime[] getTimestampWithTimezoneArray(ObjectDataInput in) throws IOException {
@@ -733,14 +727,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
-        if (len > 0) {
-            OffsetDateTime[] values = new OffsetDateTime[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = IOUtil.readOffsetDateTime(in);
-            }
-            return values;
+        OffsetDateTime[] values = new OffsetDateTime[len];
+        for (int i = 0; i < len; i++) {
+            values[i] = IOUtil.readOffsetDateTime(in);
         }
-        return new OffsetDateTime[0];
+        return values;
     }
 
     private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
