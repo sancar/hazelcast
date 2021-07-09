@@ -79,6 +79,12 @@ import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
+/**
+ * A base class that has the capability of representing Compact serialized
+ * objects as {@link InternalGenericRecord}s. This class is not instantiated
+ * directly, but its subclass {@link DefaultCompactReader} is used in the
+ * query system, as well as in returning a GenericRecord to the user.
+ */
 public class CompactInternalGenericRecord extends CompactGenericRecord implements InternalGenericRecord {
 
     private final OffsetReader offsetReader;
@@ -403,22 +409,23 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public LocalTime[] getTimeArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, TIME_ARRAY, DefaultCompactReader::getTimeArray);
+        return getVariableLength(fieldName, TIME_ARRAY, CompactInternalGenericRecord::getTimeArray);
     }
 
     @Override
     public LocalDate[] getDateArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, DATE_ARRAY, DefaultCompactReader::getDateArray);
+        return getVariableLength(fieldName, DATE_ARRAY, CompactInternalGenericRecord::getDateArray);
     }
 
     @Override
     public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, TIMESTAMP_ARRAY, DefaultCompactReader::getTimestampArray);
+        return getVariableLength(fieldName, TIMESTAMP_ARRAY, CompactInternalGenericRecord::getTimestampArray);
     }
 
     @Override
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, DefaultCompactReader::getTimestampWithTimezoneArray);
+        return getVariableLength(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY,
+                CompactInternalGenericRecord::getTimestampWithTimezoneArray);
     }
 
     @Override
@@ -471,15 +478,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private static OffsetReader getOffsetReader(int dataLength) {
-        OffsetReader offsetReader;
         if (dataLength < BYTE_OFFSET_READER_RANGE) {
-            offsetReader = BYTE_OFFSET_READER;
+            return BYTE_OFFSET_READER;
         } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
-            offsetReader = SHORT_OFFSET_READER;
+            return SHORT_OFFSET_READER;
         } else {
-            offsetReader = INT_OFFSET_READER;
+            return INT_OFFSET_READER;
         }
-        return offsetReader;
     }
 
     private int readFixedSizePosition(@Nonnull String fieldName, FieldType fieldType) {
@@ -489,7 +494,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Nonnull
-    protected FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
+    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
@@ -500,7 +505,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return fd;
     }
 
-    protected int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldType fieldType) {
+    private int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldType fieldType) {
         try {
             FieldDescriptor fd = getFieldDefinition(fieldName, fieldType);
             int index = fd.getIndex();
@@ -511,7 +516,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-    protected HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
+    private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
         return new HazelcastSerializationException("Unknown field name: '" + fieldName
                 + "' for " + schema);
     }
@@ -540,7 +545,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         int currentPos = in.position();
         try {
-            int booleanOffsetInBytes = index == 0 ? 0 : (index / Byte.SIZE);
+            int booleanOffsetInBytes = index / Byte.SIZE;
             int booleanOffsetWithinLastByte = index % Byte.SIZE;
             byte b = in.readByte(INT_SIZE_IN_BYTES + position + booleanOffsetInBytes);
             return ((b >>> booleanOffsetWithinLastByte) & 1) != 0;
@@ -577,11 +582,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldType fieldType,
                                              Reader<T> reader, int index) {
+        checkNotNegative(index, "Array indexes can not be negative");
+
         int position = readVariableSizeFieldPosition(fieldName, fieldType);
         if (position == NULL_OFFSET) {
             return null;
         }
-        checkNotNegative(index, "Array index can not be negative");
         if (readLength(position) <= index) {
             return null;
         }
@@ -680,22 +686,19 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return new IllegalStateException("IOException is not expected since we get from a well known format and position");
     }
 
-    public static LocalDate[] getDateArray(ObjectDataInput in) throws IOException {
+    private static LocalDate[] getDateArray(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
-        if (len > 0) {
-            LocalDate[] values = new LocalDate[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = IOUtil.readLocalDate(in);
-            }
-            return values;
+        LocalDate[] values = new LocalDate[len];
+        for (int i = 0; i < len; i++) {
+            values[i] = IOUtil.readLocalDate(in);
         }
-        return new LocalDate[0];
+        return values;
     }
 
-    public static LocalTime[] getTimeArray(ObjectDataInput in) throws IOException {
+    private static LocalTime[] getTimeArray(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -710,7 +713,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return new LocalTime[0];
     }
 
-    public static LocalDateTime[] getTimestampArray(ObjectDataInput in) throws IOException {
+    private static LocalDateTime[] getTimestampArray(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -725,7 +728,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return new LocalDateTime[0];
     }
 
-    public static OffsetDateTime[] getTimestampWithTimezoneArray(ObjectDataInput in) throws IOException {
+    private static OffsetDateTime[] getTimestampWithTimezoneArray(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -740,7 +743,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return new OffsetDateTime[0];
     }
 
-    static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
+    private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
         int len = input.readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;

@@ -34,6 +34,15 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * A GenericRecordBuilder that serializes the fields.
+ * <p>
+ * The given schema is respected. So, the fields that are not defined
+ * in the schema cannot be written at all.
+ * <p>
+ * It also verifies that no fields are overwritten as we don't allow
+ * it.
+ */
 public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     private final DefaultCompactWriter defaultCompactWriter;
@@ -313,5 +322,4 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
             throw new HazelcastSerializationException("Field can only be written once");
         }
     }
-
 }

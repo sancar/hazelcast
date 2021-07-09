@@ -25,6 +25,11 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
+/**
+ * Tries to locate the schema from its schema id in the local registry of the
+ * member and return it. It is allowed to return {@code null} as the response,
+ * if there is no such schema in the registry.
+ */
 public class FetchSchemaOperation extends Operation implements IdentifiedDataSerializable {
 
     private long schemaId;

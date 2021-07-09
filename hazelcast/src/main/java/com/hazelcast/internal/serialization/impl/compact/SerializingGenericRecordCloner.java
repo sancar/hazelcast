@@ -38,6 +38,18 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.compact.AbstractGenericRecordBuilder.checkTypeWithSchema;
 
+/**
+ * A GenericRecordBuilder that clones a GenericRecord and serializes
+ * its fields along with overwritten fields.
+ * <p>
+ * The given schema is respected. So, the fields that are not defined
+ * in the schema cannot be written at all.
+ * <p>
+ * It also verifies that no fields written more than once as we don't
+ * allow it. Since this is a cloner, a field might not be set at all.
+ * In this case, the builder will use the field from the cloned
+ * GenericRecord itself.
+ */
 public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     interface Writer {
@@ -71,10 +83,11 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
                 Writer writer = fields.get(fieldName);
                 if (writer != null) {
                     writer.write();
-                    continue;
+                } else {
+                    // Field is not overwritten. Write the field from the generic record.
+                    FieldType fieldType = field.getType();
+                    fieldOperations(fieldType).writeFieldFromRecordToWriter(cw, genericRecord, fieldName);
                 }
-                FieldType fieldType = field.getType();
-                fieldOperations(fieldType).writeFieldFromRecordToWriter(cw, genericRecord, fieldName);
             }
             cw.end();
             byte[] bytes = cw.toByteArray();
@@ -385,5 +398,4 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
         }
         return this;
     }
-
 }

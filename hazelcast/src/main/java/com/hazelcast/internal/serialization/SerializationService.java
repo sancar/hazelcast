@@ -38,7 +38,31 @@ public interface SerializationService {
      */
     <B extends Data> B toData(Object obj);
 
-    <B extends Data> B toDataWithSchema(Object object);
+    /**
+     * Serializes an object to a {@link Data} that contains the
+     * {@link com.hazelcast.internal.serialization.impl.compact.Schema} in the
+     * binary, if the {@code object} is compact serializable. If not,
+     * this method is same as the {@link #toData(Object)}.
+     * <p>
+     * An object is compact serializable if
+     * <ul>
+     *     <li>it is registered for compact serialization via
+     *     {@link com.hazelcast.config.CompactSerializationConfig}</li>
+     *     <li>there is no serializer registered for it, and it can serialized
+     *     reflectively with {@link com.hazelcast.internal.serialization.impl.compact.ReflectiveCompactSerializer}</li>
+     * </ul>
+     * <p>
+     * This method can safely be called with a {@link Data} instance. The schema
+     * will be included only if the type of the data instance is {@code TYPE_COMPACT}.
+     * For any other data type, the instance will be returned as it is. Note that,
+     * if the data type is already {@code TYPE_COMPACT_WITH_SCHEMA}, it will also
+     * be returned as it is, since the schema is already included in it.
+     *
+     * @param obj the object to serialize.
+     * @return the serialized object.
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when serialization fails.
+     */
+    <B extends Data> B toDataWithSchema(Object obj);
 
     /**
      * Serializes an object to a {@link Data}.
@@ -90,5 +114,17 @@ public interface SerializationService {
      */
     ManagedContext getManagedContext();
 
+    /**
+     * Trims the {@link com.hazelcast.internal.serialization.impl.compact.Schema}
+     * from the {@code data}, if it includes the schema in its serialized form.
+     * If not, this method will return the {@code data} as it is, without
+     * changing it.
+     * <p>
+     * Trimming process takes care of the nested schemas, as well as the top
+     * level schema.
+     *
+     * @param data the data to be trimmed, if it contains a schema.
+     * @return the data without schema in it.
+     */
     <B extends Data> B trimSchema(Data data);
 }

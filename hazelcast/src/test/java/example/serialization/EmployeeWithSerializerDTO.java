@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
@@ -30,8 +31,9 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
 
     private static final CompactSerializer<EmployeeWithSerializerDTO> SERIALIZER =
             new CompactSerializer<EmployeeWithSerializerDTO>() {
+                @Nonnull
                 @Override
-                public EmployeeWithSerializerDTO read(CompactReader in) throws IOException {
+                public EmployeeWithSerializerDTO read(@Nonnull CompactReader in) throws IOException {
                     EmployeeWithSerializerDTO employee = new EmployeeWithSerializerDTO();
                     employee.age = in.readInt("a");
                     employee.id = in.readLong("i");
@@ -39,7 +41,7 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
                 }
 
                 @Override
-                public void write(CompactWriter out, EmployeeWithSerializerDTO object) throws IOException {
+                public void write(@Nonnull CompactWriter out, @Nonnull EmployeeWithSerializerDTO object) throws IOException {
                     out.writeInt("a", object.age);
                     out.writeLong("i", object.id);
                 }

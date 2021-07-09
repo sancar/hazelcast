@@ -20,6 +20,11 @@ import com.hazelcast.nio.serialization.FieldType;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Descriptor that carries the information for the fields
+ * of the schema. It can be used for any kind of field, whether
+ * they are fixed-size or variable-size.
+ */
 public class FieldDescriptor {
 
     private final String fieldName;

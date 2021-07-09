@@ -29,6 +29,10 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.TreeMap;
 
+/**
+ * A CompactWriter that constructs a schema from Compact
+ * serializable objects.
+ */
 public final class SchemaWriter implements CompactWriter {
 
     private final TreeMap<String, FieldDescriptor> fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
@@ -38,10 +42,16 @@ public final class SchemaWriter implements CompactWriter {
         this.className = className;
     }
 
+    /**
+     * Builds the schema from the written fields and returns it.
+     */
     public Schema build() {
         return new Schema(className, fieldDefinitionMap);
     }
 
+    /**
+     * Adds a field to the schema.
+     */
     public void addField(FieldDescriptor fieldDefinition) {
         fieldDefinitionMap.put(fieldDefinition.getFieldName(), fieldDefinition);
     }
@@ -122,27 +132,27 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeByteArray(@Nonnull String fieldName, @Nullable byte[] bytes) {
+    public void writeByteArray(@Nonnull String fieldName, @Nullable byte[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.BYTE_ARRAY));
     }
 
     @Override
-    public void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] booleans) {
+    public void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.BOOLEAN_ARRAY));
     }
 
     @Override
-    public void writeCharArray(@Nonnull String fieldName, @Nullable char[] chars) {
+    public void writeCharArray(@Nonnull String fieldName, @Nullable char[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.CHAR_ARRAY));
     }
 
     @Override
-    public void writeIntArray(@Nonnull String fieldName, @Nullable int[] ints) {
+    public void writeIntArray(@Nonnull String fieldName, @Nullable int[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.INT_ARRAY));
     }
 
     @Override
-    public void writeLongArray(@Nonnull String fieldName, @Nullable long[] longs) {
+    public void writeLongArray(@Nonnull String fieldName, @Nullable long[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.LONG_ARRAY));
     }
 
@@ -195,5 +205,4 @@ public final class SchemaWriter implements CompactWriter {
     public void writeObjectArray(@Nonnull String fieldName, @Nullable Object[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.COMPOSED_ARRAY));
     }
-
 }

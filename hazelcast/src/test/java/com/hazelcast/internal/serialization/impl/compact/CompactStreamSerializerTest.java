@@ -41,6 +41,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -178,21 +179,23 @@ public class CompactStreamSerializerTest {
         compactSerializationConfig.setEnabled(true);
         compactSerializationConfig.register(EmployeeDTO.class, "employee",
                 new CompactSerializer<EmployeeDTO>() {
+                    @Nonnull
                     @Override
-                    public EmployeeDTO read(CompactReader in) {
+                    public EmployeeDTO read(@Nonnull CompactReader in) {
                         return new EmployeeDTO(in.readInt("a"), in.readLong("i"));
                     }
 
                     @Override
-                    public void write(CompactWriter out, EmployeeDTO object) {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                         out.writeInt("a", object.getAge());
                         out.writeLong("i", object.getId());
                     }
                 });
         compactSerializationConfig.register(EmployerDTO.class, "employer",
                 new CompactSerializer<EmployerDTO>() {
+                    @Nonnull
                     @Override
-                    public EmployerDTO read(CompactReader in) {
+                    public EmployerDTO read(@Nonnull CompactReader in) {
                         String name = in.readString("n");
                         int age = in.readInt("a");
                         long[] ids = in.readLongArray("ids");
@@ -202,7 +205,7 @@ public class CompactStreamSerializerTest {
                     }
 
                     @Override
-                    public void write(CompactWriter out, EmployerDTO object) {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployerDTO object) {
                         out.writeString("n", object.getName());
                         out.writeInt("a", object.getZcode());
                         out.writeLongArray("ids", object.getIds());
@@ -249,13 +252,14 @@ public class CompactStreamSerializerTest {
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
                 .register(EmployeeDTO.class, "employee",
                         new CompactSerializer<EmployeeDTO>() {
+                            @Nonnull
                             @Override
-                            public EmployeeDTO read(CompactReader in) {
+                            public EmployeeDTO read(@Nonnull CompactReader in) {
                                 return new EmployeeDTO(in.readInt("a"), in.readLong("i"));
                             }
 
                             @Override
-                            public void write(CompactWriter out, EmployeeDTO object) {
+                            public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                                 out.writeInt("a", object.getAge());
                                 out.writeLong("i", object.getId());
                             }
@@ -479,13 +483,14 @@ public class CompactStreamSerializerTest {
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
                 .register(EmployeeDTO.class, new CompactSerializer<EmployeeDTO>() {
+                    @Nonnull
                     @Override
-                    public EmployeeDTO read(CompactReader in) throws IOException {
+                    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
                         throw new UnsupportedOperationException("We will not read from here on this test");
                     }
 
                     @Override
-                    public void write(CompactWriter out, EmployeeDTO object) throws IOException {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
                         out.writeInt("age", object.getAge());
                         out.writeLong("id", object.getId());
                         out.writeString("surname", "sir");
@@ -516,13 +521,14 @@ public class CompactStreamSerializerTest {
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
                 .register(EmployeeDTO.class, new CompactSerializer<EmployeeDTO>() {
+                    @Nonnull
                     @Override
-                    public EmployeeDTO read(CompactReader in) throws IOException {
+                    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
                         throw new UnsupportedOperationException("We will not read from here on this test");
                     }
 
                     @Override
-                    public void write(CompactWriter out, EmployeeDTO object) throws IOException {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
                         out.writeInt("age", object.getAge());
                     }
                 });

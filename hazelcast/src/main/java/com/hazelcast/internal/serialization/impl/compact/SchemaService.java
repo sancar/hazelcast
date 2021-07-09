@@ -17,23 +17,30 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 /**
- * Service to put and get meta data to cluster
+ * Service to put and get metadata to cluster.
  * <p>
- * Client implementations should make sure that even if cluster has restarted meta data will be put back.
+ * Client implementations should make sure that even if cluster has restarted metadata will be put back.
  */
 public interface SchemaService {
 
     String SERVICE_NAME = "schema-service";
 
+    /**
+     * Gets the schema with the given id either by
+     * <ul>
+     *     <li>returning it directly from the local registry, if it exists.</li>
+     *     <li>searching the cluster.</li>
+     * </ul>
+     */
     Schema get(long schemaId);
 
     /**
-     * Puts the schema to the cluster with the given id
+     * Puts the schema with the given id to the cluster.
      */
     void put(Schema schema);
 
     /**
-     * Puts the schema to the local registry of the schema service only
+     * Puts the schema to only the local registry of the schema service.
      */
     void putLocal(Schema schema);
 }

@@ -407,10 +407,10 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
                 return false;
             }
             Car that = (Car) o;
-            if (name != null ? !name.equals(that.name) : that.name != null) {
+            if (!Objects.equals(name, that.name)) {
                 return false;
             }
-            return engine != null ? engine.equals(that.engine) : that.engine == null;
+            return Objects.equals(engine, that.engine);
         }
 
         @Override

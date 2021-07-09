@@ -16,16 +16,23 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+
 import javax.annotation.Nonnull;
 
-public class ConfigurationRegistry {
+/**
+ * Tri-tuple that contains the information for the
+ * classes and their type names, along with the serializer
+ * associated with them.
+ */
+public class CompactSerializableRegistration {
 
     private final Class clazz;
-    private final InternalCompactSerializer compactSerializer;
+    private final CompactSerializer compactSerializer;
     private final String typeName;
 
-    public ConfigurationRegistry(@Nonnull Class clazz, @Nonnull String typeName,
-                                 @Nonnull InternalCompactSerializer compactSerializer) {
+    public CompactSerializableRegistration(@Nonnull Class clazz, @Nonnull String typeName,
+                                           @Nonnull CompactSerializer compactSerializer) {
         this.clazz = clazz;
         this.typeName = typeName;
         this.compactSerializer = compactSerializer;
@@ -35,7 +42,7 @@ public class ConfigurationRegistry {
         return clazz;
     }
 
-    public InternalCompactSerializer getSerializer() {
+    public CompactSerializer getSerializer() {
         return compactSerializer;
     }
 

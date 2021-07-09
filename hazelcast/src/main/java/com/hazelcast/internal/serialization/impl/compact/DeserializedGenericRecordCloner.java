@@ -26,6 +26,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * Builder that will be used when cloning {@link DeserializedGenericRecord}s.
+ */
 public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilder {
     private final TreeMap<String, Object> objects;
     private final Schema schema;
@@ -41,7 +44,6 @@ public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilde
     public GenericRecord build() {
         return new DeserializedGenericRecord(schema, objects);
     }
-
 
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
         checkTypeWithSchema(schema, fieldName, fieldType);

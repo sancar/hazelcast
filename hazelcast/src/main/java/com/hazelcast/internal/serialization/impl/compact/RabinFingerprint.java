@@ -22,12 +22,12 @@ import java.nio.charset.StandardCharsets;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 
 /**
- * A very collision-resistant fingerprint method used to create automatic schema id's for Compact format.
+ * A very collision-resistant fingerprint method used to create automatic
+ * schema ids for the Compact format.
  */
-public final class RabinFingerPrint {
+public final class RabinFingerprint {
 
-    public static final long INIT = 0xc15d213aa4d7a795L;
-
+    private static final long INIT = 0xc15d213aa4d7a795L;
     private static final long[] FP_TABLE = new long[256];
 
     static {
@@ -40,10 +40,25 @@ public final class RabinFingerPrint {
         }
     }
 
-    private RabinFingerPrint() {
+    private RabinFingerprint() {
     }
 
-    public static long fingerprint64(byte[] buf) {
+    /**
+     * Calculates the fingerprint of the schema from its type name and fields.
+     */
+    public static long fingerprint64(Schema schema) {
+        long fingerPrint = fingerprint64(INIT, schema.getTypeName());
+        fingerPrint = fingerprint64(fingerPrint, schema.getFieldCount());
+        for (FieldDescriptor descriptor : schema.getFields()) {
+            fingerPrint = fingerprint64(fingerPrint, descriptor.getFieldName());
+            fingerPrint = fingerprint64(fingerPrint, descriptor.getType().getId());
+
+        }
+        return fingerPrint;
+    }
+
+    // Package-private for tests
+    static long fingerprint64(byte[] buf) {
         long fp = INIT;
         for (byte b : buf) {
             fp = fingerprint64(fp, b);
@@ -51,11 +66,11 @@ public final class RabinFingerPrint {
         return fp;
     }
 
-    public static long fingerprint64(long fp, byte b) {
+    private static long fingerprint64(long fp, byte b) {
         return (fp >>> 8) ^ FP_TABLE[(int) (fp ^ b) & 0xff];
     }
 
-    public static long fingerprint64(long fp, @Nullable String value) {
+    private static long fingerprint64(long fp, @Nullable String value) {
         if (value == null) {
             return fingerprint64(fp, NULL_ARRAY_LENGTH);
         }
@@ -68,9 +83,9 @@ public final class RabinFingerPrint {
     }
 
     /**
-     * rabinfingerprint over little endian representation of integer
+     * FingerPrint of a little endian representation of an integer.
      */
-    public static long fingerprint64(long fp, int v) {
+    private static long fingerprint64(long fp, int v) {
         fp = fingerprint64(fp, (byte) ((v) & 0xFF));
         fp = fingerprint64(fp, (byte) ((v >>> 8) & 0xFF));
         fp = fingerprint64(fp, (byte) ((v >>> 16) & 0xFF));

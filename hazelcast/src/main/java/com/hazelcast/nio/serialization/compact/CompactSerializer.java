@@ -16,18 +16,26 @@
 
 package com.hazelcast.nio.serialization.compact;
 
-import com.hazelcast.internal.serialization.impl.compact.InternalCompactSerializer;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
+ * Defines the contract of the serializers used for Compact
+ * serialization.
+ * <p>
+ * After defining a serializer for the objects of the class {@code T},
+ * it can be registered using the {@link com.hazelcast.config.CompactSerializationConfig}.
+ * <p>
+ * {@link #write(CompactWriter, Object)} and {@link #read(CompactReader)} methods
+ * must be consistent with each other.
+ *
  * @param <T> Type of the serialized/deserialized class
  * @since Hazelcast 5.0 as BETA
  */
 @Beta
-public interface CompactSerializer<T> extends InternalCompactSerializer<T, CompactReader> {
+public interface CompactSerializer<T> {
     /**
      * @param in reader to read fields of an object
      * @return the object created as a result of read method

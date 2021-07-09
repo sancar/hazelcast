@@ -27,6 +27,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * Puts all the schemas to the local registry of this member if they are
+ * absent.
+ */
 public class SendAllSchemasOperation extends Operation implements IdentifiedDataSerializable {
 
     private Collection<Schema> schemas;

@@ -24,7 +24,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
- * Reads the offset of the variable-size fields at the given indexes.
+ * Reads the offsets of the variable-size fields with the given indexes.
  */
 public interface OffsetReader {
 

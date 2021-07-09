@@ -34,10 +34,10 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RabinFingerPrintTest {
+public class RabinFingerprintTest {
 
     @Test
-    public void testRabinFingerPrinterConsistentWithWriteData() throws IOException {
+    public void testRabinFingerprintIsConsistentWithWrittenData() throws IOException {
         SchemaWriter writer = new SchemaWriter("className");
         writer.addField(new FieldDescriptor("a", FieldType.BOOLEAN));
         writer.addField(new FieldDescriptor("b", FieldType.BOOLEAN_ARRAY));
@@ -48,9 +48,7 @@ public class RabinFingerPrintTest {
                 .setByteOrder(ByteOrder.LITTLE_ENDIAN).build();
         BufferObjectDataOutput output = internalSerializationService.createObjectDataOutput();
         schema.writeData(output);
-        long fingerprint64 = RabinFingerPrint.fingerprint64(output.toByteArray());
+        long fingerprint64 = RabinFingerprint.fingerprint64(output.toByteArray());
         assertEquals(fingerprint64, schema.getSchemaId());
     }
-
-
 }

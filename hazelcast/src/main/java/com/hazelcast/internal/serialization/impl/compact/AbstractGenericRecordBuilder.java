@@ -29,6 +29,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+/**
+ * Abstract class that implements most of the methods of the {@link GenericRecordBuilder}
+ * interface. It leaves the responsibility of building the actual {@link GenericRecord}
+ * to the child classes.
+ */
 abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull

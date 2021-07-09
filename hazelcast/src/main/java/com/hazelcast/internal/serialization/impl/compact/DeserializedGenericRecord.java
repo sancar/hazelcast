@@ -234,7 +234,6 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return get(fieldName, FieldType.COMPOSED_ARRAY);
     }
 
-
     private <T> T get(@Nonnull String fieldName, FieldType fieldType) {
         check(fieldName, fieldType);
         return (T) objects.get(fieldName);
