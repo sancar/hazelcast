@@ -23,17 +23,16 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.FieldTypeBasedOperations.VARIABLE_SIZE;
-import static java.util.Comparator.comparingInt;
 
 /**
  * Represents the schema of a class.
@@ -57,25 +56,37 @@ public class Schema implements IdentifiedDataSerializable {
     }
 
     private void init() {
-        int offset = 0;
-        int bitOffset = 0;
+        List<FieldDescriptor> fixedSizeFields = new ArrayList<>();
+        List<FieldDescriptor> booleanFields = new ArrayList<>();
+        List<FieldDescriptor> variableSizeFields = new ArrayList<>();
 
-        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
-                .filter(descriptor -> fieldOperations(descriptor.getType()).typeSizeInBytes() != VARIABLE_SIZE)
-                .filter(descriptor -> !descriptor.getType().equals(FieldType.BOOLEAN))
-                .sorted(comparingInt(o -> fieldOperations(((FieldDescriptor) o).getType()).typeSizeInBytes()).reversed())
-                .collect(Collectors.toList());
-        for (FieldDescriptor fieldDefinition : definiteSizedList) {
-            fieldDefinition.setOffset(offset);
-            offset += fieldOperations(fieldDefinition.getType()).typeSizeInBytes();
+        for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
+            FieldType fieldType = descriptor.getType();
+            if (fieldOperations(fieldType).typeSizeInBytes() == VARIABLE_SIZE) {
+                variableSizeFields.add(descriptor);
+            } else {
+                if (FieldType.BOOLEAN.equals(fieldType)) {
+                    booleanFields.add(descriptor);
+                } else {
+                    fixedSizeFields.add(descriptor);
+                }
+            }
         }
 
-        List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
-                .collect(Collectors.toList());
-        for (FieldDescriptor fieldDefinition : booleanFieldsList) {
-            fieldDefinition.setOffset(offset);
-            fieldDefinition.setBitOffset((byte) (bitOffset % Byte.SIZE));
+        fixedSizeFields.sort(Comparator.comparingInt(
+                d -> fieldOperations(((FieldDescriptor) d).getType()).typeSizeInBytes()).reversed()
+        );
+
+        int offset = 0;
+        for (FieldDescriptor descriptor : fixedSizeFields) {
+            descriptor.setOffset(offset);
+            offset += fieldOperations(descriptor.getType()).typeSizeInBytes();
+        }
+
+        int bitOffset = 0;
+        for (FieldDescriptor descriptor : booleanFields) {
+            descriptor.setOffset(offset);
+            descriptor.setBitOffset((byte) (bitOffset % Byte.SIZE));
             bitOffset++;
             if (bitOffset % Byte.SIZE == 0) {
                 offset += 1;
@@ -88,21 +99,18 @@ public class Schema implements IdentifiedDataSerializable {
         fixedSizeFieldsLength = offset;
 
         int index = 0;
-        List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
-                .filter(descriptor -> fieldOperations(descriptor.getType()).typeSizeInBytes() == VARIABLE_SIZE)
-                .collect(Collectors.toList());
-
-        for (FieldDescriptor fieldDefinition : varSizeList) {
-            fieldDefinition.setIndex(index++);
+        for (FieldDescriptor descriptor : variableSizeFields) {
+            descriptor.setIndex(index++);
         }
 
         numberVarSizeFields = index;
-        calculateSchemaId();
+        schemaId = RabinFingerprint.fingerprint64(this);
     }
 
     /**
      * The class name provided when building a schema
-     * In java, when it is not configured explicitly, this falls back to full class name including the path.
+     * In Java, when it is not configured explicitly, this falls back to
+     * fully qualified class name.
      *
      * @return name of the class
      */
@@ -161,17 +169,6 @@ public class Schema implements IdentifiedDataSerializable {
             out.writeString(descriptor.getFieldName());
             out.writeByte(descriptor.getType().getId());
         }
-    }
-
-    private void calculateSchemaId() {
-        long fp = RabinFingerPrint.fingerprint64(RabinFingerPrint.INIT, typeName);
-        fp = RabinFingerPrint.fingerprint64(fp, fieldDefinitionMap.size());
-        Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
-        for (FieldDescriptor descriptor : fields) {
-            fp = RabinFingerPrint.fingerprint64(fp, descriptor.getFieldName());
-            fp = RabinFingerPrint.fingerprint64(fp, descriptor.getType().getId());
-        }
-        schemaId = fp;
     }
 
     @Override

@@ -18,7 +18,15 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 
+/**
+ * An extension of the {@link AbstractGenericRecord} that requires the
+ * implementors to provide a {@link Schema} that represents the
+ * Compact serialized objects.
+ */
 public abstract class CompactGenericRecord extends AbstractGenericRecord {
 
+    /**
+     * Returns the schema associated with this GenericRecord.
+     */
     abstract Schema getSchema();
 }

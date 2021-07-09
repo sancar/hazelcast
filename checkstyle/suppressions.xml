@@ -308,7 +308,7 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SchemaWriter"/>
     <suppress checks="MagicNumber"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]RabinFingerPrint"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]RabinFingerprint"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compact[\\/]CompactWriter"/>
     <suppress checks="MethodCount"

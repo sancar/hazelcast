@@ -25,6 +25,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
+/**
+ * Puts the schema to the local registry of this member if it is absent.
+ */
 public class SendSchemaOperation extends Operation implements IdentifiedDataSerializable {
 
     private Schema schema;

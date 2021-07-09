@@ -68,6 +68,13 @@ import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
+/**
+ * Default implementation of the {@link CompactWriter} that writes
+ * the serialized fields into a {@link BufferObjectDataOutput}.
+ * <p>
+ * The writer can also handle compact serializable classes that we want to
+ * include schema in it.
+ */
 public class DefaultCompactWriter implements CompactWriter {
 
     private final CompactStreamSerializer serializer;
@@ -85,21 +92,30 @@ public class DefaultCompactWriter implements CompactWriter {
         if (schema.getNumberOfVariableSizeFields() != 0) {
             this.fieldOffsets = new int[schema.getNumberOfVariableSizeFields()];
             dataStartPosition = out.position() + INT_SIZE_IN_BYTES;
-            //skip for length and primitives
+            // Skip for length and primitives.
             out.writeZeroBytes(schema.getFixedSizeFieldsLength() + INT_SIZE_IN_BYTES);
         } else {
             this.fieldOffsets = null;
             dataStartPosition = out.position();
-            //skip for  primitives
+            // Skip for primitives. No need to write data length, when there is no
+            // variable-size fields.
             out.writeZeroBytes(schema.getFixedSizeFieldsLength());
         }
         this.includeSchemaOnBinary = includeSchemaOnBinary;
     }
 
+    /**
+     * Returns the byte array representation of the serialized object.
+     */
     public byte[] toByteArray() {
         return out.toByteArray();
     }
 
+    /**
+     * Ends the serialization of the compact objects by writing
+     * the offsets of the variable-size fields as well as the
+     * data length, if there are some variable-size fields.
+     */
     public void end() {
         try {
             if (schema.getNumberOfVariableSizeFields() == 0) {
@@ -165,7 +181,7 @@ public class DefaultCompactWriter implements CompactWriter {
         }
     }
 
-    IllegalStateException illegalStateException(IOException cause) {
+    private IllegalStateException illegalStateException(IOException cause) {
         return new IllegalStateException("IOException is not expected from BufferObjectDataOutput ", cause);
     }
 
@@ -450,35 +466,35 @@ public class DefaultCompactWriter implements CompactWriter {
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
-    public static void writeLocalDateArray0(ObjectDataOutput out, LocalDate[] value) throws IOException {
+    private static void writeLocalDateArray0(ObjectDataOutput out, LocalDate[] value) throws IOException {
         out.writeInt(value.length);
         for (LocalDate localDate : value) {
             IOUtil.writeLocalDate(out, localDate);
         }
     }
 
-    public static void writeLocalTimeArray0(ObjectDataOutput out, LocalTime[] value) throws IOException {
+    private static void writeLocalTimeArray0(ObjectDataOutput out, LocalTime[] value) throws IOException {
         out.writeInt(value.length);
         for (LocalTime localTime : value) {
             IOUtil.writeLocalTime(out, localTime);
         }
     }
 
-    public static void writeLocalDateTimeArray0(ObjectDataOutput out, LocalDateTime[] value) throws IOException {
+    private static void writeLocalDateTimeArray0(ObjectDataOutput out, LocalDateTime[] value) throws IOException {
         out.writeInt(value.length);
         for (LocalDateTime localDateTime : value) {
             IOUtil.writeLocalDateTime(out, localDateTime);
         }
     }
 
-    public static void writeOffsetDateTimeArray0(ObjectDataOutput out, OffsetDateTime[] value) throws IOException {
+    private static void writeOffsetDateTimeArray0(ObjectDataOutput out, OffsetDateTime[] value) throws IOException {
         out.writeInt(value.length);
         for (OffsetDateTime offsetDateTime : value) {
             IOUtil.writeOffsetDateTime(out, offsetDateTime);
         }
     }
 
-    static void writeBooleanBits(BufferObjectDataOutput out, boolean[] booleans) throws IOException {
+    private static void writeBooleanBits(BufferObjectDataOutput out, boolean[] booleans) throws IOException {
         int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
         out.writeInt(len);
         int position = out.position();
@@ -496,5 +512,4 @@ public class DefaultCompactWriter implements CompactWriter {
             }
         }
     }
-
 }

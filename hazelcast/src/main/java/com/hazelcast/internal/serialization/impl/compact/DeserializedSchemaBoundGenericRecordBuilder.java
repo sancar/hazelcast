@@ -25,6 +25,11 @@ import javax.annotation.Nonnull;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * Builder that will be used while creating a new builder out of
+ * {@link DeserializedGenericRecord}s. It carries the schema information
+ * of the record and do type checks while setting fields.
+ */
 class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
     private final TreeMap<String, Object> objects = new TreeMap<>();

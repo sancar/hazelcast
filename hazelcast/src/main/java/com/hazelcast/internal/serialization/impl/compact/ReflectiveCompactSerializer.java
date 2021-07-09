@@ -83,16 +83,13 @@ import static java.util.stream.Collectors.toList;
  * Thus, if any sub-fields does not have an accessible empty constructor, deserialization fails with
  * HazelcastSerializationException.
  */
-public class ReflectiveCompactSerializer implements InternalCompactSerializer<Object, DefaultCompactReader> {
+public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
     private final Map<Class, Writer[]> writersCache = new ConcurrentHashMap<>();
     private final Map<Class, Reader[]> readersCache = new ConcurrentHashMap<>();
 
-    public ReflectiveCompactSerializer() {
-    }
-
     @Override
-    public void write(CompactWriter writer, Object object) throws IOException {
+    public void write(@Nonnull CompactWriter writer, @Nonnull Object object) throws IOException {
         Class<?> clazz = object.getClass();
         if (writeFast(clazz, writer, object)) {
             return;
@@ -116,9 +113,9 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
         return true;
     }
 
-    private boolean readFast(Class clazz, CompactReader compactReader, Object object) throws IOException {
+    private boolean readFast(Class clazz, DefaultCompactReader compactReader, Object object) throws IOException {
         Reader[] readers = readersCache.get(clazz);
-        Schema schema = ((DefaultCompactReader) compactReader).getSchema();
+        Schema schema = compactReader.getSchema();
         if (readers == null) {
             return false;
         }
@@ -132,16 +129,20 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
         return true;
     }
 
-    public Object read(DefaultCompactReader reader) throws IOException {
-        Class associatedClass = reader.getAssociatedClass();
+    @Nonnull
+    @Override
+    public Object read(@Nonnull CompactReader reader) throws IOException {
+        // We always fed DefaultCompactReader to this serializer.
+        DefaultCompactReader compactReader = (DefaultCompactReader) reader;
+        Class associatedClass = compactReader.getAssociatedClass();
         Object object;
         object = createObject(associatedClass);
         try {
-            if (readFast(associatedClass, reader, object)) {
+            if (readFast(associatedClass, compactReader, object)) {
                 return object;
             }
             createFastReadWriteCaches(associatedClass);
-            readFast(associatedClass, reader, object);
+            readFast(associatedClass, compactReader, object);
             return object;
         } catch (Exception e) {
             throw new IOException(e);
@@ -157,7 +158,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
         }
     }
 
-    public static List<Field> getAllFields(List<Field> fields, Class<?> type) {
+    private static List<Field> getAllFields(List<Field> fields, Class<?> type) {
         fields.addAll(Arrays.stream(type.getDeclaredFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .filter(f -> !Modifier.isTransient(f.getModifiers()))

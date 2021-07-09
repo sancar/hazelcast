@@ -43,7 +43,6 @@ import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSe
 
 public class MemberSchemaService implements ManagedService, PreJoinAwareService, SchemaService {
 
-    public static final String SERVICE_NAME = "schema-service";
     private static final int MAX_RETRIES = 100;
     private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
     private ILogger logger;
@@ -171,5 +170,4 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
         }
         return false;
     }
-
 }

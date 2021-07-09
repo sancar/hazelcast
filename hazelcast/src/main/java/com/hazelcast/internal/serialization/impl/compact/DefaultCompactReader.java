@@ -59,7 +59,7 @@ import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 /**
- * Adapter to make CompactInternalGenericRecord provide `CompactReader` API
+ * Adapter to make CompactInternalGenericRecord provide `CompactReader` API.
  */
 public class DefaultCompactReader extends CompactInternalGenericRecord implements CompactReader {
 
@@ -206,7 +206,6 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Override
     @Nonnull
-
     public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) {
         return getTimestampWithTimezone(fieldName);
     }
