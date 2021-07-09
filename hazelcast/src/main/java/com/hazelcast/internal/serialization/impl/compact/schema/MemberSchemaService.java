@@ -124,22 +124,19 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
 
     @Override
     public void put(Schema schema) {
-        long schemaId = schema.getSchemaId();
-        if (putIfAbsent(schema)) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Sending schema id  " + schemaId + " locally, will search on the cluster" + schemaId);
-            }
-            invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES)
-                    .joinInternal();
-        }
+        putAsync(schema).join();
     }
 
     public CompletableFuture<Void> putAsync(Schema schema) {
-        if (putIfAbsent(schema)) {
-            return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES);
-        } else {
+        long schemaId = schema.getSchemaId();
+        if (getLocal(schemaId) != null) {
             return CompletableFuture.completedFuture(null);
         }
+        if (logger.isFinestEnabled()) {
+            logger.finest("Sending schema  " + schema + "  to the cluster");
+        }
+        return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES).
+                thenRun(() -> putIfAbsent(schema));
     }
 
     @Nonnull
