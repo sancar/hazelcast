@@ -265,7 +265,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value);
+    GenericRecordBuilder setTime(@Nonnull String fieldName, @Nonnull LocalTime value);
 
     /**
      * Sets a date field consisting of year , month of the year and day of the month
@@ -282,7 +282,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value);
+    GenericRecordBuilder setDate(@Nonnull String fieldName, @Nonnull LocalDate value);
 
     /**
      * Sets a timestamp field consisting of
@@ -300,7 +300,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
+    GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value);
 
     /**
      * Sets a timestamp with timezone field consisting of
@@ -318,7 +318,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
+    GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -578,4 +578,74 @@ interface GenericRecordBuilder {
      */
     @Nonnull
     GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value);
+
+    /**
+     * Sets a time field consisting of hour, minute, seconds and nanos parts
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableTime(@Nonnull String fieldName, @Nullable LocalTime value);
+
+    /**
+     * Sets a date field consisting of year , month of the year and day of the month
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableDate(@Nonnull String fieldName, @Nullable LocalDate value);
+
+    /**
+     * Sets a timestamp field consisting of
+     * year , month of the year and day of the month, hour, minute, seconds, nanos parts
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
+
+    /**
+     * Sets a timestamp with timezone field consisting of
+     * year , month of the year and day of the month, offset seconds , hour, minute, seconds, nanos parts
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
 }
